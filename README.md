@@ -2,7 +2,7 @@
 
 Sistema de gestão da equipe de corretores: painel de BI e metas, vendas e comissões, cartão ponto com roleta, agenda, base de conhecimento, treinamentos, relatórios em PDF e controle de acesso por perfil (Master, Coordenador, Corretor).
 
-- **Site:** `index.html` + `config.js` (sem build; publicado pelo GitHub Pages em `gestao.eaumbel.com.br`)
+- **Site:** pasta `gestao/` (sem build; publicado pela Vercel em `eaumbel.com.br/gestao`)
 - **Banco, login e arquivos:** Supabase (projeto `hjzessepenqedsfgokmt`)
 - **Segurança:** as permissões são conferidas no servidor (Row Level Security). Os usuários entram só com o login e a senha cadastrados no sistema.
 
@@ -10,11 +10,12 @@ Sistema de gestão da equipe de corretores: painel de BI e metas, vendas e comis
 
 | Arquivo | O que é |
 |---|---|
-| `index.html` | O sistema completo |
-| `config.js` | URL do Supabase e chave **anon public** |
+| `gestao/index.html` | O sistema completo |
+| `gestao/config.js` | URL do Supabase e chave **anon public** |
+| `vercel.json` | Redireciona `/` para `/gestao/` e cabeçalhos de segurança |
+| `.vercelignore` | Não publica a pasta `supabase` nem este README |
 | `supabase/migrations/20261111180000_inicial.sql` | Tabelas, permissões (RLS), armazenamento e tempo real |
 | `supabase/functions/admin-usuarios/index.ts` | Função segura que cria e altera usuários (login, senha, perfil, status, permissões) |
-| `CNAME` | Domínio do GitHub Pages |
 
 ## Configuração (uma vez)
 
@@ -37,18 +38,19 @@ Supabase → **Authentication → Sign In / Providers → Email**:
 - **Confirm email** pode ficar como estiver: os usuários são criados já confirmados.
 
 ### 4. Chave do site
-Em `config.js`, troque `COLE_AQUI_A_CHAVE_ANON_PUBLIC` pela chave **anon public** (Project Settings → API).
+Já preenchida em `gestao/config.js` (chave **anon public**, que é pública por natureza).
 
-### 5. Publicar no GitHub Pages
-1. Repositório → **Settings → Pages** → Source: **Deploy from a branch** → branch `main`, pasta `/ (root)`.
-2. Em **Custom domain**, confirme `gestao.eaumbel.com.br` e marque **Enforce HTTPS** quando liberar.
-3. No painel DNS do domínio `eaumbel.com.br`, crie:
-   `gestao  CNAME  eaumbel.github.io.`
-
-> No plano gratuito do GitHub, o Pages exige repositório **público**. Não há segredo no código: a chave anon é pública e a proteção dos dados está nas regras do banco. Se preferir repositório privado, publique pela Vercel ou Netlify apontando para este repositório (sem build, pasta raiz).
+### 5. Publicar na Vercel
+1. Vercel → **Add New → Project** → importe o repositório `eaumbel/imobiliaria2.0`.
+2. **Framework Preset:** `Other`. Deixe Build Command e Output Directory vazios. Clique em **Deploy**.
+3. No projeto: **Settings → Domains** → adicione `eaumbel.com.br` (e, se quiser, `www.eaumbel.com.br`).
+4. A Vercel mostra os registros DNS a criar. No Registro.br (**Editar zona** do domínio), crie exatamente os que ela indicar — normalmente:
+   - `A` · nome vazio (`eaumbel.com.br`) · `76.76.21.21`
+   - `CNAME` · `www` · `cname.vercel-dns.com`
+5. Quando o domínio aparecer como **Valid Configuration** na Vercel, o sistema abre em `https://eaumbel.com.br/gestao/`.
 
 ### 6. Primeiro acesso
-Abra `https://gestao.eaumbel.com.br`. Como não há usuários, aparece **Primeiro acesso**: crie o login do **Master**. Depois cadastre a equipe em **Usuários**.
+Abra `https://eaumbel.com.br/gestao/` (ou o endereço `….vercel.app/gestao/` que a Vercel mostra, antes do domínio ficar pronto). Como não há usuários, aparece **Primeiro acesso**: crie o login do **Master**. Depois cadastre a equipe em **Usuários**.
 
 ## Esqueci a senha do Master
 Outro Master pode redefinir em **Usuários → Editar**. Se não houver outro, rode no **SQL Editor** do Supabase (troque o login e a senha):
