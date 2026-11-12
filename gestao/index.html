@@ -382,6 +382,27 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .suffix span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700;font-size:13px}
 .vd-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 
+/* ---------- Diário de bordo ---------- */
+.di-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:start}
+.di-text{min-height:220px;font-size:15px;line-height:1.6}
+.di-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn.mic.rec{background:var(--accent);border-color:var(--accent);color:#fff;animation:pulso 1.2s ease-in-out infinite}
+@keyframes pulso{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent)}50%{box-shadow:0 0 0 7px transparent}}
+.nota{display:flex;align-items:center;gap:16px}
+.nota b{font-family:var(--font-display);font-size:46px;line-height:1}
+.nota small{color:var(--muted);font-size:13px}
+.di-sec h4{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+.di-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+.di-list.ok li::marker{color:var(--ok)}
+.di-list.bad li::marker{color:var(--bad)}
+.feedback{font-size:15px;line-height:1.65;background:var(--surface-2);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:14px 16px;white-space:pre-line}
+.acao{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+.acao.desfeito{opacity:.55;text-decoration:line-through}
+.hist{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid transparent;width:100%;background:transparent;text-align:left;font:inherit;color:inherit}
+.hist:hover{background:var(--surface-2);border-color:var(--line)}
+.hist.sel{border-color:var(--accent);background:var(--accent-soft)}
+.kw-row{display:grid;grid-template-columns:1fr 240px 36px;gap:8px;align-items:center}
+
 @media (max-width: 1180px){
   .hero{grid-template-columns:1fr}
   .dash-grid{grid-template-columns:1fr}
@@ -407,6 +428,8 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
   .bar-row .bar-track{grid-column:1 / -1;grid-row:2}
   .grid-2,.grid-3{grid-template-columns:1fr}
   .rel-filters{grid-template-columns:1fr;gap:8px}
+  .di-grid{grid-template-columns:1fr}
+  .kw-row{grid-template-columns:1fr 150px 36px}
   .tipo-venda{grid-template-columns:1fr 1fr}
   .vd-sum{grid-template-columns:1fr 1fr;gap:12px}
   .span-2{grid-column:auto}
@@ -517,6 +540,9 @@ const ICON = {
   share: '<path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v8h14v-8"/>',
   printer: '<path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/>',
   key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/>',
+  book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5A2.5 2.5 0 0 1 6.5 19H20v3H6.5"/><path d="M9 7h7M9 11h5"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 3v4M17 5h4"/>',
   logout: '<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4M6 12h10"/>'
 };
 const ic = (n, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n] || ''}</svg>`;
@@ -524,8 +550,8 @@ const ic = (n, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentC
 /* =========================================================
    Camada de dados — Supabase (banco, login e tempo real)
    ========================================================= */
-const COLS = ['corretores', 'metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config'];
-const TABELAS = ['metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config'];
+const COLS = ['corretores', 'metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario'];
+const TABELAS = ['metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario'];
 const S = {}; COLS.forEach(c => S[c] = new Map());
 let MODE = 'loading', CORR_READY = false;
 const CFG = window.APP_CONFIG || {};
@@ -578,13 +604,14 @@ async function loadAll() {
   }
 }
 function clearData() { COLS.forEach(c => S[c] = new Map()); CORR_READY = false; if (canal) { sb.removeChannel(canal); canal = null; } }
-async function api(acao, payload = {}) {
+const api = (acao, payload = {}) => fnCall('admin-usuarios', {acao, ...payload});
+async function fnCall(nome, payload = {}) {
   const {data: {session}} = await sb.auth.getSession();
   let res;
   try {
-    res = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/functions/v1/admin-usuarios', {method: 'POST',
+    res = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/functions/v1/' + nome, {method: 'POST',
       headers: {'Content-Type': 'application/json', apikey: CFG.supabaseAnonKey, Authorization: 'Bearer ' + (session?.access_token || CFG.supabaseAnonKey)},
-      body: JSON.stringify({acao, ...payload})});
+      body: JSON.stringify(payload)});
   } catch (e) { throw new Error('Não foi possível falar com o servidor. Verifique a internet.'); }
   let out = {}; try { out = await res.json(); } catch (e) {}
   if (!res.ok) throw new Error(out.erro || 'O servidor recusou a operação.');
@@ -635,13 +662,14 @@ const corretor = id => S.corretores.get(id);
    ========================================================= */
 const PERFIS = {master: 'Master · Gestor de Vendas', coordenador: 'Coordenador', corretor: 'Corretor'};
 const PERFIL_CURTO = {master: 'Master', coordenador: 'Coordenador', corretor: 'Corretor'};
-const MENUS_ON = {relatorios: 1, agenda: 1, conhecimento: 1, treinamentos: 1, ponto: 1, vendas: 1};
+const MENUS_ON = {diario: 1, relatorios: 1, agenda: 1, conhecimento: 1, treinamentos: 1, ponto: 1, vendas: 1};
 const PERMS = {
   master:      {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 1, usuarios: 1, conteudo: 1, operacaoTodos: 1},
   coordenador: {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 0, usuarios: 0, conteudo: 1, operacaoTodos: 1},
   corretor:    {...MENUS_ON, equipe: 0, metas: 0, metasEdit: 0, usuarios: 0, conteudo: 0, operacaoTodos: 0}
 };
 const PERM_DEFS = [
+  {k: 'diario', g: 'Menus que aparecem', l: 'Diário de bordo', d: 'Cada um escreve e vê o próprio diário. Ver o da equipe depende de "Ver números de toda a equipe".'},
   {k: 'relatorios', g: 'Menus que aparecem', l: 'Relatórios'},
   {k: 'agenda', g: 'Menus que aparecem', l: 'Agenda'},
   {k: 'conhecimento', g: 'Menus que aparecem', l: 'Base de conhecimento'},
@@ -666,7 +694,7 @@ const can = p => { if (!ME) return false; const pf = perfilOf(ME); if (pf === 'm
   const ov = ME.permissoes?.[p]; if (ov === true || ov === false) return ov; return perfilPode(pf, p); };
 const participa = c => c.participa != null ? c.participa !== false : perfilOf(c) !== 'master';
 const vendedores = () => corretores(true).filter(participa);
-const VIEW_PERM = {metas: 'metas', usuarios: 'usuarios', relatorios: 'relatorios', agenda: 'agenda', conhecimento: 'conhecimento', treinamentos: 'treinamentos', ponto: 'ponto', vendas: 'vendas'};
+const VIEW_PERM = {diario: 'diario', metas: 'metas', usuarios: 'usuarios', relatorios: 'relatorios', agenda: 'agenda', conhecimento: 'conhecimento', treinamentos: 'treinamentos', ponto: 'ponto', vendas: 'vendas'};
 const canView = v => !VIEW_PERM[v] || can(VIEW_PERM[v]);
 const isMine = id => !!ME && id === ME.id;
 const canOp = corretorId => can('operacaoTodos') || isMine(corretorId);
@@ -810,6 +838,7 @@ const state = {
   metasMes: monthKey(today()),
   users: {tab: 'lista', filtro: 'todos', busca: '', editId: null},
   kbBusca: '',
+  diario: {tab: 'meu', data: today(), cor: 'all', mes: monthKey(today())},
   vendas: {mes: monthKey(today()), corretor: 'all', busca: ''},
   rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today()},
   dirty: false, pending: false
@@ -822,6 +851,7 @@ function scheduleRender(fromData) {
 
 const NAV = [
   {id: 'inicio', grp: 'Gestão', label: 'Painel', icon: 'chart', sub: 'Indicadores comerciais da equipe'},
+  {id: 'diario', grp: 'Gestão', label: 'Diário de bordo', icon: 'book', sub: 'O dia de cada corretor, com análise e plano de ação'},
   {id: 'relatorios', grp: 'Gestão', label: 'Relatórios', icon: 'report', sub: 'Relatórios em PDF para imprimir e compartilhar'},
   {id: 'agenda', grp: 'Gestão', label: 'Agenda', icon: 'cal', sub: 'Compromissos da equipe'},
   {id: 'conhecimento', grp: 'Gestão', label: 'Base de conhecimento', icon: 'brain', sub: 'Processos, roteiros e materiais em mapa mental'},
@@ -1167,7 +1197,7 @@ function evHTML(e) {
     <div class="acts"><button class="btn sm" data-act="ag-iphone" data-id="${e.id}">${ic('phone')}iPhone</button>${canOp(e.corretorId) ? `<button class="btn sm icon" data-act="ag-edit" data-id="${e.id}" aria-label="Editar">${ic('edit')}</button><button class="btn sm icon danger" data-act="ag-del" data-id="${e.id}" aria-label="Excluir">${ic('trash')}</button>` : ''}</div></div>`;
 }
 VIEWS.agenda = {
-  actions: () => `<button class="btn primary" data-act="ag-new">${ic('plus')}Novo compromisso</button>`,
+  actions: () => `<button class="btn" data-act="ag-new">${ic('plus')}Novo compromisso</button><button class="btn primary" data-act="ag-visita">${ic('pin')}Agendar visita</button>`,
   html() {
     const a = state.agenda, evs = agendaVisivel();
     const marks = {}; evs.forEach(e => marks[e.data] = (marks[e.data] || 0) + 1);
@@ -1178,7 +1208,7 @@ VIEWS.agenda = {
     return `<div class="split">
       <div class="stack">${calHTML(a.month, a.sel, marks, 'ag')}
         <div class="card card-b small">
-          <div style="font-weight:800;margin-bottom:6px;display:flex;gap:8px;align-items:center">${ic('phone')} Agenda do iPhone</div>
+          <div style="font-weight:800;margin-bottom:6px;display:flex;gap:8px;align-items:center"><span style="width:18px;height:18px;display:inline-flex">${ic('phone')}</span> Agenda do iPhone</div>
           <div class="muted">Em cada compromisso, toque em <b>iPhone</b> para enviá-lo ao Calendário. Para levar todos de uma vez, use:</div>
           <button class="btn sm" style="margin-top:10px" data-act="ag-ics-all">${ic('copy')}Copiar agenda completa (.ics)</button>
         </div>
@@ -1539,7 +1569,7 @@ VIEWS.vendas = {
       <div class="card"><div class="card-h"><h2>Vendas de ${monthLong(f.mes)}</h2><span class="hint">${vs.length} registro(s)</span></div>
         <div class="card-b tbl-wrap">${vs.length ? `<table class="t vis"><thead><tr><th>Data</th><th>Referência</th><th>Cliente</th><th>Tipo de venda</th><th>Vendedor</th><th>Angariador</th><th class="r">Valor</th><th class="r">Entrada</th><th class="r">Sinal</th><th class="r">Com. venda</th><th class="r">Com. angariador</th><th></th></tr></thead><tbody>
           ${vs.map(v => { const c = comissoes(v); return `<tr><td class="num">${dayShort(v.data)}</td><td><b>${esc(v.referencia)}</b>${v.imovel ? `<div class="small muted">${esc(v.imovel)}</div>` : ''}</td><td>${esc(v.cliente || '—')}</td>
-            <td><span class="pill ${isPermuta(v.tipoVenda) ? 'gold' : v.tipoVenda === 'Financiamento' ? 'info' : 'ok'}">${esc(v.tipoVenda)}</span></td><td>${esc(nome(v.vendedorId))}</td><td>${esc(v.angariadorId ? nome(v.angariadorId) : '—')}</td>
+            <td>${v.tipoVenda ? `<span class="pill ${isPermuta(v.tipoVenda) ? 'gold' : v.tipoVenda === 'Financiamento' ? 'info' : 'ok'}">${esc(v.tipoVenda)}</span>` : `<span class="pill warn" title="Lançada pelo Diário de bordo. Complete tipo de venda e comissões.">Revisar dados</span>`}</td><td>${esc(nome(v.vendedorId))}</td><td>${esc(v.angariadorId ? nome(v.angariadorId) : '—')}</td>
             <td class="r num" style="font-weight:800">${brlC(v.valor)}</td><td class="r num">${v.entrada ? brlC(v.entrada) : '—'}</td><td class="r num">${v.sinal ? brlC(v.sinal) : '—'}</td>
             <td class="r num">${brlC(c.cv)}<div class="small muted">${pctIn(v.comVendaPct) || '0'}%${isPermuta(v.tipoVenda) ? ' + ' + (pctIn(v.permutaComPct) || '0') + '% perm.' : ''}</div></td>
             <td class="r num">${brlC(c.ca)}<div class="small muted">${pctIn(v.comAngPct) || '0'}%</div></td>
@@ -1631,6 +1661,228 @@ function vendaForm(v = {}) {
         if (await save('vendas', v.id || uid(), rec)) { toast('Venda salva.'); state.vendas.mes = monthKey(rec.data); }
       };
     }});
+}
+
+/* =========================================================
+   Microfone (ditado por voz)
+   ========================================================= */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recAtivo = null;
+const micBtn = target => SR ? `<button type="button" class="btn sm mic" data-act="mic" data-target="${target}">${ic('mic')}Falar</button>`
+  : `<span class="small muted">${ic('mic').replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px"')} Para ditar, use o microfone do teclado do celular.</span>`;
+function ditar(el) {
+  if (recAtivo) { recAtivo.stop(); return; }
+  const ta = document.getElementById(el.dataset.target); if (!ta || !SR) return;
+  const rec = new SR(); rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true;
+  const base = ta.value ? ta.value.replace(/\s*$/, ' ') : '';
+  let final = '';
+  rec.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) { const t = e.results[i][0].transcript; if (e.results[i].isFinal) final += t.trim() + ' '; else interim += t; }
+    ta.value = base + final + interim; ta.dispatchEvent(new Event('input', {bubbles: true}));
+  };
+  rec.onerror = e => toast(e.error === 'not-allowed' ? 'Permita o uso do microfone no navegador para ditar.' : e.error === 'no-speech' ? 'Não ouvi nada. Toque em Falar e tente de novo.' : 'O ditado foi interrompido. Toque em Falar para continuar.', 'warn');
+  rec.onend = () => { recAtivo = null; $$('[data-act="mic"]').forEach(b => { b.classList.remove('rec'); b.innerHTML = ic('mic') + 'Falar'; }); };
+  try { rec.start(); recAtivo = rec; el.classList.add('rec'); el.innerHTML = ic('mic') + 'Parar'; toast('Pode falar. Toque em Parar quando terminar.'); }
+  catch (e) { toast('Não foi possível ligar o microfone.', 'bad'); }
+}
+
+/* =========================================================
+   Agenda: agendar visita
+   ========================================================= */
+function visitaAgendaForm() {
+  const cs = can('operacaoTodos') ? vendedores() : [ME];
+  if (!cs.some(c => c.id === ME.id)) cs.unshift(ME);
+  openModal({title: 'Agendar visita',
+    body: `<form class="stack" onsubmit="return false" autocomplete="off">
+      <div class="grid-2">
+        <div class="field"><label for="av-data">Data *</label><input class="input" type="date" id="av-data" value="${esc(state.agenda.sel || today())}"></div>
+        <div class="field"><label for="av-hora">Hora *</label><select class="input" id="av-hora">${horaOptions('10:00', false)}</select></div>
+        <div class="field"><label for="av-cli">Nome do cliente *</label><input class="input" id="av-cli"></div>
+        <div class="field"><label for="av-cor">Corretor</label><select class="input" id="av-cor">${cs.map(c => `<option value="${c.id}" ${c.id === ME.id ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</select></div>
+        <div class="field span-2"><label for="av-end">Endereço</label><input class="input" id="av-end" placeholder="Rua, número, bairro ou nome do edifício"></div>
+      </div>
+      <div class="field"><div class="row" style="justify-content:space-between"><label for="av-res">Resumo</label>${micBtn('av-res')}</div>
+        <textarea class="input" id="av-res" placeholder="O que o cliente procura, imóvel que será mostrado, observações…"></textarea></div>
+    </form>`,
+    foot: `<button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="av-save">${ic('cal')}Agendar</button>`,
+    onMount: m => {
+      $('#av-save', m).onclick = async () => {
+        if (!requireFields(['av-data', 'av-cli'])) return;
+        if (recAtivo) recAtivo.stop();
+        const data = val('av-data'), hora = val('av-hora'), cliente = val('av-cli'), local = val('av-end'), resumo = $('#av-res', m).value.trim(), cid = val('av-cor') || ME.id;
+        const fim = (() => { const [h, mi] = hora.split(':').map(Number); return String(Math.min(h + 1, 23)).padStart(2, '0') + ':' + String(mi).padStart(2, '0'); })();
+        closeModal();
+        let visitaId = '';
+        if (can('ponto')) { visitaId = uid(); if (!await save('visitas', visitaId, {data, hora, tipo: 'Venda', cliente, telefone: '', corretorId: cid, status: 'Agendada', imovel: local, valor: 0, obs: resumo})) visitaId = ''; }
+        const ok = await save('agenda', uid(), {titulo: 'Visita · ' + cliente, data, inicio: hora, fim, local, corretorId: cid, lembrete: '60', obs: resumo, tipo: 'visita', cliente, visitaId});
+        if (ok) { state.agenda.sel = data; state.agenda.month = monthKey(data); toast('Visita agendada para ' + dayShort(data) + ' às ' + hora + '.'); }
+      };
+    }});
+}
+
+/* =========================================================
+   VIEW: Diário de bordo (análise por inteligência artificial)
+   ========================================================= */
+const DIARIO_ACOES = {venda: 'Lançar em Vendas', visita: 'Registrar visita realizada', agenda: 'Agendar na Agenda'};
+const DIARIO_PADRAO = {
+  valores: ['Ética e transparência com o cliente', 'Foco em resultado', 'Trabalho em equipe'],
+  deveres: ['Responder os leads da roleta em até 5 minutos', 'Registrar todas as visitas no sistema', 'Fazer follow-up com cada cliente em até 24 horas', 'Prospectar novos clientes todos os dias'],
+  virtudes: ['Disciplina', 'Persistência', 'Empatia', 'Organização'],
+  palavras: [{termo: 'vendi', acao: 'venda'}, {termo: 'fechei negócio', acao: 'venda'}, {termo: 'assinou contrato', acao: 'venda'},
+    {termo: 'visitei', acao: 'visita'}, {termo: 'mostrei o imóvel', acao: 'visita'}, {termo: 'agendei', acao: 'agenda'}, {termo: 'marquei visita', acao: 'agenda'}],
+  instrucoes: ''
+};
+const cfgDiario = () => { const c = S.config.get('diario') || {}; return {...DIARIO_PADRAO, ...Object.fromEntries(Object.entries(c).filter(([k]) => k in DIARIO_PADRAO))}; };
+const notaCor = n => n == null ? 'var(--muted)' : n >= 8 ? 'var(--ok)' : n >= 6 ? 'var(--warn)' : 'var(--bad)';
+const diarioId = (data, cid) => data + '_' + cid;
+
+function analiseHTML(e, podeDesfazer) {
+  if (!e) return `<div class="card empty"><b>Nenhum registro neste dia</b>Descreva o seu dia e toque em “Analisar meu dia”.</div>`;
+  const a = e.analise;
+  if (!a) return `<div class="card empty"><b>Texto salvo, ainda sem análise</b>Toque em “Analisar meu dia” para receber o feedback.</div>`;
+  const li = (arr, cls) => (arr || []).length ? `<ul class="di-list ${cls || ''}">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<div class="small muted">—</div>';
+  return `<div class="card"><div class="card-b stack" style="gap:18px">
+    <div class="row" style="justify-content:space-between">
+      <div class="nota"><b class="num" style="color:${notaCor(a.nota)}">${a.nota ?? '—'}</b><div><div style="font-weight:800">Nota do dia</div><small>de 0 a 10 · ${esc(fmtD(e.data))}</small></div></div>
+      <span class="pill neutral">${ic('spark').replace('<svg', '<svg style="width:13px;height:13px"')}Análise por IA</span>
+    </div>
+    <div class="di-sec"><h4>Feedback</h4><div class="feedback">${esc(a.feedback || '')}</div></div>
+    <div class="grid-2" style="align-items:start">
+      <div class="di-sec"><h4 style="color:var(--ok)">Pontos fortes</h4>${li(a.pontos_fortes, 'ok')}</div>
+      <div class="di-sec"><h4 style="color:var(--bad)">Pontos a melhorar</h4>${li(a.pontos_fracos, 'bad')}</div>
+    </div>
+    <div class="di-sec"><h4>Mudanças para chegar à excelência e vender mais</h4>${(a.melhorias || []).length ? `<ol class="di-list">${a.melhorias.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : '—'}</div>
+    ${(a.mantra || []).length ? `<div class="di-sec"><h4>Alinhamento com o mantra da equipe</h4><div class="stack" style="gap:6px">${a.mantra.map(m => `<div class="small"><b>${esc(m.item)}</b> · <span class="muted">${esc(m.avaliacao)}</span></div>`).join('')}</div></div>` : ''}
+    ${(e.acoes || []).length ? `<div class="di-sec"><h4>Lançado automaticamente</h4><div class="stack" style="gap:8px">${e.acoes.map((x, i) => `<div class="acao ${x.desfeito ? 'desfeito' : ''}">
+        <span class="pill ${x.ok ? 'ok' : 'bad'}">${x.tipo === 'venda' ? 'Venda' : x.tipo === 'visita' ? 'Visita' : 'Agenda'}</span><span class="grow">${esc(x.resumo)}${x.ok ? '' : ' · não foi possível lançar'}</span>
+        ${x.ok && !x.desfeito && podeDesfazer ? `<button class="btn sm" data-act="di-desfazer" data-id="${esc(e.id)}" data-i="${i}">Desfazer</button>` : ''}${x.desfeito ? '<span class="small muted">desfeito</span>' : ''}</div>`).join('')}</div>
+      <div class="small muted" style="margin-top:6px">Vendas lançadas assim ficam marcadas como “Revisar dados” em Vendas, para completar tipo de venda e comissões.</div></div>` : ''}
+  </div></div>`;
+}
+
+VIEWS.diario = {
+  html() {
+    const d = state.diario, tabs = [['meu', 'Meu diário', true], ['equipe', 'Equipe', can('equipe')], ['config', 'Configurações', isMaster()]].filter(t => t[2]);
+    if (!tabs.some(t => t[0] === d.tab)) d.tab = 'meu';
+    const head = `<div class="tabs-top">${tabs.map(([k, l]) => `<button class="btn ${d.tab === k ? 'primary' : ''}" data-act="di-tab" data-v="${k}">${l}</button>`).join('')}</div>`;
+    if (d.tab === 'config') return head + diarioConfigHTML();
+    if (d.tab === 'equipe') return head + diarioEquipeHTML();
+    const e = S.diario.get(diarioId(d.data, ME.id));
+    const meus = list('diario').filter(x => x.corretorId === ME.id).sort((a, b) => (b.data || '').localeCompare(a.data || '')).slice(0, 30);
+    const cfg = cfgDiario();
+    return head + `<div class="di-grid">
+      <div class="stack">
+        <form class="card" data-guard onsubmit="return false"><div class="card-b stack">
+          <div class="row" style="justify-content:space-between"><h2 style="font-size:17px">Como foi o seu dia?</h2>
+            <input class="input" type="date" id="di-data" value="${d.data}" max="${today()}" style="width:170px" aria-label="Dia"></div>
+          <textarea class="input di-text" id="di-texto" placeholder="Conte o que você fez hoje: atendimentos, ligações, visitas, propostas, vendas, dificuldades… Ex.: Vendi 300 mil reais para o cliente João, apartamento no Edifício Marrocos.">${esc(e?.texto || '')}</textarea>
+          <div class="di-tools">${micBtn('di-texto')}<span class="grow"></span><button class="btn primary" id="di-analisar">${ic('spark')}Analisar meu dia</button></div>
+          <div class="small muted">Palavras que lançam registros automaticamente: ${cfg.palavras.map(p => `<b>${esc(p.termo)}</b>`).join(', ')}.</div>
+        </div></form>
+        <div class="card"><div class="card-h"><h3>Meus últimos dias</h3></div><div class="card-b" style="display:flex;flex-direction:column;gap:2px">
+          ${meus.length ? meus.map(x => `<button class="hist ${x.data === d.data ? 'sel' : ''}" data-act="di-dia" data-d="${x.data}"><b class="num" style="width:34px;color:${notaCor(x.analise?.nota)}">${x.analise?.nota ?? '—'}</b><span style="min-width:0;flex:1"><b style="font-size:13.5px">${esc(fmtD(x.data))}</b><span class="small muted" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((x.texto || '').slice(0, 90))}</span></span></button>`).join('')
+            : '<div class="small muted">Seus registros aparecem aqui.</div>'}
+        </div></div>
+      </div>
+      <div id="di-resultado">${analiseHTML(e, true)}</div>
+    </div>`;
+  },
+  mount() {
+    const dd = $('#di-data'); if (dd) dd.onchange = () => { if (dd.value) { state.diario.data = dd.value; state.dirty = false; render(); } };
+    const b = $('#di-analisar'); if (b) b.onclick = () => analisarDia(b);
+    if (state.diario.tab === 'config') diarioConfigMount();
+    if (state.diario.tab === 'equipe') { const c = $('#die-cor'); if (c) c.onchange = () => { state.diario.cor = c.value; render(); };
+      const mm = $('#die-mes'); if (mm) mm.onchange = () => { if (mm.value) { state.diario.mes = mm.value; render(); } }; }
+  }
+};
+async function analisarDia(btn) {
+  const texto = $('#di-texto').value.trim();
+  if (texto.length < 30) { $('#di-texto').focus(); return toast('Descreva o seu dia com um pouco mais de detalhe para a análise ser útil.', 'warn'); }
+  if (recAtivo) recAtivo.stop();
+  const data = state.diario.data, id = diarioId(data, ME.id), prev = S.diario.get(id);
+  const restaura = () => { btn.disabled = false; btn.innerHTML = ic('spark') + 'Analisar meu dia'; };
+  btn.disabled = true; btn.innerHTML = 'Analisando…';
+  const base = {corretorId: ME.id, data, texto, criadoEm: prev?.criadoEm || Date.now(), analise: prev?.analise || null, acoes: prev?.acoes || []};
+  if (!await save('diario', id, base)) return restaura();
+  let out;
+  try { out = await fnCall('diario-ia', {texto, data}); }
+  catch (e) { restaura(); state.dirty = false; render(); return toast(e.message, 'bad'); }
+  const jaLancou = (prev?.acoes || []).length > 0;
+  const acoes = jaLancou ? prev.acoes : await criarRegistros(out.registros || [], id, data);
+  await save('diario', id, {...base, analise: {...(out.analise || {}), em: Date.now()}, acoes});
+  restaura(); state.dirty = false; render();
+  toast(jaLancou ? 'Análise atualizada. Os lançamentos da primeira análise foram mantidos.' : acoes.length ? `Análise pronta e ${acoes.filter(a => a.ok).length} registro(s) lançado(s).` : 'Análise pronta.');
+}
+async function criarRegistros(regs, did, dataDia) {
+  const out = [];
+  for (const r of regs.slice(0, 10)) {
+    const data = /^\d{4}-\d{2}-\d{2}$/.test(r.data || '') ? r.data : dataDia;
+    const hora = /^\d{2}:\d{2}$/.test(r.hora || '') ? r.hora : '';
+    if (r.tipo === 'venda' && +r.valor > 0) {
+      const id = uid();
+      const ok = await save('vendas', id, {referencia: (r.imovel || 'A definir').slice(0, 60), data, cliente: r.cliente || '', imovel: r.imovel || '', valor: r2(+r.valor), tipoVenda: '',
+        permutaDesc: '', permutaValor: 0, permutaComPct: 0, tornaValor: 0, entrada: 0, sinal: 0, vendedorId: ME.id, angariadorId: '',
+        comVendaPct: 0, comAngPct: 0, comVendaValor: 0, comAngValor: 0, obs: r.descricao || '', visitaId: '', criadoPor: ME.id, pendente: true, origem: 'diario', diarioId: did});
+      out.push({tipo: 'venda', col: 'vendas', id, ok: !!ok, resumo: `Venda de ${brlC(r.valor)}${r.cliente ? ' para ' + r.cliente : ''}${r.imovel ? ' · ' + r.imovel : ''}`});
+    } else if (r.tipo === 'visita') {
+      const id = uid();
+      const ok = await save('visitas', id, {data, hora: hora || '10:00', tipo: TIPOS.includes(r.tipoVisita) ? r.tipoVisita : 'Venda', cliente: r.cliente || 'Cliente', telefone: '', corretorId: ME.id,
+        status: 'Realizada', imovel: r.imovel || r.endereco || '', valor: 0, obs: r.descricao || '', origem: 'diario'});
+      out.push({tipo: 'visita', col: 'visitas', id, ok: !!ok, resumo: `Visita realizada${r.cliente ? ' com ' + r.cliente : ''}${r.imovel || r.endereco ? ' · ' + (r.imovel || r.endereco) : ''} em ${dayShort(data)}`});
+    } else if (r.tipo === 'agenda') {
+      const id = uid(), ini = hora || '09:00';
+      const ok = await save('agenda', id, {titulo: r.cliente ? 'Visita · ' + r.cliente : (r.descricao || 'Compromisso').slice(0, 80), data, inicio: ini, fim: '', local: r.endereco || r.imovel || '',
+        corretorId: ME.id, lembrete: '60', obs: r.descricao || '', tipo: r.cliente ? 'visita' : '', cliente: r.cliente || '', origem: 'diario'});
+      out.push({tipo: 'agenda', col: 'agenda', id, ok: !!ok, resumo: `${r.cliente ? 'Visita com ' + r.cliente : (r.descricao || 'Compromisso')} em ${dayShort(data)} às ${ini}`});
+    }
+  }
+  return out;
+}
+function diarioEquipeHTML() {
+  const d = state.diario, ms = d.mes;
+  const ents = list('diario').filter(x => String(x.data || '').startsWith(ms) && (d.cor === 'all' || x.corretorId === d.cor)).sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  const por = {}; ents.forEach(x => { if (x.analise?.nota == null) return; (por[x.corretorId] = por[x.corretorId] || []).push(+x.analise.nota); });
+  const medias = Object.entries(por).map(([k, v]) => [k, v.reduce((a, b) => a + b, 0) / v.length, v.length]).sort((a, b) => b[1] - a[1]);
+  return `<div class="row">
+      <input class="input" type="month" id="die-mes" value="${ms}" style="width:180px" aria-label="Mês">
+      <select class="input" id="die-cor" style="width:240px" aria-label="Corretor"><option value="all">Toda a equipe</option>${corretores().map(c => `<option value="${c.id}" ${d.cor === c.id ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</select>
+    </div>
+    ${medias.length ? `<div class="card"><div class="card-h"><h3>Nota média no mês</h3></div><div class="card-b bars">${medias.map(([k, m, n]) => `<div class="bar-row"><div class="who">${avatar(corretor(k))}<div><b>${esc(corretor(k)?.nome || '—')}</b><span>${n} dia(s) analisado(s)</span></div></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${m * 10}%;background:${notaCor(m)}"></div></div><div class="bar-pct num" style="color:${notaCor(m)}">${m.toLocaleString('pt-BR', {maximumFractionDigits: 1})}<small>de 10</small></div></div>`).join('')}</div></div>` : ''}
+    <div class="card"><div class="card-h"><h3>Registros de ${monthLong(ms)}</h3><span class="hint">${ents.length} dia(s)</span></div>
+      <div class="card-b tbl-wrap">${ents.length ? `<table class="t"><thead><tr><th>Data</th><th>Corretor</th><th class="r">Nota</th><th>Resumo do feedback</th><th></th></tr></thead><tbody>
+        ${ents.map(x => `<tr><td class="num" style="white-space:nowrap">${esc(fmtD(x.data))}</td><td>${esc(corretor(x.corretorId)?.nome || '—')}</td>
+          <td class="r num" style="font-weight:800;color:${notaCor(x.analise?.nota)}">${x.analise?.nota ?? '—'}</td><td class="small">${esc((x.analise?.feedback || x.texto || '').slice(0, 140))}…</td>
+          <td><button class="btn sm" data-act="di-ver" data-id="${esc(x.id)}">Ver</button></td></tr>`).join('')}</tbody></table>`
+        : `<div class="empty"><b>Nenhum diário neste período</b></div>`}</div></div>`;
+}
+function diarioConfigHTML() {
+  const c = cfgDiario();
+  const ta = (id, l, arr, help) => `<div class="field"><label for="${id}">${l}</label><textarea class="input" id="${id}" style="min-height:130px">${esc(arr.join('\n'))}</textarea><div class="help">${help}</div></div>`;
+  return `<div class="banner">${ic('info')}<span>Este é o <b>mantra da equipe</b>: a inteligência usa estes valores, deveres e virtudes como régua para avaliar cada dia. Um item por linha.</span></div>
+    <form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Mantra da equipe</h2></div><div class="card-b grid-3" style="align-items:start">
+      ${ta('dc-val', 'Valores', c.valores, 'Princípios que guiam o trabalho.')}
+      ${ta('dc-dev', 'Deveres', c.deveres, 'Rotinas e compromissos obrigatórios.')}
+      ${ta('dc-vir', 'Virtudes', c.virtudes, 'Comportamentos que fazem a diferença.')}
+      <div class="field span-2" style="grid-column:1/-1"><label for="dc-ins">Instruções extras para a análise (opcional)</label><textarea class="input" id="dc-ins" style="min-height:70px" placeholder="Ex.: Cobre sempre o número de ligações feitas; a meta diária é de 20 contatos.">${esc(c.instrucoes)}</textarea></div>
+    </div></form>
+    <form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Palavras-chave que lançam registros</h2><span class="grow"></span><button class="btn sm" data-act="dc-add">${ic('plus')}Adicionar palavra</button></div>
+      <div class="card-b stack" id="dc-kws">${c.palavras.map((p, i) => kwRow(p, i)).join('')}</div>
+      <div class="card-b small muted" style="padding-top:0">Quando o corretor escrever algo com essas palavras, o sistema lança o registro com os dados que conseguir identificar (cliente, valor, imóvel, data e hora). Ex.: “vendi 300 mil reais para o João, apartamento no Edifício Marrocos” vira uma venda.</div></form>
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-act="dc-padrao">Restaurar sugestões</button><button class="btn primary" id="dc-save">Salvar configurações</button></div>`;
+}
+const kwRow = (p, i) => `<div class="kw-row" data-kw><input class="input sm" value="${esc(p.termo)}" placeholder="palavra ou expressão" aria-label="Palavra-chave ${i + 1}">
+  <select class="input sm" aria-label="Ação">${Object.entries(DIARIO_ACOES).map(([k, l]) => `<option value="${k}" ${p.acao === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+  <button type="button" class="btn sm icon ghost" data-act="dc-rm" aria-label="Remover">${ic('x')}</button></div>`;
+function diarioConfigMount() {
+  $('#dc-save').onclick = async () => {
+    if (!isMaster()) return denied();
+    const linhas = id => val(id).split('\n').map(x => x.trim()).filter(Boolean).slice(0, 30);
+    const palavras = $$('[data-kw]').map(r => ({termo: r.querySelector('input').value.trim().toLowerCase(), acao: r.querySelector('select').value})).filter(p => p.termo).slice(0, 40);
+    const ok = await save('config', 'diario', {valores: linhas('dc-val'), deveres: linhas('dc-dev'), virtudes: linhas('dc-vir'), palavras, instrucoes: val('dc-ins').slice(0, 1500)});
+    if (ok) { state.dirty = false; toast('Configurações do Diário de bordo salvas.'); }
+  };
 }
 
 /* =========================================================
@@ -2125,6 +2377,19 @@ const shiftMonth = (o, n) => { o.month = addMonths(o.month, n); };
 const ACTIONS = {
   'menu': () => document.body.classList.toggle('nav-open'),
   'logout': () => logout(),
+  'mic': el => ditar(el),
+  'ag-visita': () => visitaAgendaForm(),
+  'di-tab': el => { state.diario.tab = el.dataset.v; state.dirty = false; render(); },
+  'di-dia': el => { state.diario.data = el.dataset.d; state.dirty = false; render(); },
+  'di-ver': el => { const x = S.diario.get(el.dataset.id); if (!x) return;
+    openModal({title: esc((corretor(x.corretorId)?.nome || '') + ' · ' + fmtD(x.data)), wide: true,
+      body: `<div class="di-grid"><div class="card"><div class="card-h"><h3>O que foi descrito</h3></div><div class="card-b" style="white-space:pre-line;font-size:14.5px;line-height:1.6">${esc(x.texto || '')}</div></div><div>${analiseHTML(x, false)}</div></div>`}); },
+  'di-desfazer': el => { const x = S.diario.get(el.dataset.id), i = +el.dataset.i; if (!x || x.corretorId !== ME.id) return denied(); const a = x.acoes?.[i]; if (!a) return;
+    confirmBox('Desfazer o lançamento “' + esc(a.resumo) + '”? O registro será excluído.', 'Desfazer', async () => {
+      if (await remove(a.col, a.id)) { const acoes = x.acoes.map((y, j) => j === i ? {...y, desfeito: true} : y); await save('diario', x.id, {...x, acoes}); toast('Lançamento desfeito.'); } }); },
+  'dc-add': () => { const box = $('#dc-kws'); box.insertAdjacentHTML('beforeend', kwRow({termo: '', acao: 'venda'}, box.children.length)); box.lastElementChild.querySelector('input').focus(); state.dirty = true; },
+  'dc-rm': el => { el.closest('[data-kw]').remove(); state.dirty = true; },
+  'dc-padrao': () => { if (!isMaster()) return denied(); confirmBox('Voltar o mantra e as palavras-chave para as sugestões iniciais?', 'Restaurar', async () => { if (await save('config', 'diario', DIARIO_PADRAO)) { state.dirty = false; render(); toast('Sugestões restauradas.'); } }); },
   'tr-file': async el => {
     const w = window.open('', '_blank');
     const {data, error} = await sb.storage.from('treinamentos').createSignedUrl(el.dataset.path, 600);

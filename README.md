@@ -60,3 +60,14 @@ update auth.users
 set encrypted_password = crypt('NovaSenha123', gen_salt('bf'))
 where email = 'gestor@acesso.eaumbel.com.br';
 ```
+
+## Diário de bordo (inteligência artificial)
+
+A análise do dia usa o Claude, pela API da Anthropic, através da função `diario-ia`.
+
+1. **Banco:** rode no SQL Editor o arquivo `supabase/migrations/20261111220000_diario_de_bordo.sql`.
+2. **Função:** Edge Functions → Deploy a new function → Via Editor → nome `diario-ia` → cole `supabase/functions/diario-ia/index.ts` → Deploy. Em **Settings**, desligue **Verify JWT**.
+3. **Chave da IA:** crie uma chave em https://console.anthropic.com (API Keys) e cadastre em Supabase → Edge Functions → **Secrets** com o nome `ANTHROPIC_API_KEY`. A cobrança é por uso, direto na conta da Anthropic.
+4. Opcional: o segredo `MODELO_IA` troca o modelo (padrão `claude-sonnet-5-5`).
+
+O mantra da equipe (valores, deveres, virtudes) e as palavras-chave ficam em **Diário de bordo → Configurações** (só o Master).
