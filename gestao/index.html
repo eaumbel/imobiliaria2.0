@@ -383,6 +383,68 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .vd-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 
 /* ---------- Diário de bordo ---------- */
+.di-top{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start}
+.di-top > *,.rc-top > *{min-width:0}
+.rc{overflow:hidden}
+.rc > summary{list-style:none;cursor:pointer}
+.rc > summary::-webkit-details-marker{display:none}
+.rc-h{display:flex;align-items:center;gap:12px;padding:16px 20px;flex-wrap:wrap}
+.rc-h b{display:block;font-size:15.5px}
+.rc-h span{font-size:12.5px;color:var(--muted)}
+.rc-h .pill{font-size:11.5px}
+.rc-nota{font-family:var(--font-display);font-weight:700;font-size:20px;color:var(--ink)}
+.rc-nota small{font-size:12px;color:var(--muted);font-weight:600}
+.chev{width:18px;height:18px;display:inline-flex;transition:transform .2s;color:var(--muted)}
+.rc[open] .chev{transform:rotate(90deg)}
+.rc-b{border-top:1px solid var(--line);padding:18px 20px 22px;display:flex;flex-direction:column;gap:16px}
+.rc-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:800;margin-bottom:6px}
+.relato{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;white-space:pre-line}
+.rc-top{display:grid;grid-template-columns:1fr 240px;gap:16px;align-items:stretch}
+.diag{background:var(--info-soft);border:1px solid color-mix(in srgb,var(--info) 35%,transparent);border-radius:14px;padding:18px 20px}
+.diag h4,.pf h4,.plano h4,.desafio h4,.reflexao h4{display:flex;align-items:center;gap:8px;font-size:15px;margin:0 0 10px;font-family:var(--font-display)}
+.diag h4 svg,.pf h4 svg,.plano h4 svg,.desafio h4 svg,.reflexao h4 svg{width:18px;height:18px}
+.diag p{margin:0 0 10px;font-size:13.8px;line-height:1.6}
+.diag p:last-child{margin:0}
+.nota-box{background:#17191c;color:#fff;border-radius:14px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px}
+.nota-box .nb-ic{width:24px;height:24px;color:#e5383f}
+.nota-box .nb-l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#a7adb4;font-weight:800}
+.nota-box .nb-v{font-family:var(--font-display);font-size:52px;font-weight:700;line-height:1}
+.nota-box .nb-v small{font-size:16px;color:#a7adb4}
+.nota-box .nb-v.sm{font-size:15px;line-height:1.35;font-weight:700}
+.nota-box .nb-pill{background:#f1f2f4;color:#16181b;border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:800}
+.nota-box .nb-m{font-size:12px;color:#c3c8ce;line-height:1.45}
+.pf{padding:16px 18px;box-shadow:none}
+.pf-i{border-left:3px solid var(--ok);padding:2px 0 2px 12px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.pf-i + .pf-i{margin-top:12px}
+.pf-i.bad{border-left-color:var(--bad)}
+.pf-i b{color:var(--ink);font-size:13.8px}
+.plano{padding:16px 18px;box-shadow:none;display:flex;flex-direction:column;gap:10px}
+.pa{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.pa b{color:var(--ink);font-size:13.8px}
+.prio{display:inline-flex;height:22px;align-items:center;padding:0 10px;border-radius:999px;font-size:11px;font-weight:800}
+.prio-alta{background:var(--accent);color:#fff}
+.prio-media{background:var(--gold-soft);color:var(--ink)}
+.prio-baixa{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.desafio{background:#17191c;color:#fff;border-radius:14px;padding:18px 20px}
+.desafio p{margin:0;font-weight:700;line-height:1.55;font-size:14px}
+.reflexao{background:var(--info-soft);border:1px solid color-mix(in srgb,var(--info) 35%,transparent);border-radius:14px;padding:18px 20px}
+.reflexao p{margin:0;font-style:italic;font-weight:600;line-height:1.55;font-size:14px}
+.acc{padding:4px 18px;box-shadow:none}
+.acc details{border-bottom:1px solid var(--line)}
+.acc details:last-child{border-bottom:0}
+.acc summary{cursor:pointer;padding:13px 0;font-weight:700;font-size:13.8px;display:flex;align-items:center;gap:10px;list-style:none}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s}
+.acc details[open] summary::after{transform:rotate(-135deg)}
+.acc .acc-b{padding:0 0 14px;font-size:13.5px;display:flex;flex-direction:column;gap:8px}
+.mb{display:flex;flex-direction:column;gap:10px}
+.mb-p{font-family:var(--font-display);font-weight:700;font-size:18px}
+.mb-bar{height:8px}
+.mb-s{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mb-s span{display:block;font-size:11.5px;color:var(--muted)}
+.mb-s b{font-size:14px}
+.nota-rodape{font-size:12px;color:var(--muted)}
+
 .di-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:start}
 .di-text{min-height:220px;font-size:15px;line-height:1.6}
 .di-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -428,7 +490,8 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
   .bar-row .bar-track{grid-column:1 / -1;grid-row:2}
   .grid-2,.grid-3{grid-template-columns:1fr}
   .rel-filters{grid-template-columns:1fr;gap:8px}
-  .di-grid{grid-template-columns:1fr}
+  .di-grid,.di-top,.rc-top{grid-template-columns:1fr}
+  .mb-s{grid-template-columns:1fr 1fr}
   .kw-row{grid-template-columns:1fr 150px 36px}
   .tipo-venda{grid-template-columns:1fr 1fr}
   .vd-sum{grid-template-columns:1fr 1fr;gap:12px}
@@ -838,7 +901,7 @@ const state = {
   metasMes: monthKey(today()),
   users: {tab: 'lista', filtro: 'todos', busca: '', editId: null},
   kbBusca: '',
-  diario: {tab: 'meu', data: today(), cor: 'all', mes: monthKey(today())},
+  diario: {tab: 'meu', data: today(), dia: today(), cor: 'all'},
   vendas: {mes: monthKey(today()), corretor: 'all', busca: ''},
   rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today()},
   dirty: false, pending: false
@@ -1731,74 +1794,125 @@ const DIARIO_PADRAO = {
   virtudes: ['Disciplina', 'Persistência', 'Empatia', 'Organização'],
   palavras: [{termo: 'vendi', acao: 'venda'}, {termo: 'fechei negócio', acao: 'venda'}, {termo: 'assinou contrato', acao: 'venda'},
     {termo: 'visitei', acao: 'visita'}, {termo: 'mostrei o imóvel', acao: 'visita'}, {termo: 'agendei', acao: 'agenda'}, {termo: 'marquei visita', acao: 'agenda'}],
-  instrucoes: ''
+  instrucoes: '',
+  prompt: "Você é um mentor comercial sênior, especialista em gestão de desempenho, comportamento profissional, negociação, persuasão ética, angariação de imóveis e venda de imóveis prontos.\n\nSua função é analisar os relatos diários dos corretores com rigor, sinceridade, objetividade e compromisso com a evolução profissional.\n\nVocê deve atuar como um mentor que respeita a pessoa, mas não protege comportamentos improdutivos de críticas necessárias.\n\nNão elogie por educação. Não critique por estilo. Fundamente suas conclusões em fatos relatados ou dados autorizados do CRM.\n\nSepare fatos, interpretações e recomendações. Não invente acontecimentos, números, intenções, emoções, resultados ou oportunidades.\n\nConsidere os princípios de reflexão pessoal, escuta ativa, construção de confiança, persuasão ética, diagnóstico, negociação tática, disciplina comercial e os pilares inegociáveis da operação.\n\nAvalie o processo, não apenas o resultado final. Um dia sem venda pode ter sido produtivo. Um dia com venda pode conter falhas que precisam ser corrigidas.",
+  versao: 1,
+  limite: 3
 };
 const cfgDiario = () => { const c = S.config.get('diario') || {}; return {...DIARIO_PADRAO, ...Object.fromEntries(Object.entries(c).filter(([k]) => k in DIARIO_PADRAO))}; };
-const notaCor = n => n == null ? 'var(--muted)' : n >= 8 ? 'var(--ok)' : n >= 6 ? 'var(--warn)' : 'var(--bad)';
+const nota100 = a => a?.nota == null ? null : (a.escala === 100 ? +a.nota : Math.round(+a.nota * 10));
+const notaCor = n => n == null ? 'var(--muted)' : n >= 80 ? 'var(--ok)' : n >= 60 ? 'var(--warn)' : 'var(--bad)';
 const diarioId = (data, cid) => data + '_' + cid;
-
-function analiseHTML(e, podeDesfazer) {
-  if (!e) return `<div class="card empty"><b>Nenhum registro neste dia</b>Descreva o seu dia e toque em “Analisar meu dia”.</div>`;
-  const a = e.analise;
-  if (!a) return `<div class="card empty"><b>Texto salvo, ainda sem análise</b>Toque em “Analisar meu dia” para receber o feedback.</div>`;
-  const li = (arr, cls) => (arr || []).length ? `<ul class="di-list ${cls || ''}">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<div class="small muted">—</div>';
-  return `<div class="card"><div class="card-b stack" style="gap:18px">
-    <div class="row" style="justify-content:space-between">
-      <div class="nota"><b class="num" style="color:${notaCor(a.nota)}">${a.nota ?? '—'}</b><div><div style="font-weight:800">Nota do dia</div><small>de 0 a 10 · ${esc(fmtD(e.data))}</small></div></div>
-      <span class="pill neutral">${ic('spark').replace('<svg', '<svg style="width:13px;height:13px"')}Análise por IA</span>
+const CONF = {alta: 'Confiança alta', media: 'Confiança média', baixa: 'Confiança baixa'};
+const PRIO = {alta: ['Prioridade alta', 'prio-alta'], media: ['Prioridade média', 'prio-media'], baixa: ['Prioridade baixa', 'prio-baixa']};
+const SIT = {atendido: ['Atendido', 'ok'], parcial: ['Parcial', 'warn'], nao_atendido: ['Não atendido', 'bad'], sem_evidencia: ['Sem evidência', 'neutral']};
+const NOTA_RODAPE = `<div class="nota-rodape">A nota da IA não deve ser usada como critério único para remuneração, promoção ou punição.</div>`;
+const vgvDia = (cid, data) => list('vendas').filter(v => v.vendedorId === cid && v.data === data).reduce((t, v) => t + (+v.valor || 0), 0);
+const dataBR = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? dateObj(iso).toLocaleDateString('pt-BR') : (iso || '');
+function contextoDia(cid, data) {
+  const mk = monthKey(data);
+  const ctx = {vgvDia: vgvDia(cid, data), vgvMes: realizado([mk], cid), metaIndividual: metaOf([mk], cid)};
+  if (can('equipe')) { const vs = vendedores(); Object.assign(ctx, {metaEquipe: metaOf([mk], 'all'), vgvEquipeMes: realizado([mk], 'all'), corretoresComMeta: vs.filter(c => metaOf([mk], c.id) > 0).length, totalCorretores: vs.length}); }
+  return ctx;
+}
+const acoesHTML = (e, podeDesfazer) => (e.acoes || []).length ? `<div><div class="rc-lbl">Lançado automaticamente pelo relato</div><div class="stack" style="gap:8px">${e.acoes.map((x, i) => `<div class="acao ${x.desfeito ? 'desfeito' : ''}">
+    <span class="pill ${x.ok ? 'ok' : 'bad'}">${x.tipo === 'venda' ? 'Venda' : x.tipo === 'visita' ? 'Visita' : 'Agenda'}</span><span class="grow">${esc(x.resumo)}${x.ok ? '' : ' · não foi possível lançar'}</span>
+    ${x.ok && !x.desfeito && podeDesfazer ? `<button class="btn sm" data-act="di-desfazer" data-id="${esc(e.id)}" data-i="${i}">Desfazer</button>` : ''}${x.desfeito ? '<span class="small muted">desfeito</span>' : ''}</div>`).join('')}</div>
+  <div class="small muted" style="margin-top:6px">Vendas lançadas assim aparecem como “Revisar dados” em Vendas, para completar tipo de venda e comissões.</div></div>` : '';
+function analiseCompletaHTML(a) {
+  const d = a.diagnostico || {}, n = nota100(a);
+  const li = arr => (arr || []).length ? `<ul class="di-list">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<div class="small muted">Nada a destacar.</div>';
+  const fortes = (a.pontos_fortes || []).map(p => `<div class="pf-i"><b>${esc(p.titulo)}</b><div>Evidência: ${esc(p.evidencia)}</div><div>Impacto: ${esc(p.impacto)}</div><div>Como repetir: ${esc(p.como_repetir)}</div></div>`).join('');
+  const fracos = (a.pontos_fracos || []).map(p => `<div class="pf-i bad"><b>${esc(p.titulo)}</b><div>Evidência: ${esc(p.evidencia)}</div><div>Impacto: ${esc(p.impacto)}</div><div>Como corrigir: ${esc(p.como_corrigir)}</div></div>`).join('');
+  const plano = (a.plano_acao || []).map(p => { const pr = PRIO[p.prioridade] || PRIO.media;
+    return `<div class="pa"><div class="row" style="gap:8px"><span class="prio ${pr[1]}">${pr[0]}</span>${p.prazo ? `<span class="small muted">Prazo: ${esc(dataBR(p.prazo))}</span>` : ''}</div>
+      <b>${esc(p.acao)}</b>${p.meta ? `<div>Meta: ${esc(p.meta)}</div>` : ''}${p.conclusao ? `<div>Conclusão: ${esc(p.conclusao)}</div>` : ''}</div>`; }).join('');
+  const totalPts = (a.nota_detalhes || []).reduce((t, x) => t + (+x.pontos || 0), 0), totalMax = (a.nota_detalhes || []).reduce((t, x) => t + (+x.maximo || 0), 0);
+  return `<div class="rc-top">
+      <div class="diag"><h4>${ic('target')}Diagnóstico sincero do dia</h4>
+        ${[['O que aconteceu', 'o_que_aconteceu'], ['Produtividade', 'produtividade'], ['Principal avanço', 'principal_avanco'], ['Principal problema', 'principal_problema'], ['Atenção amanhã', 'atencao_amanha']].map(([l, k]) => d[k] ? `<p><b>${l}:</b> ${esc(d[k])}</p>` : '').join('')}</div>
+      <div class="nota-box"><span class="nb-ic">${ic('clock')}</span><div class="nb-l">Nota de execução</div>
+        ${n == null ? `<div class="nb-v sm">Dados insuficientes para uma nota confiável</div>` : `<div class="nb-v">${n}<small>/100</small></div>`}
+        ${a.confianca ? `<span class="nb-pill">${CONF[a.confianca] || ''}</span>` : ''}${a.nota_motivo ? `<div class="nb-m">${esc(a.nota_motivo)}</div>` : ''}</div>
     </div>
-    <div class="di-sec"><h4>Feedback</h4><div class="feedback">${esc(a.feedback || '')}</div></div>
     <div class="grid-2" style="align-items:start">
-      <div class="di-sec"><h4 style="color:var(--ok)">Pontos fortes</h4>${li(a.pontos_fortes, 'ok')}</div>
-      <div class="di-sec"><h4 style="color:var(--bad)">Pontos a melhorar</h4>${li(a.pontos_fracos, 'bad')}</div>
+      <div class="card pf"><h4 style="color:var(--ok)">${ic('target')}Pontos fortes</h4>${fortes || '<div class="small muted">Nenhum ponto forte identificado no relato.</div>'}</div>
+      <div class="card pf"><h4 style="color:var(--bad)">${ic('info')}Pontos fracos e falhas</h4>${fracos || '<div class="small muted">Nenhuma falha relevante identificada no relato.</div>'}</div>
     </div>
-    <div class="di-sec"><h4>Mudanças para chegar à excelência e vender mais</h4>${(a.melhorias || []).length ? `<ol class="di-list">${a.melhorias.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : '—'}</div>
-    ${(a.mantra || []).length ? `<div class="di-sec"><h4>Alinhamento com o mantra da equipe</h4><div class="stack" style="gap:6px">${a.mantra.map(m => `<div class="small"><b>${esc(m.item)}</b> · <span class="muted">${esc(m.avaliacao)}</span></div>`).join('')}</div></div>` : ''}
-    ${(e.acoes || []).length ? `<div class="di-sec"><h4>Lançado automaticamente</h4><div class="stack" style="gap:8px">${e.acoes.map((x, i) => `<div class="acao ${x.desfeito ? 'desfeito' : ''}">
-        <span class="pill ${x.ok ? 'ok' : 'bad'}">${x.tipo === 'venda' ? 'Venda' : x.tipo === 'visita' ? 'Visita' : 'Agenda'}</span><span class="grow">${esc(x.resumo)}${x.ok ? '' : ' · não foi possível lançar'}</span>
-        ${x.ok && !x.desfeito && podeDesfazer ? `<button class="btn sm" data-act="di-desfazer" data-id="${esc(e.id)}" data-i="${i}">Desfazer</button>` : ''}${x.desfeito ? '<span class="small muted">desfeito</span>' : ''}</div>`).join('')}</div>
-      <div class="small muted" style="margin-top:6px">Vendas lançadas assim ficam marcadas como “Revisar dados” em Vendas, para completar tipo de venda e comissões.</div></div>` : ''}
-  </div></div>`;
+    <div class="card plano"><h4>${ic('trend')}Plano de ação para amanhã</h4>${plano || '<div class="small muted">Sem ações sugeridas.</div>'}</div>
+    <div class="grid-2" style="align-items:stretch">
+      <div class="desafio"><h4>${ic('spark')}Desafio para amanhã</h4><p>${esc(a.desafio || '—')}</p></div>
+      <div class="reflexao"><h4>${ic('info')}Pergunta de reflexão</h4><p>${esc(a.pergunta_reflexao || '—')}</p></div>
+    </div>
+    <div class="card acc">
+      <details><summary>Fatos, interpretações e lacunas</summary><div class="acc-b">
+        <div><div class="rc-lbl">Fatos</div>${li(a.fatos)}</div><div><div class="rc-lbl">Interpretações</div>${li(a.interpretacoes)}</div><div><div class="rc-lbl">Lacunas</div>${li(a.lacunas)}</div></div></details>
+      <details><summary>Oportunidades perdidas</summary><div class="acc-b">${li(a.oportunidades_perdidas)}</div></details>
+      <details><summary>Avaliação pelos pilares</summary><div class="acc-b">${(a.pilares || []).length ? a.pilares.map(p => { const st = SIT[p.situacao] || SIT.sem_evidencia;
+        return `<div class="row" style="gap:10px;align-items:flex-start;flex-wrap:nowrap"><span class="pill ${st[1]}" style="flex:none">${st[0]}</span><div><b>${esc(p.item)}</b><div class="small muted">${esc(p.avaliacao)}</div></div></div>`; }).join('') : '<div class="small muted">Sem avaliação.</div>'}</div></details>
+      <details><summary>Técnicas comerciais</summary><div class="acc-b">${(a.tecnicas || []).length ? a.tecnicas.map(t => `<div><b>${esc(t.tecnica)}</b><div class="small muted">${esc(t.como_aplicar)}</div></div>`).join('') : '<div class="small muted">Sem sugestões.</div>'}</div></details>
+      <details><summary>Detalhes da nota</summary><div class="acc-b">${(a.nota_detalhes || []).length ? `<table class="t"><tbody>${a.nota_detalhes.map(x => `<tr><td><b>${esc(x.criterio)}</b><div class="small muted">${esc(x.comentario)}</div></td><td class="r num" style="white-space:nowrap;font-weight:800">${+x.pontos || 0}/${+x.maximo || 0}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td>Total</td><td class="r num">${totalPts}/${totalMax}</td></tr></tfoot></table>` : '<div class="small muted">Sem detalhamento.</div>'}</div></details>
+      <details><summary>Para melhorar os próximos diários</summary><div class="acc-b">${li(a.melhorar_diario)}</div></details>
+    </div>`;
+}
+function analiseAntigaHTML(a) {
+  const li = arr => (arr || []).length ? `<ul class="di-list">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '—';
+  return `<div class="feedback">${esc(a.feedback || '')}</div><div class="grid-2"><div><div class="rc-lbl">Pontos fortes</div>${li(a.pontos_fortes)}</div><div><div class="rc-lbl">Pontos a melhorar</div>${li(a.pontos_fracos)}</div></div>
+    <div><div class="rc-lbl">Melhorias</div>${li(a.melhorias)}</div><div class="small muted">Análise no formato antigo. Toque em “Analisar meu dia” para gerar o relatório completo.</div>`;
+}
+function relatorioCardHTML(e, {aberto = true, desfazer = false} = {}) {
+  const c = corretor(e.corretorId), a = e.analise, n = nota100(a);
+  const body = `<div style="font-weight:800;font-size:13.5px">VGV vendido no dia: ${brlC(vgvDia(e.corretorId, e.data))}</div>
+    <div><div class="rc-lbl">Relato (texto)</div><div class="relato">${esc(e.texto || '')}</div></div>
+    ${!a ? `<div class="empty"><b>Ainda sem análise</b>O texto foi salvo. Toque em “Analisar meu dia” para gerar o relatório.</div>` : a.diagnostico ? analiseCompletaHTML(a) : analiseAntigaHTML(a)}
+    ${acoesHTML(e, desfazer)}`;
+  return `<details class="card rc" ${aberto ? 'open' : ''}><summary class="rc-h"><div><b>${esc(c?.nome || '—')}</b><span>${esc(dayLong(e.data))} de ${e.data.slice(0, 4)}</span></div><span class="grow"></span>
+    <span class="pill ${a ? 'info' : 'neutral'}">${a ? 'Analisado' : 'Sem análise'}</span><span class="rc-nota num" style="color:${notaCor(n)}">${n ?? '—'}<small>/100</small></span><span class="chev">${ic('right')}</span></summary>
+    <div class="rc-b">${body}</div></details>`;
 }
 
 VIEWS.diario = {
   html() {
-    const d = state.diario, tabs = [['meu', 'Meu diário', true], ['equipe', 'Equipe', can('equipe')], ['config', 'Configurações', isMaster()]].filter(t => t[2]);
+    const d = state.diario;
+    if (d.tab === 'equipe') d.tab = 'relatorio';
+    const tabs = [['meu', 'Meu diário', true], ['relatorio', 'Relatório', can('equipe')], ['config', 'Configurações', isMaster()]].filter(t => t[2]);
     if (!tabs.some(t => t[0] === d.tab)) d.tab = 'meu';
     const head = `<div class="tabs-top">${tabs.map(([k, l]) => `<button class="btn ${d.tab === k ? 'primary' : ''}" data-act="di-tab" data-v="${k}">${l}</button>`).join('')}</div>`;
     if (d.tab === 'config') return head + diarioConfigHTML();
-    if (d.tab === 'equipe') return head + diarioEquipeHTML();
+    if (d.tab === 'relatorio') return head + relatorioDiarioHTML();
     const e = S.diario.get(diarioId(d.data, ME.id));
     const meus = list('diario').filter(x => x.corretorId === ME.id).sort((a, b) => (b.data || '').localeCompare(a.data || '')).slice(0, 30);
     const cfg = cfgDiario();
-    return head + `<div class="di-grid">
-      <div class="stack">
+    return head + `<div class="di-top">
         <form class="card" data-guard onsubmit="return false"><div class="card-b stack">
           <div class="row" style="justify-content:space-between"><h2 style="font-size:17px">Como foi o seu dia?</h2>
             <input class="input" type="date" id="di-data" value="${d.data}" max="${today()}" style="width:170px" aria-label="Dia"></div>
-          <textarea class="input di-text" id="di-texto" placeholder="Conte o que você fez hoje: atendimentos, ligações, visitas, propostas, vendas, dificuldades… Ex.: Vendi 300 mil reais para o cliente João, apartamento no Edifício Marrocos.">${esc(e?.texto || '')}</textarea>
+          <textarea class="input di-text" id="di-texto" placeholder="Conte o que você fez hoje com números: leads atendidos, ligações, visitas, propostas, vendas, próximos passos e dificuldades. Ex.: Vendi 300 mil reais para o cliente João, apartamento no Edifício Marrocos.">${esc(e?.texto || '')}</textarea>
           <div class="di-tools">${micBtn('di-texto')}<span class="grow"></span><button class="btn primary" id="di-analisar">${ic('spark')}Analisar meu dia</button></div>
           <div class="small muted">Palavras que lançam registros automaticamente: ${cfg.palavras.map(p => `<b>${esc(p.termo)}</b>`).join(', ')}.</div>
         </div></form>
-        <div class="card"><div class="card-h"><h3>Meus últimos dias</h3></div><div class="card-b" style="display:flex;flex-direction:column;gap:2px">
-          ${meus.length ? meus.map(x => `<button class="hist ${x.data === d.data ? 'sel' : ''}" data-act="di-dia" data-d="${x.data}"><b class="num" style="width:34px;color:${notaCor(x.analise?.nota)}">${x.analise?.nota ?? '—'}</b><span style="min-width:0;flex:1"><b style="font-size:13.5px">${esc(fmtD(x.data))}</b><span class="small muted" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((x.texto || '').slice(0, 90))}</span></span></button>`).join('')
+        <div class="card"><div class="card-h"><h3>Meus últimos dias</h3></div><div class="card-b" style="display:flex;flex-direction:column;gap:2px;max-height:360px;overflow:auto">
+          ${meus.length ? meus.map(x => { const n = nota100(x.analise); return `<button class="hist ${x.data === d.data ? 'sel' : ''}" data-act="di-dia" data-d="${x.data}"><b class="num" style="width:40px;color:${notaCor(n)}">${n ?? '—'}</b><span style="min-width:0;flex:1"><b style="font-size:13.5px">${esc(fmtD(x.data))}</b><span class="small muted" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((x.texto || '').slice(0, 90))}</span></span></button>`; }).join('')
             : '<div class="small muted">Seus registros aparecem aqui.</div>'}
         </div></div>
       </div>
-      <div id="di-resultado">${analiseHTML(e, true)}</div>
-    </div>`;
+      ${e ? relatorioCardHTML(e, {aberto: true, desfazer: true}) : `<div class="card empty"><b>Nenhum registro neste dia</b>Descreva o seu dia e toque em “Analisar meu dia” para receber o relatório.</div>`}
+      ${NOTA_RODAPE}`;
   },
   mount() {
     const dd = $('#di-data'); if (dd) dd.onchange = () => { if (dd.value) { state.diario.data = dd.value; state.dirty = false; render(); } };
     const b = $('#di-analisar'); if (b) b.onclick = () => analisarDia(b);
     if (state.diario.tab === 'config') diarioConfigMount();
-    if (state.diario.tab === 'equipe') { const c = $('#die-cor'); if (c) c.onchange = () => { state.diario.cor = c.value; render(); };
-      const mm = $('#die-mes'); if (mm) mm.onchange = () => { if (mm.value) { state.diario.mes = mm.value; render(); } }; }
+    if (state.diario.tab === 'relatorio') {
+      const c = $('#dr-cor'); if (c) c.onchange = () => { state.diario.cor = c.value; render(); };
+      const dia = $('#dr-dia'); if (dia) dia.onchange = () => { if (dia.value) { state.diario.dia = dia.value; render(); } };
+    }
   }
 };
 async function analisarDia(btn) {
   const texto = $('#di-texto').value.trim();
-  if (texto.length < 30) { $('#di-texto').focus(); return toast('Descreva o seu dia com um pouco mais de detalhe para a análise ser útil.', 'warn'); }
+  if (texto.length < 20) { $('#di-texto').focus(); return toast('Descreva o seu dia com um pouco mais de detalhe para a análise ser útil.', 'warn'); }
   if (recAtivo) recAtivo.stop();
   const data = state.diario.data, id = diarioId(data, ME.id), prev = S.diario.get(id);
   const restaura = () => { btn.disabled = false; btn.innerHTML = ic('spark') + 'Analisar meu dia'; };
@@ -1806,13 +1920,13 @@ async function analisarDia(btn) {
   const base = {corretorId: ME.id, data, texto, criadoEm: prev?.criadoEm || Date.now(), analise: prev?.analise || null, acoes: prev?.acoes || []};
   if (!await save('diario', id, base)) return restaura();
   let out;
-  try { out = await fnCall('diario-ia', {texto, data}); }
+  try { out = await fnCall('diario-ia', {texto, data, contexto: contextoDia(ME.id, data)}); }
   catch (e) { restaura(); state.dirty = false; render(); return toast(e.message, 'bad'); }
   const jaLancou = (prev?.acoes || []).length > 0;
   const acoes = jaLancou ? prev.acoes : await criarRegistros(out.registros || [], id, data);
   await save('diario', id, {...base, analise: {...(out.analise || {}), em: Date.now()}, acoes});
   restaura(); state.dirty = false; render();
-  toast(jaLancou ? 'Análise atualizada. Os lançamentos da primeira análise foram mantidos.' : acoes.length ? `Análise pronta e ${acoes.filter(a => a.ok).length} registro(s) lançado(s).` : 'Análise pronta.');
+  toast(jaLancou ? 'Relatório atualizado. Os lançamentos da primeira análise foram mantidos.' : acoes.length ? `Relatório pronto e ${acoes.filter(a => a.ok).length} registro(s) lançado(s).` : 'Relatório pronto.');
 }
 async function criarRegistros(regs, did, dataDia) {
   const out = [];
@@ -1839,28 +1953,47 @@ async function criarRegistros(regs, did, dataDia) {
   }
   return out;
 }
-function diarioEquipeHTML() {
-  const d = state.diario, ms = d.mes;
-  const ents = list('diario').filter(x => String(x.data || '').startsWith(ms) && (d.cor === 'all' || x.corretorId === d.cor)).sort((a, b) => (b.data || '').localeCompare(a.data || ''));
-  const por = {}; ents.forEach(x => { if (x.analise?.nota == null) return; (por[x.corretorId] = por[x.corretorId] || []).push(+x.analise.nota); });
-  const medias = Object.entries(por).map(([k, v]) => [k, v.reduce((a, b) => a + b, 0) / v.length, v.length]).sort((a, b) => b[1] - a[1]);
-  return `<div class="row">
-      <input class="input" type="month" id="die-mes" value="${ms}" style="width:180px" aria-label="Mês">
-      <select class="input" id="die-cor" style="width:240px" aria-label="Corretor"><option value="all">Toda a equipe</option>${corretores().map(c => `<option value="${c.id}" ${d.cor === c.id ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</select>
-    </div>
-    ${medias.length ? `<div class="card"><div class="card-h"><h3>Nota média no mês</h3></div><div class="card-b bars">${medias.map(([k, m, n]) => `<div class="bar-row"><div class="who">${avatar(corretor(k))}<div><b>${esc(corretor(k)?.nome || '—')}</b><span>${n} dia(s) analisado(s)</span></div></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${m * 10}%;background:${notaCor(m)}"></div></div><div class="bar-pct num" style="color:${notaCor(m)}">${m.toLocaleString('pt-BR', {maximumFractionDigits: 1})}<small>de 10</small></div></div>`).join('')}</div></div>` : ''}
-    <div class="card"><div class="card-h"><h3>Registros de ${monthLong(ms)}</h3><span class="hint">${ents.length} dia(s)</span></div>
-      <div class="card-b tbl-wrap">${ents.length ? `<table class="t"><thead><tr><th>Data</th><th>Corretor</th><th class="r">Nota</th><th>Resumo do feedback</th><th></th></tr></thead><tbody>
-        ${ents.map(x => `<tr><td class="num" style="white-space:nowrap">${esc(fmtD(x.data))}</td><td>${esc(corretor(x.corretorId)?.nome || '—')}</td>
-          <td class="r num" style="font-weight:800;color:${notaCor(x.analise?.nota)}">${x.analise?.nota ?? '—'}</td><td class="small">${esc((x.analise?.feedback || x.texto || '').slice(0, 140))}…</td>
-          <td><button class="btn sm" data-act="di-ver" data-id="${esc(x.id)}">Ver</button></td></tr>`).join('')}</tbody></table>`
-        : `<div class="empty"><b>Nenhum diário neste período</b></div>`}</div></div>`;
+function metaBoxHTML(titulo, meta, real, nota) {
+  const p = meta ? real / meta : null;
+  return `<div class="mb"><div class="row"><b>${titulo}</b><span class="grow"></span><span class="mb-p" style="color:${p == null ? 'var(--info)' : p >= 1 ? 'var(--ok)' : p >= .7 ? 'var(--warn)' : 'var(--bad)'}">${p == null ? 'Sem meta' : pct(p)}</span></div>
+    <div class="bar-track mb-bar"><div class="bar-fill" style="width:${Math.min(p || 0, 1) * 100}%"></div></div>
+    <div class="mb-s"><div><span>Meta mensal</span><b class="num">${meta ? brlC(meta) : 'Não definida'}</b></div><div><span>VGV acumulado</span><b class="num">${brlC(real)}</b></div><div><span>Falta atingir</span><b class="num">${meta ? brlC(Math.max(meta - real, 0)) : '—'}</b></div></div>
+    ${nota ? `<div class="small muted">${nota}</div>` : ''}</div>`;
+}
+function relatorioDiarioHTML() {
+  const d = state.diario, dia = d.dia || today(), mk = monthKey(dia);
+  const todos = corretores(true), escopo = d.cor === 'all' ? todos : [corretor(d.cor)].filter(Boolean);
+  const ents = list('diario').filter(x => x.data === dia && escopo.some(c => c.id === x.corretorId)).sort((a, b) => (nota100(b.analise) ?? -1) - (nota100(a.analise) ?? -1));
+  const analisados = ents.filter(x => x.analise).length;
+  const sem = escopo.filter(c => !ents.some(x => x.corretorId === c.id));
+  const vs = vendedores(), comMeta = vs.filter(c => metaOf([mk], c.id) > 0).length;
+  const indiv = d.cor !== 'all' && escopo[0] ? metaBoxHTML('Meta individual', metaOf([mk], escopo[0].id), realizado([mk], escopo[0].id)) : '';
+  const equipe = metaBoxHTML('Meta geral da equipe', metaOf([mk], 'all'), realizado([mk], 'all'), comMeta < vs.length ? `Meta geral parcial: ${comMeta} de ${vs.length} corretores com meta definida.` : '');
+  return `<div class="card"><div class="card-b row" style="align-items:flex-end;gap:14px">
+      <div class="field"><label for="dr-cor">Usuário</label><select class="input" id="dr-cor" style="width:240px"><option value="all">Todos os usuários</option>${todos.map(c => `<option value="${c.id}" ${d.cor === c.id ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label for="dr-dia">Dia</label><input class="input" type="date" id="dr-dia" value="${dia}" max="${today()}" style="width:170px"></div>
+      <span class="grow"></span>
+      <div style="text-align:right"><div class="small muted" style="font-weight:700">Analisados no dia</div><div class="num" style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--info)">${analisados}/${escopo.length}</div></div>
+    </div></div>
+    <div class="small muted" style="text-transform:none">${esc(dayLong(dia))} de ${dia.slice(0, 4)}</div>
+    <div class="card"><div class="card-h"><h2>VGV · ${cap(monthLong(mk))}</h2></div><div class="card-b ${indiv ? 'grid-2' : ''}" style="gap:28px">${indiv}${equipe}</div></div>
+    ${ents.length ? ents.map(e => relatorioCardHTML(e, {aberto: ents.length === 1})).join('') : `<div class="card empty"><b>Nenhum diário neste dia</b>Escolha outro dia ou outro corretor.</div>`}
+    ${sem.length && d.cor === 'all' ? `<div class="small muted">Sem diário neste dia: ${sem.map(c => esc(c.nome)).join(', ')}.</div>` : ''}
+    ${NOTA_RODAPE}`;
 }
 function diarioConfigHTML() {
   const c = cfgDiario();
   const ta = (id, l, arr, help) => `<div class="field"><label for="${id}">${l}</label><textarea class="input" id="${id}" style="min-height:130px">${esc(arr.join('\n'))}</textarea><div class="help">${help}</div></div>`;
-  return `<div class="banner">${ic('info')}<span>Este é o <b>mantra da equipe</b>: a inteligência usa estes valores, deveres e virtudes como régua para avaliar cada dia. Um item por linha.</span></div>
+  return `<form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Prompt do mentor</h2><span class="grow"></span><span class="pill neutral">Versão v${c.versao || 1}</span></div>
+      <div class="card-b stack">
+        <div class="help" style="font-size:13px">Diretrizes que a inteligência segue ao analisar cada diário: papel, postura, tom e princípios. O mantra, os critérios da nota e o formato do relatório são aplicados automaticamente.</div>
+        <textarea class="input" id="dc-prompt" style="min-height:320px;font-size:14px;line-height:1.6">${esc(c.prompt)}</textarea>
+        <div class="row" style="align-items:flex-end">
+          <div class="field"><label for="dc-lim">Análises por corretor a cada 24h</label><input class="input num" id="dc-lim" type="number" min="1" max="50" value="${+c.limite || 3}" style="width:140px"></div>
+          <span class="grow"></span><button type="button" class="btn" data-act="dc-prompt-padrao">Restaurar prompt sugerido</button>
+        </div>
+      </div></form>
+    <div class="banner">${ic('info')}<span>Este é o <b>mantra da equipe</b>: a inteligência usa estes valores, deveres e virtudes como régua para avaliar cada dia. Um item por linha.</span></div>
     <form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Mantra da equipe</h2></div><div class="card-b grid-3" style="align-items:start">
       ${ta('dc-val', 'Valores', c.valores, 'Princípios que guiam o trabalho.')}
       ${ta('dc-dev', 'Deveres', c.deveres, 'Rotinas e compromissos obrigatórios.')}
@@ -1880,7 +2013,10 @@ function diarioConfigMount() {
     if (!isMaster()) return denied();
     const linhas = id => val(id).split('\n').map(x => x.trim()).filter(Boolean).slice(0, 30);
     const palavras = $$('[data-kw]').map(r => ({termo: r.querySelector('input').value.trim().toLowerCase(), acao: r.querySelector('select').value})).filter(p => p.termo).slice(0, 40);
-    const ok = await save('config', 'diario', {valores: linhas('dc-val'), deveres: linhas('dc-dev'), virtudes: linhas('dc-vir'), palavras, instrucoes: val('dc-ins').slice(0, 1500)});
+    const ant = cfgDiario(), prompt = $('#dc-prompt').value.trim().slice(0, 12000) || DIARIO_PADRAO.prompt;
+    const limite = Math.max(1, Math.min(50, parseInt(val('dc-lim'), 10) || 3));
+    const versao = (+ant.versao || 1) + (prompt !== ant.prompt ? 1 : 0);
+    const ok = await save('config', 'diario', {valores: linhas('dc-val'), deveres: linhas('dc-dev'), virtudes: linhas('dc-vir'), palavras, instrucoes: val('dc-ins').slice(0, 1500), prompt, versao, limite});
     if (ok) { state.dirty = false; toast('Configurações do Diário de bordo salvas.'); }
   };
 }
@@ -2381,13 +2517,12 @@ const ACTIONS = {
   'ag-visita': () => visitaAgendaForm(),
   'di-tab': el => { state.diario.tab = el.dataset.v; state.dirty = false; render(); },
   'di-dia': el => { state.diario.data = el.dataset.d; state.dirty = false; render(); },
-  'di-ver': el => { const x = S.diario.get(el.dataset.id); if (!x) return;
-    openModal({title: esc((corretor(x.corretorId)?.nome || '') + ' · ' + fmtD(x.data)), wide: true,
-      body: `<div class="di-grid"><div class="card"><div class="card-h"><h3>O que foi descrito</h3></div><div class="card-b" style="white-space:pre-line;font-size:14.5px;line-height:1.6">${esc(x.texto || '')}</div></div><div>${analiseHTML(x, false)}</div></div>`}); },
+  'di-ver': el => { const x = S.diario.get(el.dataset.id); if (x) openModal({title: 'Diário de bordo', wide: true, body: relatorioCardHTML(x, {aberto: true})}); },
   'di-desfazer': el => { const x = S.diario.get(el.dataset.id), i = +el.dataset.i; if (!x || x.corretorId !== ME.id) return denied(); const a = x.acoes?.[i]; if (!a) return;
     confirmBox('Desfazer o lançamento “' + esc(a.resumo) + '”? O registro será excluído.', 'Desfazer', async () => {
       if (await remove(a.col, a.id)) { const acoes = x.acoes.map((y, j) => j === i ? {...y, desfeito: true} : y); await save('diario', x.id, {...x, acoes}); toast('Lançamento desfeito.'); } }); },
   'dc-add': () => { const box = $('#dc-kws'); box.insertAdjacentHTML('beforeend', kwRow({termo: '', acao: 'venda'}, box.children.length)); box.lastElementChild.querySelector('input').focus(); state.dirty = true; },
+  'dc-prompt-padrao': () => { $('#dc-prompt').value = DIARIO_PADRAO.prompt; state.dirty = true; toast('Prompt sugerido restaurado. Clique em Salvar configurações para aplicar.'); },
   'dc-rm': el => { el.closest('[data-kw]').remove(); state.dirty = true; },
   'dc-padrao': () => { if (!isMaster()) return denied(); confirmBox('Voltar o mantra e as palavras-chave para as sugestões iniciais?', 'Restaurar', async () => { if (await save('config', 'diario', DIARIO_PADRAO)) { state.dirty = false; render(); toast('Sugestões restauradas.'); } }); },
   'tr-file': async el => {

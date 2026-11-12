@@ -65,10 +65,10 @@ where email = 'gestor@acesso.eaumbel.com.br';
 
 A análise do dia é feita pela função `diario-ia`, que funciona com **Google Gemini** (plano gratuito) ou com **Claude** (Anthropic, pago por uso). Basta cadastrar um dos dois segredos; se os dois existirem, usa o Gemini.
 
-1. **Banco:** rode no SQL Editor o arquivo `supabase/migrations/20261111220000_diario_de_bordo.sql`.
+1. **Banco:** rode no SQL Editor os arquivos `supabase/migrations/20261111220000_diario_de_bordo.sql` e `supabase/migrations/20261112010000_uso_ia.sql`.
 2. **Função:** Edge Functions → Deploy a new function → Via Editor → nome `diario-ia` → cole `supabase/functions/diario-ia/index.ts` → Deploy. Em **Settings**, desligue **Verify JWT**.
 3. **Chave da IA (gratuita):** em https://aistudio.google.com → **Get API key** → **Create API key**. Cadastre em Supabase → Edge Functions → **Secrets** com o nome `GEMINI_API_KEY`.
    - No plano gratuito do Gemini, o Google pode usar os textos enviados para melhorar os produtos dele. Para evitar isso, ative o faturamento no Google Cloud (plano pago) ou use a Anthropic (`ANTHROPIC_API_KEY`).
 4. Opcional: o segredo `MODELO_IA` troca o modelo (padrão `gemini-flash-latest` no Gemini, `claude-sonnet-5-5` na Anthropic).
 
-O mantra da equipe (valores, deveres, virtudes) e as palavras-chave ficam em **Diário de bordo → Configurações** (só o Master).
+O prompt do mentor (com versão), o limite de análises por corretor a cada 24h, o mantra da equipe (valores, deveres, virtudes) e as palavras-chave ficam em **Diário de bordo → Configurações** (só o Master).
