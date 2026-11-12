@@ -2,7 +2,10 @@
 // Lê o mantra da equipe (valores, deveres, virtudes) e as palavras-chave,
 // analisa o dia descrito pelo corretor com o Claude (API da Anthropic) e
 // devolve feedback, pontos fortes e fracos, melhorias e registros a lançar.
-// Segredo necessário: ANTHROPIC_API_KEY. Opcional: MODELO_IA.
+// Provedor de IA (cadastre UM destes segredos no Supabase):
+//   GEMINI_API_KEY     → Google Gemini (tem plano gratuito, sem cartão)
+//   ANTHROPIC_API_KEY  → Claude, da Anthropic (pago por uso)
+// Opcional: MODELO_IA para trocar o modelo do provedor escolhido.
 // Publicar com "Verify JWT" DESLIGADO (a função confere a sessão).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
@@ -75,8 +78,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return erro(405, "Método não permitido.");
 
+  const chaveGemini = Deno.env.get("GEMINI_API_KEY");
   const chave = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!chave) return erro(500, "A inteligência ainda não foi configurada: cadastre o segredo ANTHROPIC_API_KEY em Edge Functions → Secrets no Supabase.");
+  if (!chaveGemini && !chave) return erro(500, "A inteligência ainda não foi configurada: cadastre o segredo GEMINI_API_KEY (gratuito) em Edge Functions → Secrets no Supabase.");
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -131,6 +135,43 @@ O que o corretor escreveu:
 ${texto}
 """`;
 
+  if (chaveGemini) {
+    const formato = `
+Responda SOMENTE com um objeto JSON válido, sem texto antes ou depois, neste formato:
+{"nota": inteiro 0-10, "feedback": "texto", "pontos_fortes": ["..."], "pontos_fracos": ["..."], "melhorias": ["..."],
+ "mantra": [{"item": "...", "avaliacao": "..."}],
+ "registros": [{"tipo": "venda|visita|agenda", "cliente": "...", "valor": número, "imovel": "...", "endereco": "...", "data": "AAAA-MM-DD", "hora": "HH:MM", "tipoVisita": "Venda|Locação|Captação|Avaliação|Lançamento|Retorno", "descricao": "..."}]}
+Em "registros", omita os campos que não aparecem no texto.`;
+    let g: Response;
+    try {
+      g = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${Deno.env.get("MODELO_IA") ?? "gemini-flash-latest"}:generateContent`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": chaveGemini },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: sistema.replace("Responda sempre chamando a ferramenta registrar_analise, em português do Brasil.", "Responda em português do Brasil.") + formato }] },
+          contents: [{ role: "user", parts: [{ text: usuario }] }],
+          generationConfig: { responseMimeType: "application/json", temperature: 0.4, maxOutputTokens: 4096 },
+        }),
+      });
+    } catch {
+      return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
+    }
+    const gj = await g.json().catch(() => ({}));
+    if (!g.ok) {
+      const msg = gj?.error?.message ?? "";
+      if (g.status === 400 && /API key/i.test(msg)) return erro(500, "A chave GEMINI_API_KEY configurada no Supabase é inválida.");
+      if (g.status === 403) return erro(500, "A chave GEMINI_API_KEY não tem permissão. Gere outra em aistudio.google.com.");
+      if (g.status === 404) return erro(500, "Modelo de IA não encontrado. Ajuste o segredo MODELO_IA no Supabase.");
+      if (g.status === 429) return erro(503, "Limite gratuito de análises atingido por agora. Tente de novo em alguns minutos.");
+      if (g.status >= 500) return erro(503, "O serviço de inteligência está ocupado. Tente de novo em um minuto.");
+      return erro(502, "O serviço de inteligência recusou a análise: " + msg);
+    }
+    const txt = (gj?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? "").join("").trim();
+    let a: any;
+    try { a = JSON.parse(txt.replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch { return erro(502, "A inteligência não devolveu uma análise válida. Tente de novo."); }
+    return resp(200, normalizar(a));
+  }
+
   let r: Response;
   try {
     r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -159,16 +200,20 @@ ${texto}
   }
   const uso = (j.content ?? []).find((b: any) => b.type === "tool_use");
   if (!uso?.input) return erro(502, "A inteligência não devolveu uma análise válida. Tente de novo.");
-  const a = uso.input;
-  return resp(200, {
+  return resp(200, normalizar(uso.input));
+});
+
+function normalizar(a: any) {
+  const arr = (x: unknown) => (Array.isArray(x) ? x : []);
+  return {
     analise: {
       nota: Math.max(0, Math.min(10, Math.round(Number(a.nota) || 0))),
       feedback: String(a.feedback ?? ""),
-      pontos_fortes: a.pontos_fortes ?? [],
-      pontos_fracos: a.pontos_fracos ?? [],
-      melhorias: a.melhorias ?? [],
-      mantra: a.mantra ?? [],
+      pontos_fortes: arr(a.pontos_fortes).map(String),
+      pontos_fracos: arr(a.pontos_fracos).map(String),
+      melhorias: arr(a.melhorias).map(String),
+      mantra: arr(a.mantra).filter((m: any) => m && m.item),
     },
-    registros: Array.isArray(a.registros) ? a.registros : [],
-  });
-});
+    registros: arr(a.registros).filter((r: any) => r && ["venda", "visita", "agenda"].includes(r.tipo)),
+  };
+}
