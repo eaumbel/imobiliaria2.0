@@ -674,12 +674,12 @@ const PERM_DEFS = [
   {k: 'agenda', g: 'Menus que aparecem', l: 'Agenda'},
   {k: 'conhecimento', g: 'Menus que aparecem', l: 'Base de conhecimento'},
   {k: 'treinamentos', g: 'Menus que aparecem', l: 'Treinamentos'},
-  {k: 'ponto', g: 'Menus que aparecem', l: 'Cartão ponto'},
+  {k: 'ponto', g: 'Menus que aparecem', l: 'Assiduidade'},
   {k: 'vendas', g: 'Menus que aparecem', l: 'Vendas'},
   {k: 'metas', g: 'Menus que aparecem', l: 'Metas'},
   {k: 'usuarios', g: 'Menus que aparecem', l: 'Usuários', d: 'Cadastrar e editar a equipe. Só o Master altera permissões e cria outros Masters.'},
   {k: 'equipe', g: 'O que pode fazer', l: 'Ver números de toda a equipe', d: 'Painel e relatórios de todos. Sem isto, vê só os próprios.'},
-  {k: 'operacaoTodos', g: 'O que pode fazer', l: 'Lançar e editar registros de todos', d: 'Agenda, visitas, cartão ponto e vendas. Sem isto, só os próprios.'},
+  {k: 'operacaoTodos', g: 'O que pode fazer', l: 'Lançar e editar registros de todos', d: 'Agenda, visitas, assiduidade e vendas. Sem isto, só os próprios.'},
   {k: 'conteudo', g: 'O que pode fazer', l: 'Criar e editar conteúdo', d: 'Cards da base de conhecimento e treinamentos.'},
   {k: 'metasEdit', g: 'O que pode fazer', l: 'Definir e alterar metas'}
 ];
@@ -856,7 +856,7 @@ const NAV = [
   {id: 'agenda', grp: 'Gestão', label: 'Agenda', icon: 'cal', sub: 'Compromissos da equipe'},
   {id: 'conhecimento', grp: 'Gestão', label: 'Base de conhecimento', icon: 'brain', sub: 'Processos, roteiros e materiais em mapa mental'},
   {id: 'treinamentos', grp: 'Gestão', label: 'Treinamentos', icon: 'grad', sub: 'Materiais e capacitações da equipe'},
-  {id: 'ponto', grp: 'Operação', label: 'Cartão ponto', icon: 'clock', sub: 'Presença, roleta e visitas do dia'},
+  {id: 'ponto', grp: 'Operação', label: 'Assiduidade', icon: 'clock', sub: 'Presença, roleta e visitas do dia'},
   {id: 'vendas', grp: 'Operação', label: 'Vendas', icon: 'key', sub: 'Registro de vendas, permutas e comissões'},
   {id: 'metas', grp: 'Operação', label: 'Metas', icon: 'target', sub: 'Meta da equipe e individual por mês'},
   {id: 'usuarios', grp: 'Operação', label: 'Usuários', icon: 'users', sub: 'Cadastro da equipe e tipos de acesso'}
@@ -1058,7 +1058,7 @@ VIEWS.inicio = {
         ${kpi('trend', 'Visitas realizadas', realizadas, `${vs.length} registradas no período`)}
         ${kpi('target', 'Taxa de conversão', pct(conv, 1), 'negócios ÷ visitas realizadas')}
         ${kpi('chart', 'Ticket médio', fechados ? compact(ticket) : '—', 'valor médio por negócio')}
-        ${kpi('clock', 'Presença', pct(pres), pres == null ? 'sem registros no cartão ponto' : 'dias com "Veio" no cartão ponto')}
+        ${kpi('clock', 'Presença', pct(pres), pres == null ? 'sem registros na Assiduidade' : 'dias com "Veio" na Assiduidade')}
       </div>
     </section>
 
@@ -1109,7 +1109,7 @@ function barsHTML(ms, sel) {
     </div>`).join('')}</div>`;
 }
 function funnelHTML(vs) {
-  if (!vs.length) return `<div class="empty"><b>Sem visitas no período</b>Registre visitas no <a href="#ponto">Cartão ponto</a>.</div>`;
+  if (!vs.length) return `<div class="empty"><b>Sem visitas no período</b>Registre visitas na <a href="#ponto">Assiduidade</a>.</div>`;
   const order = ['Agendada', 'Realizada', 'Proposta enviada', 'Negócio fechado', 'Cliente não veio', 'Cancelada'];
   const counts = order.map(s => [s, vs.filter(v => v.status === s).length]);
   const max = Math.max(1, ...counts.map(c => c[1]));
@@ -1421,7 +1421,7 @@ function trForm(t = {}) {
 }
 
 /* =========================================================
-   VIEW: Cartão ponto (presença + roleta + visitas)
+   VIEW: Assiduidade (presença + roleta + visitas)
    ========================================================= */
 VIEWS.ponto = {
   actions: () => `<button class="btn primary" data-act="vi-new">${ic('plus')}Registrar visita</button>`,
@@ -2084,7 +2084,7 @@ function userList() {
 /* =========================================================
    VIEW: Relatórios (PDF, imprimir, WhatsApp, AirDrop)
    ========================================================= */
-const RELTIPOS = {ponto: 'Cartão ponto', metas: 'Metas', agenda: 'Agenda', vendas: 'Vendas', angariacao: 'Angariação'};
+const RELTIPOS = {ponto: 'Assiduidade', metas: 'Metas', agenda: 'Agenda', vendas: 'Vendas', angariacao: 'Angariação'};
 const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 const isoD = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const fmtD = iso => dateObj(iso).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' · ' + WD[dateObj(iso).getDay()];
@@ -2477,7 +2477,7 @@ const ACTIONS = {
   'perm-reset': () => { if (!isMaster()) return denied(); confirmBox('Voltar as permissões de Coordenador e Corretor para o padrão do sistema? As exceções por usuário continuam.', 'Restaurar', async () => { if (await save('config', 'permissoes', {})) toast('Permissões padrão restauradas.'); }); },
   'us-edit': el => { const c = corretor(el.dataset.id); if (c && !isMaster() && perfilOf(c) === 'master') return denied(); state.users.tab = 'form'; state.users.editId = el.dataset.id; render(); window.scrollTo(0, 0); },
   'us-filtro': el => { state.users.filtro = el.dataset.v; render(); },
-  'us-limpar': () => confirmBox('Remover todos os registros de exemplo (corretores, metas, visitas, agenda, cards, treinamentos e cartão ponto de exemplo)? Os dados que você cadastrou ficam.', 'Remover exemplos', async () => {
+  'us-limpar': () => confirmBox('Remover todos os registros de exemplo (corretores, metas, visitas, agenda, cards, treinamentos e assiduidade de exemplo)? Os dados que você cadastrou ficam.', 'Remover exemplos', async () => {
     let n = 0; for (const c of COLS) for (const r of list(c).filter(r => r.exemplo)) { if (await remove(c, r.id)) n++; }
     toast(n + ' registro(s) de exemplo removidos.');
   })
