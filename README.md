@@ -16,6 +16,8 @@ Sistema de gestão da equipe de corretores: painel de BI e metas, vendas e comis
 | `.vercelignore` | Não publica a pasta `supabase` nem este README |
 | `supabase/migrations/20261111180000_inicial.sql` | Tabelas, permissões (RLS), armazenamento e tempo real |
 | `supabase/functions/admin-usuarios/index.ts` | Função segura que cria e altera usuários (login, senha, perfil, status, permissões) |
+| `gestao/modelos/autorizacao-venda.pdf` | Modelo do contrato Autorização de Venda (PDF com campos preenchíveis) |
+| `supabase/migrations/20261114120000_contratos.sql` | Contratos assinados: tabela, carimbo de data/hora do servidor, arquivos PDF e permissões |
 
 ## Configuração (uma vez)
 
@@ -60,6 +62,21 @@ update auth.users
 set encrypted_password = crypt('NovaSenha123', gen_salt('bf'))
 where email = 'gestor@acesso.eaumbel.com.br';
 ```
+
+## Modelos de Contrato
+
+Menu **Modelos de Contrato**: o corretor abre o modelo (hoje, **Autorização de Venda**), preenche os campos (nenhum é obrigatório) e toca em **Assinar**. O(a) proprietário(a) assina na tela com o dedo, a caneta ou o mouse e, se quiser, tira uma **selfie**. Com a selfie ficam registrados o local (endereço aproximado), as coordenadas geográficas, a data e a hora.
+
+- A **data e a hora** vêm do **servidor**, no horário de Brasília, e preenchem o dia, o mês e o ano do contrato.
+- O nome e o CRECI do **corretor** que está usando o sistema são preenchidos na linha CORRETOR(A).
+- O PDF final é o próprio modelo preenchido, com a assinatura e, na página 2, o bloco **Registro da assinatura eletrônica**: selfie, data e hora, local, coordenadas, corretor e código do documento. Depois de assinado, o documento **não pode ser alterado**.
+- **Exportar** baixa o PDF; **Imprimir** abre a janela de impressão do aparelho; **WhatsApp** e **E-mail** no celular/tablet abrem a tela de compartilhar com o PDF anexado (WhatsApp, WhatsApp Business, Mail, Gmail…). No computador, o PDF é baixado e abre o **WhatsApp Web** ou o **aplicativo de e-mail padrão**, com um link do documento válido por 7 dias.
+- **Todos os Documentos Assinados** lista cliente, data de assinatura e corretor, com **Visualizar** e **Download**. Cada corretor vê os que gerou; quem tem "Ver números de toda a equipe" vê todos. Só o Master exclui.
+- O endereço da selfie é obtido no serviço gratuito do OpenStreetMap (Nominatim), que recebe as coordenadas. Se a localização não for autorizada no aparelho, a selfie é gravada sem local.
+
+**Configuração (uma vez):** rode no SQL Editor do Supabase o arquivo `supabase/migrations/20261114120000_contratos.sql`. Ele cria a tabela `contratos`, o armazenamento privado `contratos` e a permissão do menu (ligada por padrão para todos os perfis; dá para mudar em **Usuários → Permissões**).
+
+**Novos modelos:** coloque o PDF preenchível em `gestao/modelos/` e cadastre os campos em `MODELOS`, no `gestao/index.html`.
 
 ## Diário de bordo (inteligência artificial)
 
