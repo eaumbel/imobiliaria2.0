@@ -2775,20 +2775,73 @@ function baixarDoc(d) {
   a.href = url; a.download = d.nome; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
+// Impressão sem usar a página do sistema (que é pesada para a prévia de impressão do navegador):
+// - Chrome, Edge e Firefox no computador: imprime o próprio PDF, pelo leitor de PDF do navegador.
+// - Safari e celulares: imprime uma página separada só com as páginas do contrato (imagens).
+// - iPhone/iPad: imprime pela própria página, que é o que o Safari do iOS aceita.
+const SAFARI = /^((?!chrome|chromium|crios|fxios|edg|opr|android).)*safari/i.test(navigator.userAgent);
+const IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let IMP_FRAME = null, IMP_URL = null;
+function quadroImpressao() {
+  if (IMP_FRAME) IMP_FRAME.parentNode?.removeChild(IMP_FRAME);
+  if (IMP_URL) { URL.revokeObjectURL(IMP_URL); IMP_URL = null; }
+  const f = document.createElement('iframe');
+  f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1; f.title = 'Impressão';
+  f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  IMP_FRAME = f; return f;
+}
+function imprimirPdfNativo(d) {
+  return new Promise((ok, falha) => {
+    const f = quadroImpressao(); IMP_URL = URL.createObjectURL(d.blob);
+    const prazo = setTimeout(() => falha(new Error('tempo')), 15000);
+    f.onload = () => setTimeout(() => {
+      clearTimeout(prazo);
+      try { f.contentWindow.focus(); f.contentWindow.print(); ok(); } catch (e) { falha(e); }
+    }, 400);
+    f.src = IMP_URL; document.body.appendChild(f);
+  });
+}
+async function imprimirImagens(d) {
+  const imgs = await imgsImpressao(d);
+  const f = quadroImpressao();
+  f.srcdoc = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(d.nome)}</title><style>
+    @page{size:A4;margin:0} html,body{margin:0;padding:0;background:#fff}
+    img{display:block;width:210mm;height:296.5mm;object-fit:contain;break-after:page;page-break-after:always}
+    img:last-child{break-after:auto;page-break-after:auto}</style></head><body>${imgs.map(s => `<img src="${s}" alt="">`).join('')}</body></html>`;
+  await new Promise((ok, falha) => {
+    const prazo = setTimeout(() => falha(new Error('tempo')), 15000);
+    f.onload = async () => {
+      clearTimeout(prazo);
+      try {
+        const w = f.contentWindow;
+        await Promise.all([...w.document.images].map(i => i.decode ? i.decode().catch(() => {}) : null));
+        w.focus(); w.print(); ok();
+      } catch (e) { falha(e); }
+    };
+    document.body.appendChild(f);
+  });
+}
+async function imprimirNaPagina(d) {
+  const imgs = await imgsImpressao(d), root = $('#print-root');
+  root.innerHTML = imgs.map(s => `<div class="pg"><img src="${s}" alt=""></div>`).join('');
+  await Promise.all($$('img', root).map(i => i.decode ? i.decode().catch(() => {}) : null));
+  let st = document.getElementById('print-page');
+  if (!st) { st = document.createElement('style'); st.id = 'print-page'; st.textContent = '@page{size:A4;margin:0}'; document.head.appendChild(st); }
+  document.body.classList.add('imprimindo');
+  const fim = () => { document.body.classList.remove('imprimindo'); root.innerHTML = ''; st.parentNode?.removeChild(st); window.removeEventListener('afterprint', fim); };
+  window.addEventListener('afterprint', fim);
+  window.print();
+}
+let IMPRIMINDO = false;
 async function imprimirDoc(d, btn) {
-  if (btn) btn.disabled = true;
+  if (IMPRIMINDO) return;
+  IMPRIMINDO = true; if (btn) btn.disabled = true;
   try {
-    const imgs = await imgsImpressao(d), root = $('#print-root');
-    root.innerHTML = imgs.map(s => `<div class="pg"><img src="${s}" alt=""></div>`).join('');
-    await Promise.all($$('img', root).map(i => i.decode ? i.decode().catch(() => {}) : null));
-    let st = document.getElementById('print-page');
-    if (!st) { st = document.createElement('style'); st.id = 'print-page'; st.textContent = '@page{size:A4;margin:0}'; document.head.appendChild(st); }
-    document.body.classList.add('imprimindo');
-    const fim = () => { document.body.classList.remove('imprimindo'); root.innerHTML = ''; st.remove(); window.removeEventListener('afterprint', fim); };
-    window.addEventListener('afterprint', fim);
-    window.print();
-  } catch (e) { toast('Não foi possível preparar a impressão. Use Exportar e imprima o PDF.', 'bad'); }
-  finally { if (btn) btn.disabled = false; }
+    if (IOS) await imprimirNaPagina(d);
+    else if (!MOVEL && !SAFARI) { try { await imprimirPdfNativo(d); } catch (e) { await imprimirImagens(d); } }
+    else await imprimirImagens(d);
+  } catch (e) { toast('Não foi possível abrir a impressão. Use Exportar e imprima o PDF baixado.', 'bad'); }
+  finally { IMPRIMINDO = false; if (btn) setTimeout(() => { btn.disabled = false; }, 800); }
 }
 const arquivoDe = d => new File([d.blob], d.nome, {type: 'application/pdf'});
 const podeCompartilhar = d => { try { return !!(navigator.canShare && navigator.canShare({files: [arquivoDe(d)]})); } catch (e) { return false; } };
