@@ -18,6 +18,7 @@ Sistema de gestão da equipe de corretores: painel de BI e metas, vendas e comis
 | `supabase/functions/admin-usuarios/index.ts` | Função segura que cria e altera usuários (login, senha, perfil, status, permissões) |
 | `gestao/modelos/autorizacao-venda.pdf` | Modelo do contrato Autorização de Venda (PDF com campos preenchíveis) |
 | `supabase/migrations/20261114120000_contratos.sql` | Contratos assinados: tabela, carimbo de data/hora do servidor, arquivos PDF e permissões |
+| `supabase/migrations/20261115100000_contratos_identidade.sql` | Contratos: IP pelo servidor, dossiê de comprovação e impressões digitais (SHA-256) |
 
 ## Configuração (uma vez)
 
@@ -65,16 +66,28 @@ where email = 'gestor@acesso.eaumbel.com.br';
 
 ## Modelos de Contrato
 
-Menu **Modelos de Contrato**: o corretor abre o modelo (hoje, **Autorização de Venda**), preenche os campos (nenhum é obrigatório) e toca em **Assinar**. O(a) proprietário(a) assina na tela com o dedo, a caneta ou o mouse e, se quiser, tira uma **selfie**. Com a selfie ficam registrados o local (endereço aproximado), as coordenadas geográficas, a data e a hora.
+Menu **Modelos de Contrato**: o corretor abre o modelo (hoje, **Autorização de Venda**), preenche os campos (nenhum é obrigatório) e toca em **Assinar**. A assinatura segue **3 passos obrigatórios, nessa ordem**:
 
-- A **data e a hora** vêm do **servidor**, no horário de Brasília, e preenchem o dia, o mês e o ano do contrato.
+1. **Documento com foto** do(a) proprietário(a) (CNH, RG ou outro): frente e verso, tirando a foto ou anexando o arquivo. Há a opção "documento sem verso".
+2. **Selfie segurando o documento**, tirada pela câmera na hora (não aceita arquivo anexado).
+3. **Assinatura** na tela com o dedo, a caneta ou o mouse, e a marcação de **"Li e autorizo a assinatura eletrônica…"**.
+
+A **localização é obrigatória**: sem a permissão de localização no aparelho, não dá para passar do passo 2.
+
+- A **data e a hora** vêm do **servidor**, no horário de Brasília, e preenchem o dia, o mês e o ano do contrato. O **IP do aparelho** também é capturado pelo servidor.
 - O nome e o CRECI do **corretor** que está usando o sistema são preenchidos na linha CORRETOR(A).
-- O PDF final é o próprio modelo preenchido, com a assinatura e, na página 2, o bloco **Registro da assinatura eletrônica**: selfie, data e hora, local, coordenadas, corretor e código do documento. Depois de assinado, o documento **não pode ser alterado**.
+- O contrato tem a **Cláusula de assinatura eletrônica**, em que o(a) proprietário(a) autoriza a assinatura eletrônica (art. 10, § 2º, da MP 2.200-2/2001) e o registro dos dados (LGPD). Ela aparece no formulário e no PDF.
+- São gerados **dois PDFs**:
+  - **Contrato:** o próprio modelo preenchido, com a assinatura, a cláusula e o bloco **Registro da assinatura eletrônica** (data e hora, IP, local, coordenadas, corretor, código e a impressão digital SHA-256 do dossiê). É o que vai por WhatsApp ou e-mail; **não contém** a foto do documento.
+  - **Dossiê de comprovação** (interno): registro completo, frente e verso do documento, selfie com o documento e assinatura. Fica guardado no sistema, só aparece em **Visualizar → Dossiê de comprovação** e não é enviado por WhatsApp ou e-mail.
+- A impressão digital SHA-256 do contrato e do dossiê fica gravada no banco: qualquer alteração posterior no arquivo muda esse código. Depois de assinado, o documento **não pode ser alterado**.
 - **Exportar** baixa o PDF; **Imprimir** abre a janela de impressão do aparelho; **WhatsApp** e **E-mail** no celular/tablet abrem a tela de compartilhar com o PDF anexado (WhatsApp, WhatsApp Business, Mail, Gmail…). No computador, o PDF é baixado e abre o **WhatsApp Web** ou o **aplicativo de e-mail padrão**, com um link do documento válido por 7 dias.
-- **Todos os Documentos Assinados** lista cliente, data de assinatura e corretor, com **Visualizar** e **Download**. Cada corretor vê os que gerou; quem tem "Ver números de toda a equipe" vê todos. Só o Master exclui.
-- O endereço da selfie é obtido no serviço gratuito do OpenStreetMap (Nominatim), que recebe as coordenadas. Se a localização não for autorizada no aparelho, a selfie é gravada sem local.
+- **Todos os Documentos Assinados** lista cliente, data de assinatura e corretor, com **Visualizar** e **Download**. Cada corretor vê os que gerou; quem tem "Ver números de toda a equipe" vê todos. Só o Master exclui (contrato e dossiê).
+- O endereço é obtido no serviço gratuito do OpenStreetMap (Nominatim), que recebe as coordenadas.
 
-**Configuração (uma vez):** rode no SQL Editor do Supabase o arquivo `supabase/migrations/20261114120000_contratos.sql`. Ele cria a tabela `contratos`, o armazenamento privado `contratos` e a permissão do menu (ligada por padrão para todos os perfis; dá para mudar em **Usuários → Permissões**).
+**Configuração (uma vez):** rode no SQL Editor do Supabase, nesta ordem:
+1. `supabase/migrations/20261114120000_contratos.sql`: tabela `contratos`, armazenamento privado `contratos` e a permissão do menu (ligada por padrão para todos os perfis; dá para mudar em **Usuários → Permissões**).
+2. `supabase/migrations/20261115100000_contratos_identidade.sql`: IP pelo servidor, dossiê de comprovação e impressões digitais.
 
 **Novos modelos:** coloque o PDF preenchível em `gestao/modelos/` e cadastre os campos em `MODELOS`, no `gestao/index.html`.
 

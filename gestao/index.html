@@ -418,6 +418,27 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .sf-geo.warn svg{color:var(--warn)}
 .ct-pdf{display:flex;flex-direction:column;gap:12px;align-items:center}
 .ct-pdf img{width:100%;max-width:820px;border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow);background:#fff}
+
+.ass-passos{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ass-passos button{width:100%;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:left}
+.ass-passos b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--muted);font-size:12.5px;flex:none}
+.ass-passos li.atual button{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+.ass-passos li.atual b{background:var(--accent);color:#fff}
+.ass-passos li.feito button{color:var(--ink)}
+.ass-passos li.feito b{background:var(--ok);color:#fff}
+.ass-inst{margin:12px 0;font-size:13.5px;line-height:1.55}
+.id-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.id-slot.off{opacity:.4;pointer-events:none}
+.id-prev{background:#0f1012;border-radius:12px;overflow:hidden;height:min(260px,36vh);display:flex;align-items:center;justify-content:center}
+[data-slot="selfie"] .id-prev{height:min(380px,50vh)}
+.id-prev img,.id-prev video{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain}
+.id-prev video.espelho{transform:scaleX(-1)}
+.id-vazio{display:flex;flex-direction:column;align-items:center;gap:8px;color:#9aa1a9;font-size:13.5px;font-weight:700;padding:20px;text-align:center}
+.id-vazio svg{width:34px;height:34px}
+.id-acts{margin-top:10px;gap:8px}
+.ass-aceite{margin-top:14px;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.45;padding:12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2)}
+.ass-aceite input{margin-top:2px;flex:none;width:18px;height:18px}
+.ct-hash code{font-size:11.5px;word-break:break-all}
 #print-root{display:none}
 @media print{
   body.imprimindo > *:not(#print-root){display:none!important}
@@ -562,6 +583,9 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
   .tr-card{grid-template-columns:1fr}
   .tr-ic{display:none}
   .ct-grid,.ct-ass{grid-template-columns:1fr}
+  .id-grid{grid-template-columns:1fr}
+  .ass-passos span{display:none}
+  .ass-passos button{justify-content:center}
   .ct-docs{min-width:0}
   .ct-docs thead{display:none}
   .ct-docs tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:14px 0;border-bottom:1px solid var(--line)}
@@ -990,7 +1014,7 @@ const state = {
   diario: {tab: 'meu', data: today(), dia: today(), cor: 'all'},
   vendas: {mes: monthKey(today()), corretor: 'all', busca: ''},
   rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today()},
-  ct: {modelo: null, v: {}, doc: null, assinatura: '', selfie: '', etapa: '', busca: ''},
+  ct: {modelo: null, v: {}, doc: null, assinatura: '', ident: null, etapa: '', busca: ''},
   dirty: false, pending: false
 };
 let rafId = 0;
@@ -2597,6 +2621,7 @@ VIEWS.relatorios = {
 /* =========================================================
    VIEW: Modelos de Contrato
    ========================================================= */
+const CLAUSULA_ASSINATURA_HTML = 'O(A) PROPRIETÁRIO(A) declara que leu este instrumento e autoriza, de forma livre e expressa, que ele seja assinado eletronicamente, reconhecendo como válida e de sua autoria a assinatura realizada por meio do sistema da contratada, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2/2001. Declara ainda que apresentou <b>documento oficial com foto</b> e <b>selfie segurando o documento</b> para comprovação de sua identidade, e consente com o registro de data, hora, endereço IP, localização e coordenadas geográficas do dispositivo utilizado, bem como com o tratamento desses dados exclusivamente para comprovação desta assinatura, conforme a Lei nº 13.709/2018 (LGPD).';
 const MODELOS = {
   'autorizacao-venda': {
     nome: 'Autorização de Venda', titulo: 'Autorização de Venda de Imóvel', arquivo: 'modelos/autorizacao-venda.pdf',
@@ -2629,11 +2654,12 @@ const MODELOS = {
     ],
     textos: [
       {t: 'Documentação do imóvel e proprietários', p: 'Documentos necessários para realização da venda e locação: matrícula, escritura, carnê de IPTU, CNH ou RG e CPF dos proprietários, comprovante de endereço e certidão de casamento / nascimento.'},
-      {t: 'Autorização de comercialização do imóvel', p: 'Fica a empresa <b>PATRIMONIO GESTÃO DE BENS LONDRINA</b>, inscrita no CNPJ sob nº 64.068.053/0001-27, portadora do <b>CRECI sob o nº J9323</b>, autorizada a anunciar, promover e intermediar a venda do imóvel acima. Concordo em pagar a comissão de <b>6%</b> sobre o valor da transação de venda, no ato da assinatura do contrato de compra e venda. Assumo a responsabilidade pelo pagamento da comissão, caso a transação seja realizada com pessoa apresentada pela contratada após a expiração do período desta autorização. O prazo da corretagem é de <b>180 dias</b> à contar da assinatura desse instrumento.'}
+      {t: 'Autorização de comercialização do imóvel', p: 'Fica a empresa <b>PATRIMONIO GESTÃO DE BENS LONDRINA</b>, inscrita no CNPJ sob nº 64.068.053/0001-27, portadora do <b>CRECI sob o nº J9323</b>, autorizada a anunciar, promover e intermediar a venda do imóvel acima. Concordo em pagar a comissão de <b>6%</b> sobre o valor da transação de venda, no ato da assinatura do contrato de compra e venda. Assumo a responsabilidade pelo pagamento da comissão, caso a transação seja realizada com pessoa apresentada pela contratada após a expiração do período desta autorização. O prazo da corretagem é de <b>180 dias</b> à contar da assinatura desse instrumento.'},
+      {t: 'Cláusula de assinatura eletrônica', p: CLAUSULA_ASSINATURA_HTML}
     ],
     cidade: 'Londrina',
     // Posições na página 2 do PDF (pontos, origem no canto inferior esquerdo; a altura é somada na hora)
-    pos: {pagina: 1, assinatura: {x0: 46, x1: 288, topo: 222, base: 272}, corretor: {cx: 428.5, larg: 236, linha: 275}, ano: {x: 363.712, yMin: 318.8033, yMax: 329.4053, ref: 'Londrina', refLarg: 36.9645}, carimbo: 362}
+    pos: {pagina: 1, assinatura: {x0: 46, x1: 288, topo: 222, base: 272}, corretor: {cx: 428.5, larg: 236, linha: 275}, ano: {x: 363.712, yMin: 318.8033, yMax: 329.4053, ref: 'Londrina', refLarg: 36.9645}, carimbo: 352}
   }
 };
 let CONTRATOS_OK = true;
@@ -2675,13 +2701,64 @@ function modeloBytes(md) {
   return MODELO_BYTES[md.arquivo];
 }
 
-/* ---------- Monta o PDF: campos preenchidos, assinatura, corretor, data do servidor ---------- */
-async function montarContratoPdf(md, valores, assinaturaPng, reg, cor, selfie) {
-  const {PDFDocument, StandardFonts, rgb, PDFTextField, PDFCheckBox} = window.PDFLib;
-  const pdf = await PDFDocument.load(await modeloBytes(md));
+/* ---------- Monta os PDFs ---------- */
+const CLAUSULA_ASSINATURA = 'O(A) PROPRIETÁRIO(A) declara que leu este instrumento e autoriza, de forma livre e expressa, que ele seja assinado eletronicamente, reconhecendo como válida e de sua autoria a assinatura realizada por meio do sistema da contratada, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2/2001. Declara ainda que apresentou documento oficial com foto e selfie segurando o documento para comprovação de sua identidade, e consente com o registro de data, hora, endereço IP, localização e coordenadas geográficas do dispositivo utilizado, bem como com o tratamento desses dados exclusivamente para comprovação desta assinatura, conforme a Lei nº 13.709/2018 (LGPD).';
+const ACEITE_TXT = 'Li e autorizo a assinatura eletrônica deste documento, nos termos da cláusula de assinatura eletrônica.';
+async function sha256Hex(blob) {
+  const h = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+// Fontes e utilitários de texto para o pdf-lib (Helvetica só aceita caracteres WinAnsi)
+async function ferramentasPdf(pdf) {
+  const {StandardFonts, rgb} = window.PDFLib;
   const font = await pdf.embedFont(StandardFonts.Helvetica), bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const cs = new Set(font.getCharacterSet());
   const limpa = s => [...String(s ?? '').replace(/[\r\n\t]+/g, ' ').replace(/[“”]/g, '"').replace(/[‘’]/g, "'")].filter(ch => cs.has(ch.codePointAt(0))).join('').replace(/\s+/g, ' ').trim();
+  const tinta = rgb(43 / 255, 43 / 255, 43 / 255), ouro = rgb(188 / 255, 144 / 255, 97 / 255), filete = rgb(217 / 255, 203 / 255, 184 / 255);
+  const quebra = (txt, f, sz, larg, recuo = 0) => {
+    const out = []; let ln = '';
+    for (const w of limpa(txt).split(' ')) { const t = ln ? ln + ' ' + w : w; if (f.widthOfTextAtSize(t, sz) > larg - (out.length ? 0 : recuo) && ln) { out.push(ln); ln = w; } else ln = t; }
+    if (ln) out.push(ln); return out;
+  };
+  // Título de seção no estilo do modelo (cor ouro + filete); devolve o y abaixo
+  const titulo = (pg, txt, x, y, larg, sz = 10) => {
+    pg.drawText(limpa(txt), {x, y, size: sz, font: bold, color: ouro});
+    pg.drawLine({start: {x, y: y - 4}, end: {x: x + larg, y: y - 4}, thickness: 0.8, color: filete});
+    return y - 16;
+  };
+  // Parágrafo justificado; devolve o y abaixo
+  const paragrafo = (pg, txt, x, y, larg, sz = 8.5, lh = 11.5) => {
+    const ls = quebra(txt, font, sz, larg);
+    ls.forEach((l, i) => {
+      const pal = l.split(' '), ultima = i === ls.length - 1;
+      if (ultima || pal.length < 2) { pg.drawText(l, {x, y: y - sz, size: sz, font, color: tinta}); }
+      else {
+        const livre = larg - pal.reduce((a, w) => a + font.widthOfTextAtSize(w, sz), 0), esp = livre / (pal.length - 1); let xx = x;
+        pal.forEach(w => { pg.drawText(w, {x: xx, y: y - sz, size: sz, font, color: tinta}); xx += font.widthOfTextAtSize(w, sz) + esp; });
+      }
+      y -= lh;
+    });
+    return y;
+  };
+  // Lista "Rótulo: valor" com quebra de linha; devolve o y abaixo
+  const linhas = (pg, itens, x, y, larg, sz = 8) => {
+    for (const [rot, val] of itens) {
+      const r0 = limpa(rot) + ': ', wr = bold.widthOfTextAtSize(r0, sz);
+      pg.drawText(r0, {x, y: y - sz, size: sz, font: bold, color: tinta});
+      quebra(val || '—', font, sz, larg, wr).forEach((l, i) => { pg.drawText(l, {x: x + (i ? 0 : wr), y: y - sz, size: sz, font, color: tinta}); y -= sz + 3.5; });
+      y -= 1.5;
+    }
+    return y;
+  };
+  return {font, bold, limpa, tinta, ouro, filete, quebra, titulo, paragrafo, linhas};
+}
+const geoTxt = g => g?.lat != null ? `${(+g.lat).toFixed(6)}, ${(+g.lon).toFixed(6)}${g.precisao ? ` (precisão de ${Math.round(g.precisao)} m)` : ''}` : 'não registrada';
+
+// Contrato: modelo preenchido + assinatura + corretor + ano do servidor + cláusula + registro
+async function montarContratoPdf(md, valores, assinaturaPng, reg, cor, hashDossie) {
+  const {PDFDocument, rgb, PDFTextField, PDFCheckBox} = window.PDFLib;
+  const pdf = await PDFDocument.load(await modeloBytes(md));
+  const T = await ferramentasPdf(pdf), {font, bold, limpa, tinta} = T;
   const c = carimbo(reg);
   const textos = {...valores, data_dia: c.D, data_mes: MESES[c.M - 1]};
   const form = pdf.getForm();
@@ -2699,7 +2776,7 @@ async function montarContratoPdf(md, valores, assinaturaPng, reg, cor, selfie) {
   form.updateFieldAppearances(font);
   form.flatten();
 
-  const p = md.pos, pg = pdf.getPages()[p.pagina], H = pg.getHeight(), tinta = rgb(43 / 255, 43 / 255, 43 / 255);
+  const p = md.pos, pg = pdf.getPages()[p.pagina], H = pg.getHeight(), W = pg.getWidth(), L = 36, larg = W - 72;
   // Ano gravado no servidor no lugar do ano impresso no modelo
   const tam = p.ano.refLarg / font.widthOfTextAtSize(p.ano.ref, 1);
   pg.drawRectangle({x: p.ano.x - 1, y: H - p.ano.yMax - 0.5, width: font.widthOfTextAtSize('2026.', tam) + 3, height: p.ano.yMax - p.ano.yMin + 1, color: rgb(1, 1, 1)});
@@ -2714,42 +2791,78 @@ async function montarContratoPdf(md, valores, assinaturaPng, reg, cor, selfie) {
   const nome = limpa(cor?.nome), creci = limpa(cor?.creci);
   if (nome) {
     const r = p.corretor, sz = Math.min(10, r.larg / bold.widthOfTextAtSize(nome, 1));
-    const yNome = H - r.linha + (creci ? 13 : 6);
-    pg.drawText(nome, {x: r.cx - bold.widthOfTextAtSize(nome, sz) / 2, y: yNome, size: sz, font: bold, color: tinta});
+    pg.drawText(nome, {x: r.cx - bold.widthOfTextAtSize(nome, sz) / 2, y: H - r.linha + (creci ? 13 : 6), size: sz, font: bold, color: tinta});
     if (creci) { const t = 'CRECI ' + creci, s2 = 7.5; pg.drawText(t, {x: r.cx - font.widthOfTextAtSize(t, s2) / 2, y: H - r.linha + 4, size: s2, font, color: tinta}); }
   }
-  // Registro da assinatura eletrônica: selfie, local, coordenadas, data e hora
-  const ouro = rgb(188 / 255, 144 / 255, 97 / 255), W = pg.getWidth(), L = 36, R = W - 36;
+  // Cláusula de assinatura eletrônica
   let y = H - p.carimbo;
-  pg.drawText(limpa('Registro da assinatura eletrônica'), {x: L, y, size: 10, font: bold, color: ouro});
-  pg.drawLine({start: {x: L, y: y - 4}, end: {x: R, y: y - 4}, thickness: 0.8, color: rgb(217 / 255, 203 / 255, 184 / 255)});
-  const topo = y - 16, g = reg.geo || {};
-  let xt = L;
-  if (selfie?.img) {
-    const im = await pdf.embedJpg(selfie.img), k = Math.min(96 / im.width, 128 / im.height), w = im.width * k, h = im.height * k;
-    pg.drawImage(im, {x: L, y: topo - h, width: w, height: h});
-    pg.drawRectangle({x: L, y: topo - h, width: w, height: h, borderColor: rgb(.8, .8, .8), borderWidth: 0.6});
-    xt = L + w + 14;
-  }
-  const linhas = [
+  y = T.titulo(pg, 'Cláusula de assinatura eletrônica', L, y, larg);
+  y = T.paragrafo(pg, CLAUSULA_ASSINATURA, L, y, larg);
+  // Registro da assinatura eletrônica
+  const g = reg.geo || {}, id = reg.identidade || {};
+  y = T.titulo(pg, 'Registro da assinatura eletrônica', L, y - 14, larg);
+  y = T.linhas(pg, [
     ['Data e hora', `${c.txt} (horário de Brasília, registrado pelo servidor)`],
-    ['Selfie', selfie?.img ? 'tirada pelo(a) proprietário(a) no momento da assinatura' : 'não registrada'],
-    ['Local', g.endereco || (g.lat != null ? 'endereço não identificado' : 'localização não autorizada no aparelho')],
-    ['Coordenadas', g.lat != null ? `${(+g.lat).toFixed(6)}, ${(+g.lon).toFixed(6)}${g.precisao ? ` (precisão de ${Math.round(g.precisao)} m)` : ''}` : '—'],
+    ['IP do dispositivo', reg.ip || 'não identificado'],
+    ['Local', g.endereco || (g.lat != null ? 'endereço não identificado' : 'não registrado')],
+    ['Coordenadas', geoTxt(g)],
+    ['Identificação', `documento oficial com foto (${id.semVerso ? 'frente' : 'frente e verso'}) e selfie segurando o documento, mantidos no dossiê de comprovação`],
+    ['Autorização', `o(a) proprietário(a) marcou "${ACEITE_TXT}" antes de assinar`],
     ['Corretor(a) responsável', nome || '—'],
-    ['Código do documento', reg.id]
-  ];
-  const sz = 8, larg = R - xt; let yl = topo - sz;
-  for (const [rot, val] of linhas) {
-    const r0 = limpa(rot) + ': ', wr = bold.widthOfTextAtSize(r0, sz);
-    const pal = limpa(val).split(' '); let ln = '', pri = true;
-    const sai = () => { pg.drawText(ln, {x: xt + (pri ? wr : 0), y: yl, size: sz, font, color: tinta}); yl -= sz + 3.5; pri = false; ln = ''; };
-    pg.drawText(r0, {x: xt, y: yl, size: sz, font: bold, color: tinta});
-    for (const w of pal) { const t = ln ? ln + ' ' + w : w; if (font.widthOfTextAtSize(t, sz) > larg - (pri ? wr : 0) && ln) { sai(); ln = w; } else ln = t; }
-    sai(); yl -= 1.5;
-  }
+    ['Código do documento', reg.id],
+    ['Dossiê de comprovação (SHA-256)', hashDossie || '—']
+  ], L, y, larg);
   pdf.setTitle(limpa(`${md.titulo}${reg.cliente ? ' · ' + reg.cliente : ''}`));
   pdf.setAuthor(limpa(cor?.nome || '')); pdf.setCreator('Imobiliária 2.0 · Gestão comercial'); pdf.setProducer('Imobiliária 2.0 · Gestão comercial');
+  return pdf.save();
+}
+
+// Dossiê de comprovação: documento com foto, selfie com documento, assinatura e registro (uso interno)
+async function montarDossiePdf(md, reg, ident, assinaturaPng, cor) {
+  const {PDFDocument, rgb} = window.PDFLib;
+  const pdf = await PDFDocument.create();
+  const T = await ferramentasPdf(pdf), {font, bold, limpa, tinta} = T;
+  const W = 595.28, H = 841.89, L = 40, larg = W - 80, c = carimbo(reg), g = reg.geo || {};
+  const nova = () => {
+    const pg = pdf.addPage([W, H]);
+    const rod = limpa(`Dossiê de comprovação de identidade · Código ${reg.id} · Documento interno e confidencial, contém dados pessoais (LGPD)`);
+    pg.drawText(rod, {x: (W - font.widthOfTextAtSize(rod, 7)) / 2, y: 24, size: 7, font, color: rgb(.45, .45, .45)});
+    return pg;
+  };
+  const imagem = async (pg, dataUrl, x, yTopo, maxW, maxH, rot, borda = true) => {
+    const im = /^data:image\/png/.test(dataUrl) ? await pdf.embedPng(dataUrl) : await pdf.embedJpg(dataUrl);
+    const k = Math.min(maxW / im.width, maxH / im.height), w = im.width * k, h = im.height * k, xx = x + (maxW - w) / 2;
+    pg.drawText(limpa(rot), {x, y: yTopo - 9, size: 8.5, font: bold, color: tinta});
+    pg.drawImage(im, {x: xx, y: yTopo - 16 - h, width: w, height: h});
+    if (borda) pg.drawRectangle({x: xx, y: yTopo - 16 - h, width: w, height: h, borderColor: rgb(.8, .8, .8), borderWidth: 0.6});
+    return yTopo - 16 - h;
+  };
+  let pg = nova(), y = H - 50;
+  pg.drawText(limpa('Dossiê de comprovação de identidade'), {x: L, y, size: 16, font: bold, color: T.ouro});
+  y -= 16; pg.drawText(limpa(`${md.titulo} · Código ${reg.id}`), {x: L, y, size: 9, font, color: tinta}); y -= 22;
+  y = T.titulo(pg, 'Registro', L, y, larg);
+  y = T.linhas(pg, [
+    ['Proprietário(a)', reg.cliente || '—'], ['CPF/CNPJ', reg.cpf || '—'], ['Imóvel', reg.imovel || '—'],
+    ['Data e hora', `${c.txt} (horário de Brasília, registrado pelo servidor)`],
+    ['IP do dispositivo', reg.ip || 'não identificado'],
+    ['Local', g.endereco || 'endereço não identificado'], ['Coordenadas', geoTxt(g)],
+    ['Autorização', `marcou "${ACEITE_TXT}"`],
+    ['Corretor(a) responsável', limpa(cor?.nome) || '—'],
+    ['Aparelho', navigator.userAgent]
+  ], L, y, larg, 8.5);
+  y = T.titulo(pg, 'Documento oficial com foto', L, y - 10, larg);
+  const meia = (larg - 16) / 2, altImg = Math.min(250, y - 60);
+  await imagem(pg, ident.frente, L, y, meia, altImg, 'Frente');
+  if (ident.verso) await imagem(pg, ident.verso, L + meia + 16, y, meia, altImg, 'Verso');
+  else pg.drawText(limpa('Verso: documento sem verso'), {x: L + meia + 16, y: y - 9, size: 8.5, font: bold, color: tinta});
+  pg = nova(); y = H - 50;
+  y = T.titulo(pg, 'Selfie segurando o documento', L, y, larg);
+  y = await imagem(pg, ident.selfie, L, y, larg, 470, 'Foto tirada pela câmera do aparelho no momento da assinatura');
+  y = T.titulo(pg, 'Assinatura', L, y - 22, larg);
+  y = await imagem(pg, assinaturaPng, L + larg / 4, y, larg / 2, 90, '', false);
+  pg.drawLine({start: {x: L + larg / 4, y: y - 4}, end: {x: L + larg * 3 / 4, y: y - 4}, thickness: 0.8, color: tinta});
+  const lb = 'PROPRIETÁRIO(A)'; pg.drawText(lb, {x: (W - bold.widthOfTextAtSize(lb, 8.5)) / 2, y: y - 16, size: 8.5, font: bold, color: tinta});
+  pdf.setTitle(limpa(`Dossiê de comprovação · ${reg.cliente || reg.id}`)); pdf.setCreator('Imobiliária 2.0 · Gestão comercial'); pdf.setProducer('Imobiliária 2.0 · Gestão comercial');
   return pdf.save();
 }
 
@@ -2916,7 +3029,7 @@ function ctFormHTML() {
   const c = d ? carimbo(d.reg) : null, dis = d ? '' : 'disabled';
   return `<div class="ct-form">
     <div class="banner">${ic('info')}<span class="grow">${trava ? `Documento <b>assinado em ${c.txt}</b> (horário de Brasília). Os campos ficam bloqueados; para outro contrato use <b>Novo formulário</b>.`
-      : 'Preencha o que tiver; nenhum campo é obrigatório. Depois toque em <b>Assinar</b> para o(a) proprietário(a) assinar na tela.'}</span></div>
+      : 'Preencha o que tiver; nenhum campo é obrigatório. Depois toque em <b>Assinar</b>: o(a) proprietário(a) envia o documento com foto, tira uma selfie segurando o documento e assina na tela.'}</span></div>
     ${md.secoes.map(s => `<section class="card"><div class="card-h"><h3>${esc(s.t)}</h3></div><div class="card-b ct-grid">${s.campos.map(x => ctCampoHTML(x, v, trava)).join('')}</div></section>`).join('')}
     ${md.textos.map(t => `<section class="card"><div class="card-h"><h3>${esc(t.t)}</h3></div><div class="card-b"><p class="ct-texto">${t.p}</p></div></section>`).join('')}
     <section class="card"><div class="card-h"><h3>Assinaturas</h3></div><div class="card-b stack">
@@ -2924,7 +3037,7 @@ function ctFormHTML() {
         <div class="ct-ass-box">${state.ct.assinatura ? `<img src="${state.ct.assinatura}" alt="Assinatura do(a) proprietário(a)">` : '<span class="vazio">Aguardando a assinatura</span>'}<div class="ln">PROPRIETÁRIO(A)</div></div>
         <div class="ct-ass-box"><b class="ct-cor">${esc(ME.nome)}</b>${ME.creci ? `<span class="small">CRECI ${esc(ME.creci)}</span>` : ''}<div class="ln">CORRETOR(A)</div></div>
       </div>
-      ${state.ct.selfie ? `<div class="ct-selfie"><img src="${state.ct.selfie}" alt="Selfie do(a) proprietário(a)"><div class="small"><b>Selfie registrada</b><br>${esc(d?.reg.geo?.endereco || (d?.reg.geo ? 'Endereço não identificado' : 'Localização não autorizada'))}${d?.reg.geo ? `<br><span class="muted">Coordenadas ${(+d.reg.geo.lat).toFixed(6)}, ${(+d.reg.geo.lon).toFixed(6)}</span>` : ''}</div></div>` : ''}
+      ${state.ct.ident && d ? `<div class="ct-selfie"><img src="${state.ct.ident.selfie}" alt="Selfie com o documento"><div class="small"><b>Identidade comprovada</b> · documento com foto e selfie com o documento (no dossiê de comprovação)<br>${esc(d.reg.geo?.endereco || 'Endereço não identificado')}${d.reg.geo ? ` · <span class="muted">${(+d.reg.geo.lat).toFixed(6)}, ${(+d.reg.geo.lon).toFixed(6)}</span>` : ''}${d.reg.ip ? `<br><span class="muted">IP ${esc(d.reg.ip)}</span>` : ''}</div></div>` : ''}
       <p class="muted small" style="margin:0;text-align:center">${esc(md.cidade)}, ${c ? `${c.D} de ${MESES[c.M - 1]} de ${c.Y}` : 'a data é preenchida na assinatura com o horário do servidor (Brasília)'}.</p>
     </div></section>
     <div class="ct-bar">
@@ -2955,7 +3068,7 @@ VIEWS.contratos = {
   }
 };
 
-/* ---------- Assinatura na tela (dedo, caneta ou mouse) + selfie com local, coordenadas, data e hora ---------- */
+/* ---------- Assinatura: 1) documento com foto → 2) selfie com o documento → 3) assinatura (obrigatórios, nessa ordem) ---------- */
 function localizar() {
   return new Promise(ok => {
     if (!navigator.geolocation) return ok(null);
@@ -2976,34 +3089,125 @@ async function enderecoDe(geo) {
     return curto || j.display_name || '';
   } catch (e) { return ''; }
 }
+// Reduz a foto para JPEG (máx. `max` px no maior lado)
+function fotoJpeg(src, w, h, max = 1600, q = 0.85) {
+  const k = Math.min(1, max / Math.max(w, h)), c = document.createElement('canvas');
+  c.width = Math.round(w * k); c.height = Math.round(h * k);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(src, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', q);
+}
+function lerFoto(file, max) {
+  return new Promise((ok, falha) => {
+    if (!file || !/^image\//.test(file.type)) return falha(new Error('tipo'));
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { try { ok(fotoJpeg(im, im.naturalWidth, im.naturalHeight, max)); } catch (e) { falha(e); } URL.revokeObjectURL(url); };
+    im.onerror = () => { URL.revokeObjectURL(url); falha(new Error('imagem')); };
+    im.src = url;
+  });
+}
 function assinaturaModal(onSave) {
+  const slotHTML = (k, rot) => `<div class="id-slot" data-slot="${k}">
+      <div class="id-prev" id="prev-${k}"><div class="id-vazio">${ic(k === 'selfie' ? 'camera' : 'file')}<span>${rot}</span></div></div>
+      <div class="row id-acts" id="acts-${k}"></div></div>`;
   openModal({title: 'Assinatura do(a) proprietário(a)', wide: true,
-    body: `<div class="seg ct-abas" role="tablist" aria-label="Etapas da assinatura">
-        <button type="button" role="tab" data-aba="ass" aria-pressed="true">${ic('sign')}Assinatura</button>
-        <button type="button" role="tab" data-aba="selfie" aria-pressed="false">${ic('camera')}Selfie <span id="sf-ok-tag"></span></button></div>
-      <div data-painel="ass">
-        <p class="muted small" style="margin:12px 0 10px">Assine com o dedo, a caneta (Apple Pencil) ou o mouse dentro da área branca.</p>
+    body: `<ol class="ass-passos" id="ass-passos">
+        <li data-p="1"><button type="button" data-ir="1"><b>1</b><span>Documento com foto</span></button></li>
+        <li data-p="2"><button type="button" data-ir="2"><b>2</b><span>Selfie com o documento</span></button></li>
+        <li data-p="3"><button type="button" data-ir="3"><b>3</b><span>Assinatura</span></button></li></ol>
+      <div class="sf-geo" id="ass-geo"></div>
+      <section data-passo="1">
+        <p class="ass-inst">Fotografe ou anexe um <b>documento oficial com foto</b> do(a) proprietário(a) (CNH, RG ou outro). Envie a <b>frente</b> e o <b>verso</b>.</p>
+        <div class="id-grid">${slotHTML('frente', 'Frente do documento')}${slotHTML('verso', 'Verso do documento')}</div>
+        <label class="check" style="margin-top:12px"><input type="checkbox" id="sem-verso">Documento sem verso (ex.: CNH digital impressa)</label>
+      </section>
+      <section data-passo="2" hidden>
+        <p class="ass-inst">O(A) proprietário(a) tira uma <b>selfie segurando o documento</b> ao lado do rosto, com a foto do documento visível. A foto é tirada pela câmera, na hora.</p>
+        ${slotHTML('selfie', 'A câmera frontal abre aqui')}
+      </section>
+      <section data-passo="3" hidden>
+        <p class="ass-inst">Assine com o dedo, a caneta (Apple Pencil) ou o mouse dentro da área branca.</p>
         <div class="sig-wrap"><div class="sig-line"></div><span class="sig-hint" id="sig-hint">Assine aqui</span><canvas id="sig" aria-label="Área para assinar"></canvas></div>
         <div class="row" style="margin-top:10px"><button type="button" class="btn sm" id="sig-clear">${ic('trash')}Limpar assinatura</button></div>
-      </div>
-      <div data-painel="selfie" hidden>
-        <p class="muted small" style="margin:12px 0 10px">O(a) proprietário(a) tira uma foto de si mesmo(a). Junto com a selfie ficam gravados o local, as coordenadas geográficas, a data e a hora (horário do servidor, Brasília).</p>
-        <div class="sf-box">
-          <video id="sf-video" playsinline muted autoplay hidden></video>
-          <img id="sf-foto" alt="Selfie do(a) proprietário(a)" hidden>
-          <div class="sf-vazio" id="sf-vazio">${ic('camera')}<span>A câmera frontal abre aqui</span></div>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button type="button" class="btn" id="sf-abrir">${ic('camera')}Abrir câmera</button>
-          <button type="button" class="btn primary" id="sf-tirar" hidden>${ic('camera')}Tirar selfie</button>
-          <button type="button" class="btn" id="sf-refazer" hidden>Tirar outra</button>
-          <label class="btn" id="sf-arq-lbl" hidden>${ic('upload')}Usar a câmera do aparelho<input type="file" id="sf-arq" accept="image/*" capture="user" hidden></label>
-        </div>
-        <div class="sf-geo" id="sf-geo"></div>
-      </div>`,
-    foot: `<button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="sig-ok" disabled>${ic('sign')}Salvar assinatura</button>`,
+        <label class="check ass-aceite"><input type="checkbox" id="ass-aceite"><span>${esc(ACEITE_TXT)}</span></label>
+      </section>`,
+    foot: `<button class="btn left" id="ass-voltar">${ic('left')}Voltar</button><button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="ass-avancar">Continuar${ic('right')}</button>`,
     onMount: m => {
-      const cv = $('#sig', m), ctx = cv.getContext('2d'), ok = $('#sig-ok', m), hint = $('#sig-hint', m);
+      const S_ = {passo: 1, frente: null, verso: null, selfie: null, semVerso: false, geo: null, geoEstado: 'buscando', aceite: false};
+      let stream = null, camSlot = null;
+      const bAv = $('#ass-avancar', m), bVolta = $('#ass-voltar', m), geoBox = $('#ass-geo', m);
+      const temCam = !!navigator.mediaDevices?.getUserMedia;
+
+      // ----- Localização (obrigatória) -----
+      const pintarGeo = () => {
+        const g = S_.geo;
+        geoBox.className = 'sf-geo ' + (S_.geoEstado === 'ok' ? 'ok' : S_.geoEstado === 'negada' ? 'warn' : '');
+        geoBox.innerHTML = S_.geoEstado === 'ok' ? `${ic('pin')}<span><b>${esc(g.endereco || 'Endereço não identificado')}</b><br>Coordenadas ${g.lat.toFixed(6)}, ${g.lon.toFixed(6)} (precisão de ${g.precisao} m)</span>`
+          : S_.geoEstado === 'negada' ? `${ic('pin')}<span class="grow"><b>A localização é obrigatória para assinar.</b><br>Permita o acesso à localização para este site nas configurações do navegador e toque em "Tentar de novo".</span><button type="button" class="btn sm" id="geo-retry">Tentar de novo</button>`
+          : `${ic('pin')}<span>Obtendo a localização… autorize o acesso se o aparelho pedir.</span>`;
+        const r = $('#geo-retry', m); if (r) r.onclick = buscarGeo;
+      };
+      const buscarGeo = async () => {
+        S_.geoEstado = 'buscando'; pintarGeo(); atualizar();
+        const g = await localizar(); if (!m.isConnected) return;
+        if (!g) { S_.geoEstado = 'negada'; pintarGeo(); atualizar(); return; }
+        S_.geo = g; S_.geoEstado = 'ok'; pintarGeo(); atualizar();
+        g.endereco = await enderecoDe(g); if (m.isConnected) pintarGeo();
+      };
+
+      // ----- Câmera e arquivos -----
+      const parar = () => { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } camSlot = null; };
+      const pintarSlot = k => {
+        const prev = $('#prev-' + k, m), acts = $('#acts-' + k, m), img = S_[k], selfie = k === 'selfie';
+        if (camSlot === k) {
+          acts.innerHTML = `<button type="button" class="btn primary" data-capturar="${k}">${ic('camera')}${selfie ? 'Tirar selfie' : 'Capturar foto'}</button><button type="button" class="btn" data-cancelar="${k}">Cancelar</button>`;
+          return;
+        }
+        if (img) prev.innerHTML = `<img src="${img}" alt="">`;
+        else if (!prev.querySelector('.id-vazio')) prev.innerHTML = `<div class="id-vazio">${ic(selfie ? 'camera' : 'file')}<span>${selfie ? 'A câmera frontal abre aqui' : k === 'frente' ? 'Frente do documento' : 'Verso do documento'}</span></div>`;
+        const cap = selfie ? 'user' : 'environment';
+        const btnFoto = temCam ? `<button type="button" class="btn" data-cam="${k}">${ic('camera')}${img ? 'Tirar outra' : selfie ? 'Abrir câmera' : 'Tirar foto'}</button>`
+          : `<label class="btn">${ic('camera')}${img ? 'Tirar outra' : 'Tirar foto'}<input type="file" accept="image/*" capture="${cap}" data-arq="${k}" hidden></label>`;
+        const btnArq = selfie ? '' : `<label class="btn">${ic('upload')}Anexar arquivo<input type="file" accept="image/*" data-arq="${k}" hidden></label>`;
+        acts.innerHTML = btnFoto + btnArq;
+      };
+      const ligar = async k => {
+        parar(); $$('[data-slot]', m).forEach(s => s.dataset.slot !== k && pintarSlot(s.dataset.slot));
+        const prev = $('#prev-' + k, m), selfie = k === 'selfie';
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: selfie ? 'user' : 'environment'}, width: {ideal: 1920}, height: {ideal: 1080}}, audio: false});
+          if (!m.isConnected) return parar();
+          camSlot = k;
+          prev.innerHTML = `<video playsinline muted autoplay ${selfie ? 'class="espelho"' : ''}></video>`;
+          const v = $('video', prev); v.srcObject = stream; v.play().catch(() => {});
+          pintarSlot(k);
+        } catch (e) {
+          parar(); toast('Não foi possível abrir a câmera. Verifique a permissão do navegador para a câmera.', 'warn'); pintarSlot(k);
+        }
+      };
+      m.addEventListener('click', e => {
+        const b = e.target.closest('[data-cam],[data-capturar],[data-cancelar],[data-ir]'); if (!b) return;
+        if (b.dataset.cam) return ligar(b.dataset.cam);
+        if (b.dataset.cancelar) { const k = b.dataset.cancelar; parar(); $('#prev-' + k, m).innerHTML = ''; pintarSlot(k); return; }
+        if (b.dataset.capturar) {
+          const k = b.dataset.capturar, v = $('#prev-' + k + ' video', m);
+          if (!v || !v.videoWidth) return;
+          S_[k] = fotoJpeg(v, v.videoWidth, v.videoHeight, k === 'selfie' ? 1280 : 1600); parar(); pintarSlot(k); atualizar(); return;
+        }
+        if (b.dataset.ir) { const n = +b.dataset.ir; if (n < S_.passo || (n === S_.passo + 1 && pode(S_.passo))) irPara(n); }
+      });
+      m.addEventListener('change', async e => {
+        const el = e.target;
+        if (el.id === 'sem-verso') { S_.semVerso = el.checked; $('[data-slot="verso"]', m).classList.toggle('off', el.checked); atualizar(); return; }
+        if (el.id === 'ass-aceite') { S_.aceite = el.checked; atualizar(); return; }
+        if (el.dataset.arq) {
+          const k = el.dataset.arq, f = el.files[0]; el.value = ''; if (!f) return;
+          try { S_[k] = await lerFoto(f, k === 'selfie' ? 1280 : 1600); } catch (er) { toast('Não foi possível ler a foto. Use uma imagem (JPG ou PNG).', 'bad'); }
+          pintarSlot(k); atualizar();
+        }
+      });
+
+      // ----- Assinatura (desenho) -----
+      const cv = $('#sig', m), ctx = cv.getContext('2d'), hint = $('#sig-hint', m);
       const tracos = []; let atual = null;
       const COR = '#111827';
       const larg = p => p.t === 'pen' ? 1.1 + (p.p || 0.5) * 2.8 : 2.6;
@@ -3026,8 +3230,7 @@ function assinaturaModal(onSave) {
         tracos.forEach(t => desenhar(ctx, t));
       };
       const pt = e => { const r = cv.getBoundingClientRect(); return {x: e.clientX - r.left, y: e.clientY - r.top, p: e.pressure, t: e.pointerType}; };
-      const estado = () => { const tem = tracos.length > 0; ok.disabled = !tem; hint.hidden = tem; };
-      cv.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); atual = [pt(e)]; tracos.push(atual); desenhar(ctx, atual); estado(); });
+      cv.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); atual = [pt(e)]; tracos.push(atual); desenhar(ctx, atual); hint.hidden = true; atualizar(); });
       cv.addEventListener('pointermove', e => {
         if (!atual) return; e.preventDefault();
         const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
@@ -3037,102 +3240,80 @@ function assinaturaModal(onSave) {
       const soltar = () => { atual = null; };
       cv.addEventListener('pointerup', soltar); cv.addEventListener('pointercancel', soltar); cv.addEventListener('lostpointercapture', soltar);
       ['touchstart', 'touchmove'].forEach(t => cv.addEventListener(t, e => e.preventDefault(), {passive: false}));
-      $('#sig-clear', m).onclick = () => { tracos.length = 0; ajustar(); estado(); };
+      $('#sig-clear', m).onclick = () => { tracos.length = 0; ajustar(); hint.hidden = false; atualizar(); };
 
-      // Abas
-      const abas = $$('[data-aba]', m);
-      const aba = k => { abas.forEach(b => b.setAttribute('aria-pressed', b.dataset.aba === k)); $$('[data-painel]', m).forEach(p => p.hidden = p.dataset.painel !== k); if (k === 'ass') ajustar(); };
-      abas.forEach(b => b.onclick = () => aba(b.dataset.aba));
-
-      // Selfie
-      const vid = $('#sf-video', m), foto = $('#sf-foto', m), vazio = $('#sf-vazio', m), geoBox = $('#sf-geo', m);
-      const bAbrir = $('#sf-abrir', m), bTirar = $('#sf-tirar', m), bRefazer = $('#sf-refazer', m), lblArq = $('#sf-arq-lbl', m), arq = $('#sf-arq', m);
-      let stream = null, selfie = null, geoP = null;
-      const parar = () => { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } vid.srcObject = null; vid.hidden = true; };
-      const pintarGeo = (txt, cls = '') => { geoBox.className = 'sf-geo ' + cls; geoBox.innerHTML = txt; };
-      const iniciarGeo = () => {
-        pintarGeo(`${ic('pin')}<span>Obtendo a localização… autorize o acesso se o aparelho pedir.</span>`);
-        geoP = localizar().then(async g => {
-          if (!g) { pintarGeo(`${ic('pin')}<span>Localização não autorizada. A selfie será gravada sem local e coordenadas.</span>`, 'warn'); return null; }
-          pintarGeo(`${ic('pin')}<span>Coordenadas ${g.lat.toFixed(6)}, ${g.lon.toFixed(6)} (precisão de ${g.precisao} m)<br><span class="muted">Identificando o endereço…</span></span>`);
-          g.endereco = await enderecoDe(g);
-          pintarGeo(`${ic('pin')}<span><b>${esc(g.endereco || 'Endereço não identificado')}</b><br>Coordenadas ${g.lat.toFixed(6)}, ${g.lon.toFixed(6)} (precisão de ${g.precisao} m)</span>`, 'ok');
-          return g;
-        });
-      };
-      const guardar = (src, w, h) => {
-        const max = 720, k = Math.min(1, max / Math.max(w, h)), c = document.createElement('canvas');
-        c.width = Math.round(w * k); c.height = Math.round(h * k);
-        c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
-        selfie = c.toDataURL('image/jpeg', 0.85);
-        foto.src = selfie; foto.hidden = false; vazio.hidden = true;
-        bTirar.hidden = true; bAbrir.hidden = true; bRefazer.hidden = false; lblArq.hidden = true;
-        $('#sf-ok-tag', m).innerHTML = '<span class="pill ok" style="height:20px">ok</span>';
-        iniciarGeo();
-      };
-      const usarArquivo = () => { bAbrir.hidden = true; lblArq.hidden = false; vazio.querySelector('span').textContent = 'Toque em "Usar a câmera do aparelho" para tirar a selfie'; };
-      bAbrir.onclick = async () => {
-        if (!navigator.mediaDevices?.getUserMedia) return usarArquivo();
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'user', width: {ideal: 1280}, height: {ideal: 960}}, audio: false});
-          if (!m.isConnected) return parar();
-          vid.srcObject = stream; vid.hidden = false; vazio.hidden = true; foto.hidden = true;
-          bAbrir.hidden = true; bTirar.hidden = false; bRefazer.hidden = true;
-        } catch (e) { toast('Não foi possível abrir a câmera. Verifique a permissão do navegador.', 'warn'); usarArquivo(); }
-      };
-      bTirar.onclick = () => { if (!vid.videoWidth) return; guardar(vid, vid.videoWidth, vid.videoHeight); parar(); };
-      bRefazer.onclick = () => { selfie = null; geoP = null; foto.hidden = true; pintarGeo(''); $('#sf-ok-tag', m).innerHTML = ''; bRefazer.hidden = true; vazio.hidden = false; bAbrir.hidden = false; bAbrir.click(); };
-      arq.onchange = () => {
-        const f = arq.files[0]; if (!f) return;
-        const url = URL.createObjectURL(f), im = new Image();
-        im.onload = () => { guardar(im, im.naturalWidth, im.naturalHeight); URL.revokeObjectURL(url); };
-        im.onerror = () => { toast('Não foi possível ler a foto.', 'bad'); URL.revokeObjectURL(url); };
-        im.src = url; arq.value = '';
-      };
-
-      ok.onclick = async () => {
-        const pts = tracos.flat(); if (!pts.length) return;
-        ok.disabled = true;
-        const pad = 6, x0 = Math.min(...pts.map(p => p.x)) - pad, y0 = Math.min(...pts.map(p => p.y)) - pad;
+      // ----- Passos -----
+      const pode = n => n === 1 ? !!S_.frente && (S_.semVerso || !!S_.verso)
+        : n === 2 ? !!S_.selfie && S_.geoEstado === 'ok'
+        : tracos.length > 0 && S_.aceite && S_.geoEstado === 'ok';
+      function atualizar() {
+        $$('#ass-passos li', m).forEach(li => { const n = +li.dataset.p; li.className = n < S_.passo ? 'feito' : n === S_.passo ? 'atual' : ''; });
+        bVolta.hidden = S_.passo === 1;
+        bAv.disabled = !pode(S_.passo);
+        bAv.innerHTML = S_.passo === 3 ? `${ic('sign')}Salvar assinatura` : `Continuar${ic('right')}`;
+        bAv.title = bAv.disabled ? (S_.passo === 1 ? 'Envie a frente e o verso do documento' : S_.passo === 2 ? (S_.selfie ? 'Aguardando a localização' : 'Tire a selfie segurando o documento') : 'Assine e marque a autorização') : '';
+      }
+      function irPara(n) {
+        parar(); S_.passo = n;
+        $$('[data-passo]', m).forEach(s => s.hidden = +s.dataset.passo !== n);
+        ['frente', 'verso', 'selfie'].forEach(pintarSlot);
+        if (n === 3) requestAnimationFrame(ajustar);
+        atualizar(); m.closest('.modal-bg')?.scrollTo?.(0, 0);
+      }
+      bVolta.onclick = () => S_.passo > 1 && irPara(S_.passo - 1);
+      bAv.onclick = async () => {
+        if (!pode(S_.passo)) return;
+        if (S_.passo < 3) return irPara(S_.passo + 1);
+        bAv.disabled = true;
+        const pts = tracos.flat(), pad = 6;
+        const x0 = Math.min(...pts.map(p => p.x)) - pad, y0 = Math.min(...pts.map(p => p.y)) - pad;
         const w = Math.max(...pts.map(p => p.x)) + pad - x0, h = Math.max(...pts.map(p => p.y)) + pad - y0, k = 3;
         const out = document.createElement('canvas'); out.width = Math.ceil(w * k); out.height = Math.ceil(h * k);
         const oc = out.getContext('2d'); oc.translate(-x0 * k, -y0 * k);
         tracos.forEach(t => desenhar(oc, t, k));
-        let geo = null;
-        if (selfie && geoP) { ok.innerHTML = `${ic('pin')}Aguardando a localização…`; geo = await geoP; }
-        closeModal(); onSave(out.toDataURL('image/png'), selfie ? {img: selfie, geo} : null);
+        const ident = {frente: S_.frente, verso: S_.semVerso ? null : S_.verso, semVerso: S_.semVerso, selfie: S_.selfie, geo: S_.geo, aceite: true};
+        closeModal(); onSave(out.toDataURL('image/png'), ident);
       };
-      const ro = new ResizeObserver(ajustar); ro.observe(cv);
+      const ro = new ResizeObserver(() => S_.passo === 3 && ajustar()); ro.observe(cv);
       modalCleanup = () => { ro.disconnect(); parar(); };
-      ajustar();
+      irPara(1); buscarGeo();
     }});
 }
 
-/* ---------- Fluxo: assinar → gravar no servidor (data de Brasília) → gerar PDF → salvar arquivo ---------- */
-async function ctAssinar(png, selfie) {
+/* ---------- Fluxo: assinar → gravar no servidor (data de Brasília e IP) → gerar dossiê e contrato → salvar arquivos ---------- */
+async function ctAssinar(png, ident) {
   const chave = state.ct.modelo, md = MODELOS[chave], v = {...state.ct.v};
   state.ct.etapa = 'gerando'; render();
   try { await Promise.all([loadPdfLibForm(), modeloBytes(md)]); }
   catch (e) { console.error(e); state.ct.etapa = ''; render(); return toast('Não foi possível carregar o modelo do contrato. Verifique a internet e tente de novo.', 'bad'); }
   const id = uid();
-  const {data: row, error} = await sb.from('contratos').insert({id, data: {modelo: chave, modeloNome: md.nome, cliente: (v.proprietario_a || '').trim(), cpf: v.cpf_cnpj || '', imovel: v.endereco || '', campos: v, selfie: !!selfie?.img, geo: selfie?.geo || null}}).select('id,data').single();
+  const {data: row, error} = await sb.from('contratos').insert({id, data: {modelo: chave, modeloNome: md.nome, cliente: (v.proprietario_a || '').trim(), cpf: v.cpf_cnpj || '', imovel: v.endereco || '', campos: v,
+    geo: ident.geo, identidade: {documento: true, semVerso: !!ident.semVerso, selfieComDocumento: true}, aceite: ACEITE_TXT}}).select('id,data').single();
   if (error || !row) { state.ct.etapa = ''; render(); return writeErr(error); }
   const reg = {...row.data, id: row.id};
-  let blob;
-  try { blob = new Blob([await montarContratoPdf(md, v, png, reg, ME, selfie)], {type: 'application/pdf'}); }
-  catch (e) { console.error(e); state.ct.etapa = ''; render(); return toast('Não foi possível gerar o PDF do contrato. Tente de novo.', 'bad'); }
-  state.ct.assinatura = png; state.ct.selfie = selfie?.img || '';
-  state.ct.doc = {id, reg, blob, nome: nomeArquivo(reg)};
+  if (!('ip' in row.data)) toast('Atenção: o banco ainda não grava o IP. Rode no Supabase a migração 20261115100000_contratos_identidade.sql.', 'warn');
+  let blob, dossieBlob, hashDossie, hashContrato;
+  try {
+    dossieBlob = new Blob([await montarDossiePdf(md, reg, ident, png, ME)], {type: 'application/pdf'});
+    hashDossie = await sha256Hex(dossieBlob);
+    blob = new Blob([await montarContratoPdf(md, v, png, reg, ME, hashDossie)], {type: 'application/pdf'});
+    hashContrato = await sha256Hex(blob);
+  } catch (e) { console.error(e); state.ct.etapa = ''; render(); return toast('Não foi possível gerar os documentos. Tente de novo.', 'bad'); }
+  state.ct.assinatura = png; state.ct.ident = {frente: ident.frente, selfie: ident.selfie};
+  state.ct.doc = {id, reg, blob, dossieBlob, hashContrato, hashDossie, nome: nomeArquivo(reg)};
   state.dirty = false;
   await ctSalvarArquivo(state.ct.doc);
 }
 async function ctSalvarArquivo(d) {
   state.ct.etapa = 'enviando'; render();
   try {
-    const path = d.reg.corretorId + '/' + d.id + '.pdf';
-    const up = await sb.storage.from('contratos').upload(path, d.blob, {contentType: 'application/pdf', upsert: false});
-    if (up.error && !/exist|duplicate/i.test(up.error.message || '')) throw up.error;
-    const {data, error} = await sb.from('contratos').update({data: {arquivo: path}}).eq('id', d.id).select('id,data').single();
+    const base = d.reg.corretorId + '/' + d.id, envia = async (path, b) => {
+      const up = await sb.storage.from('contratos').upload(path, b, {contentType: 'application/pdf', upsert: false});
+      if (up.error && !/exist|duplicate/i.test(up.error.message || '')) throw up.error;
+    };
+    await envia(base + '-dossie.pdf', d.dossieBlob);
+    await envia(base + '.pdf', d.blob);
+    const {data, error} = await sb.from('contratos').update({data: {arquivo: base + '.pdf', dossie: true, hashContrato: d.hashContrato, hashDossie: d.hashDossie}}).eq('id', d.id).select('id,data').single();
     if (error) throw error;
     d.reg = {...data.data, id: data.id}; S.contratos.set(d.id, d.reg); DOCS_CACHE.set(d.id, d);
     await prepararLink(d);
@@ -3144,37 +3325,64 @@ async function ctSalvarArquivo(d) {
   }
   if (state.view === 'contratos') render();
 }
-function ctLimpar() { state.ct.v = {}; state.ct.doc = null; state.ct.assinatura = ''; state.ct.selfie = ''; state.ct.etapa = ''; state.dirty = false; }
+function ctLimpar() { state.ct.v = {}; state.ct.doc = null; state.ct.assinatura = ''; state.ct.ident = null; state.ct.etapa = ''; state.dirty = false; }
+async function obterDossie(id) {
+  const d = await obterDoc(id);
+  if (d.dossieBlob) return d.dossieBlob;
+  if (!d.reg.dossie) throw new Error('sem-dossie');
+  const {data, error} = await sb.storage.from('contratos').download(d.reg.dossie); if (error) throw error;
+  d.dossieBlob = data.type === 'application/pdf' ? data : new Blob([data], {type: 'application/pdf'});
+  return d.dossieBlob;
+}
 function ctVer(id) {
   const reg = S.contratos.get(id); if (!reg) return;
-  const c = carimbo(reg);
+  const c = carimbo(reg), temDossie = !!reg.dossie;
   openModal({title: esc(reg.cliente || 'Documento sem nome'), wide: true,
-    body: `<p class="muted small" style="margin:0 0 12px">${esc(reg.modeloNome || '')} · assinado em ${c ? c.txt : '—'} · corretor(a) ${esc(reg.corretorNome || '—')}</p><div class="ct-pdf" id="ct-pdf"><div class="empty">Carregando o documento…</div></div>`,
+    body: `<p class="muted small" style="margin:0 0 6px">${esc(reg.modeloNome || '')} · assinado em ${c ? c.txt : '—'} · corretor(a) ${esc(reg.corretorNome || '—')}${reg.ip ? ` · IP ${esc(reg.ip)}` : ''}</p>
+      ${reg.hashContrato ? `<p class="muted small ct-hash" style="margin:0 0 12px">SHA-256 do contrato: <code>${esc(reg.hashContrato)}</code></p>` : ''}
+      ${temDossie ? `<div class="seg" role="tablist" style="margin-bottom:12px"><button type="button" data-aba-doc="contrato" aria-pressed="true">Contrato</button><button type="button" data-aba-doc="dossie" aria-pressed="false">${ic('lock')}Dossiê de comprovação</button></div>` : ''}
+      <div class="ct-pdf" id="ct-pdf"><div class="empty">Carregando o documento…</div></div>`,
     foot: `${isMaster() ? `<button class="btn danger left" id="cv-del">${ic('trash')}Excluir</button>` : ''}
       <button class="btn" id="cv-down" disabled>${ic('download')}Download</button><button class="btn" id="cv-print" disabled>${ic('printer')}Imprimir</button>
       <button class="btn wa" id="cv-wa" disabled>${ic('whats')}WhatsApp</button><button class="btn" id="cv-mail" disabled>${ic('mail')}E-mail</button>
       <button class="btn primary" data-act="modal-close">Fechar</button>`,
     onMount: m => {
-      let d = null;
-      $('#cv-down', m).onclick = () => d && baixarDoc(d);
-      $('#cv-print', m).onclick = e => d && imprimirDoc(d, e.currentTarget);
-      $('#cv-wa', m).onclick = () => d && whatsappDoc(d);
-      $('#cv-mail', m).onclick = () => d && emailDoc(d);
+      let d = null, aba = 'contrato', dos = null;
+      const box = $('#ct-pdf', m), bWa = $('#cv-wa', m), bMail = $('#cv-mail', m);
+      const docDossie = () => ({...d, blob: dos, nome: d.nome.replace(/\.pdf$/, '-dossie.pdf'), imgs: dos.imgs});
+      $('#cv-down', m).onclick = () => d && (aba === 'dossie' ? dos && baixarDoc(docDossie()) : baixarDoc(d));
+      $('#cv-print', m).onclick = e => d && (aba === 'dossie' ? dos && imprimirDoc(docDossie(), e.currentTarget) : imprimirDoc(d, e.currentTarget));
+      bWa.onclick = () => d && aba === 'contrato' && whatsappDoc(d);
+      bMail.onclick = () => d && aba === 'contrato' && emailDoc(d);
       const del = $('#cv-del', m); if (del) del.onclick = () => ctExcluir(id);
-      obterDoc(id).then(async x => {
+      const mostrar = imgs => { if (m.isConnected) box.innerHTML = imgs.map((s, i) => `<img src="${s}" alt="Página ${i + 1}">`).join(''); };
+      const falhou = () => { if (m.isConnected) box.innerHTML = '<div class="empty"><b>Não foi possível abrir o documento</b>Verifique a internet e tente de novo, ou use Download.</div>'; };
+      const abrirAba = async k => {
+        aba = k; $$('[data-aba-doc]', m).forEach(b => b.setAttribute('aria-pressed', b.dataset.abaDoc === k));
+        // O dossiê tem dados pessoais (documento e selfie): não é enviado por WhatsApp nem e-mail
+        bWa.hidden = bMail.hidden = k === 'dossie';
+        box.innerHTML = '<div class="empty">Carregando o documento…</div>';
+        try {
+          if (k === 'contrato') { mostrar(await imgsImpressao(d)); return; }
+          if (!dos) { dos = await obterDossie(id); }
+          const dd = docDossie(); mostrar(await imgsImpressao(dd)); dos.imgs = dd.imgs;
+        } catch (e) { falhou(); }
+      };
+      $$('[data-aba-doc]', m).forEach(b => b.onclick = () => d && abrirAba(b.dataset.abaDoc));
+      obterDoc(id).then(x => {
         d = x; if (!m.isConnected) return;
         $$('#cv-down, #cv-print, #cv-wa, #cv-mail', m).forEach(b => b.disabled = false);
-        const imgs = await imgsImpressao(d);
-        if (m.isConnected) $('#ct-pdf', m).innerHTML = imgs.map((s, i) => `<img src="${s}" alt="Página ${i + 1} do documento">`).join('');
-      }).catch(() => { if (m.isConnected) $('#ct-pdf', m).innerHTML = '<div class="empty"><b>Não foi possível abrir o documento</b>Verifique a internet e tente de novo, ou use Download.</div>'; });
+        abrirAba('contrato');
+      }).catch(falhou);
     }});
 }
 function ctExcluir(id) {
   if (!isMaster()) return denied();
   const reg = S.contratos.get(id); if (!reg) return;
-  confirmBox(`Excluir definitivamente o documento assinado de <b>${esc(reg.cliente || 'sem nome')}</b>? O PDF também será apagado.`, 'Excluir', async () => {
+  confirmBox(`Excluir definitivamente o documento assinado de <b>${esc(reg.cliente || 'sem nome')}</b>? O contrato e o dossiê de comprovação também serão apagados.`, 'Excluir', async () => {
     if (!(await remove('contratos', id))) return;
-    if (reg.arquivo) await sb.storage.from('contratos').remove([reg.arquivo]).catch(() => {});
+    const arqs = [reg.arquivo, reg.dossie].filter(Boolean);
+    if (arqs.length) await sb.storage.from('contratos').remove(arqs).catch(() => {});
     DOCS_CACHE.delete(id); toast('Documento excluído.');
   });
 }
@@ -3288,7 +3496,7 @@ const ACTIONS = {
   'ct-assinar': () => {
     if (!sb || !CONTRATOS_OK) return toast('O banco ainda não tem a estrutura de contratos. Veja o aviso no topo da tela.', 'warn');
     if (state.ct.doc || state.ct.etapa === 'gerando') return;
-    assinaturaModal((png, selfie) => ctAssinar(png, selfie));
+    assinaturaModal((png, ident) => ctAssinar(png, ident));
   },
   'ct-exportar': () => { if (state.ct.doc) { baixarDoc(state.ct.doc); toast('PDF salvo.'); } },
   'ct-imprimir': el => state.ct.doc && imprimirDoc(state.ct.doc, el),
