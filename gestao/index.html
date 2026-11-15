@@ -439,6 +439,20 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .ass-aceite{margin-top:14px;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.45;padding:12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2)}
 .ass-aceite input{margin-top:2px;flex:none;width:18px;height:18px}
 .ct-hash code{font-size:11.5px;word-break:break-all}
+
+.pill.orange{background:#fdebd8;color:#b4540a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pill.orange{background:#3b2410;color:#f2a35e}}
+.pp-venc{font-size:11.5px;font-weight:700;color:var(--bad);margin-top:4px}
+.pp-termos{margin:10px 0 0;padding-left:20px;font-size:13px;line-height:1.6;display:flex;flex-direction:column;gap:6px}
+.pp-erro{color:var(--bad);font-weight:700}
+.pp-linha{margin:0 0 4px;padding-left:18px;font-size:13px;line-height:1.7}
+.pp-link{margin-top:12px;padding:12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2)}
+.pp-contra-resumo{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);font-size:13.5px;white-space:pre-wrap}
+#publico-root{min-height:100vh;background:var(--bg);padding:24px 16px 48px}
+.pub{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.pub-h{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:var(--r);background:var(--side);color:#fff}
+.pub-h b{display:block;font-family:var(--font-display);font-size:17px}
+.pub-h span{display:block;font-size:12.5px;color:var(--side-muted)}
 #print-root{display:none}
 @media print{
   body.imprimindo > *:not(#print-root){display:none!important}
@@ -604,6 +618,7 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 </head>
 <body>
 <div id="login-root" hidden></div>
+<div id="publico-root" hidden></div>
 <div class="app" hidden>
   <aside class="side" id="side">
     <div class="brand">
@@ -717,7 +732,7 @@ const ic = (n, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentC
 /* =========================================================
    Camada de dados — Supabase (banco, login e tempo real)
    ========================================================= */
-const COLS = ['corretores', 'metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario', 'contratos'];
+const COLS = ['corretores', 'metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario', 'contratos', 'propostas'];
 const TABELAS = ['metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario'];
 const S = {}; COLS.forEach(c => S[c] = new Map());
 let MODE = 'loading', CORR_READY = false;
@@ -748,6 +763,10 @@ async function loadTable(c) {
     const {data, error} = await sb.from('perfis').select('*'); if (error) throw error;
     S.corretores = new Map(data.map(r => [r.id, perfilParaUser(r)])); CORR_READY = true; return;
   }
+  if (c === 'propostas') {
+    const {data, error} = await sb.from('propostas').select('id,data,status,token,token_expira');
+    PROPOSTAS_OK = !error; S.propostas = new Map((data || []).map(r => [r.id, ppReg(r)])); return;
+  }
   if (c === 'contratos') {
     // Tolerante: se a migração de contratos ainda não rodou, o resto do sistema continua funcionando.
     const {data, error} = await sb.from(c).select('id,data');
@@ -771,7 +790,7 @@ async function loadAll() {
   catch (e) { clearTimeout(timer); setSync('stale'); toast('Não foi possível carregar os dados. Verifique a internet e recarregue a página.', 'bad'); }
   if (!canal) {
     canal = sb.channel('mudancas');
-    ['perfis', ...TABELAS, ...(CONTRATOS_OK ? ['contratos'] : [])].forEach(t => canal.on('postgres_changes', {event: '*', schema: 'public', table: t}, () => scheduleReload(t === 'perfis' ? 'corretores' : t)));
+    ['perfis', ...TABELAS, ...(CONTRATOS_OK ? ['contratos'] : []), ...(PROPOSTAS_OK ? ['propostas'] : [])].forEach(t => canal.on('postgres_changes', {event: '*', schema: 'public', table: t}, () => scheduleReload(t === 'perfis' ? 'corretores' : t)));
     canal.subscribe();
   }
 }
@@ -871,7 +890,7 @@ const VIEW_PERM = {diario: 'diario', metas: 'metas', usuarios: 'usuarios', relat
 const canView = v => !VIEW_PERM[v] || can(VIEW_PERM[v]);
 const isMine = id => !!ME && id === ME.id;
 const canOp = corretorId => can('operacaoTodos') || isMine(corretorId);
-const ACT_PERM = {'ct-abrir': 'contratos', 'ct-assinar': 'contratos', 'kb-new': 'conteudo', 'kb-edit': 'conteudo', 'kb-del': 'conteudo', 'tr-new': 'conteudo', 'tr-edit': 'conteudo', 'tr-del': 'conteudo',
+const ACT_PERM = {'ct-abrir': 'contratos', 'ct-assinar': 'contratos', 'pp-assinar': 'contratos', 'pp-editar': 'contratos', 'kb-new': 'conteudo', 'kb-edit': 'conteudo', 'kb-del': 'conteudo', 'tr-new': 'conteudo', 'tr-edit': 'conteudo', 'tr-del': 'conteudo',
   'pt-ordem': 'operacaoTodos', 'mt-copy': 'metasEdit', 'mt-split': 'metasEdit', 'us-novo': 'usuarios', 'us-lista': 'usuarios', 'us-edit': 'usuarios', 'us-limpar': 'usuarios'};
 const denied = () => toast('Seu perfil de acesso não permite esta ação.', 'warn');
 const mastersAtivos = (exceptId) => list('corretores').filter(u => u.id !== exceptId && perfilOf(u) === 'master' && u.ativo !== false && u.senhaHash);
@@ -1044,6 +1063,7 @@ function renderNav() {
   $('#nav').innerHTML = html;
 }
 function render() {
+  if (PUBLICO) return;
   if (ME && !ME.virtual) {
     const fresh = S.corretores.get(ME.id);
     if (CORR_READY && (!fresh || fresh.ativo === false)) { logout('Seu acesso foi desativado ou removido.'); return; }
@@ -2818,7 +2838,8 @@ async function montarContratoPdf(md, valores, assinaturaPng, reg, cor, hashDossi
 }
 
 // Dossiê de comprovação: documento com foto, selfie com documento, assinatura e registro (uso interno)
-async function montarDossiePdf(md, reg, ident, assinaturaPng, cor) {
+async function montarDossiePdf(md, reg, ident, assinaturaPng, cor, opts = {}) {
+  const papel = opts.papel || 'Proprietário(a)', aceite = opts.aceite || ACEITE_TXT, linhaAss = opts.linha || 'PROPRIETÁRIO(A)';
   const {PDFDocument, rgb} = window.PDFLib;
   const pdf = await PDFDocument.create();
   const T = await ferramentasPdf(pdf), {font, bold, limpa, tinta} = T;
@@ -2839,14 +2860,14 @@ async function montarDossiePdf(md, reg, ident, assinaturaPng, cor) {
   };
   let pg = nova(), y = H - 50;
   pg.drawText(limpa('Dossiê de comprovação de identidade'), {x: L, y, size: 16, font: bold, color: T.ouro});
-  y -= 16; pg.drawText(limpa(`${md.titulo} · Código ${reg.id}`), {x: L, y, size: 9, font, color: tinta}); y -= 22;
+  y -= 16; pg.drawText(limpa(`${md.titulo} · ${papel} · Código ${reg.id}`), {x: L, y, size: 9, font, color: tinta}); y -= 22;
   y = T.titulo(pg, 'Registro', L, y, larg);
   y = T.linhas(pg, [
-    ['Proprietário(a)', reg.cliente || '—'], ['CPF/CNPJ', reg.cpf || '—'], ['Imóvel', reg.imovel || '—'],
+    [papel, reg.cliente || '—'], ['CPF/CNPJ', reg.cpf || '—'], ['Imóvel', reg.imovel || '—'],
     ['Data e hora', `${c.txt} (horário de Brasília, registrado pelo servidor)`],
     ['IP do dispositivo', reg.ip || 'não identificado'],
     ['Local', g.endereco || 'endereço não identificado'], ['Coordenadas', geoTxt(g)],
-    ['Autorização', `marcou "${ACEITE_TXT}"`],
+    ['Autorização', `marcou "${aceite}"`],
     ['Corretor(a) responsável', limpa(cor?.nome) || '—'],
     ['Aparelho', navigator.userAgent]
   ], L, y, larg, 8.5);
@@ -2861,7 +2882,7 @@ async function montarDossiePdf(md, reg, ident, assinaturaPng, cor) {
   y = T.titulo(pg, 'Assinatura', L, y - 22, larg);
   y = await imagem(pg, assinaturaPng, L + larg / 4, y, larg / 2, 90, '', false);
   pg.drawLine({start: {x: L + larg / 4, y: y - 4}, end: {x: L + larg * 3 / 4, y: y - 4}, thickness: 0.8, color: tinta});
-  const lb = 'PROPRIETÁRIO(A)'; pg.drawText(lb, {x: (W - bold.widthOfTextAtSize(lb, 8.5)) / 2, y: y - 16, size: 8.5, font: bold, color: tinta});
+  const lb = limpa(linhaAss); pg.drawText(lb, {x: (W - bold.widthOfTextAtSize(lb, 8.5)) / 2, y: y - 16, size: 8.5, font: bold, color: tinta});
   pdf.setTitle(limpa(`Dossiê de comprovação · ${reg.cliente || reg.id}`)); pdf.setCreator('Imobiliária 2.0 · Gestão comercial'); pdf.setProducer('Imobiliária 2.0 · Gestão comercial');
   return pdf.save();
 }
@@ -3004,6 +3025,7 @@ function ctHomeHTML() {
   const docs = docsAssinados().filter(r => !q || [r.cliente, r.corretorNome, r.modeloNome, r.cpf].join(' ').toLowerCase().includes(q));
   return `<section class="card"><div class="card-h"><h3>Modelos de contrato</h3><span class="hint">Escolha o modelo para preencher e colher a assinatura</span></div>
     <div class="card-b"><div class="ct-modelos">${Object.entries(MODELOS).map(([k, m]) => `<button class="ct-modelo" data-act="ct-abrir" data-m="${k}"><span class="ct-ic">${ic('sign')}</span><span><b>${esc(m.nome)}</b><small>${esc(m.desc)}</small></span>${ic('right')}</button>`).join('')}</div></div></section>
+  ${ppListaHTML()}
   <section class="card"><div class="card-h"><h3>Todos os Documentos Assinados</h3><span class="hint">${docs.length} documento(s)${can('equipe') ? '' : ' gerados por você'}</span></div>
     <div class="card-b stack">
       <div style="position:relative;max-width:420px"><input class="input" id="ct-q" placeholder="Buscar por cliente ou corretor" value="${esc(state.ct.busca)}" style="padding-left:38px" aria-label="Buscar documentos"><span style="position:absolute;left:12px;top:11px;width:18px;color:var(--muted)">${ic('search')}</span></div>
@@ -3055,15 +3077,17 @@ VIEWS.contratos = {
   actions: () => state.ct.modelo ? `<button class="btn" data-act="ct-voltar">${ic('left')}Modelos de contrato</button>` : '',
   html() {
     const aviso = CONTRATOS_OK ? '' : `<div class="banner">${ic('info')}<span>O banco ainda não tem a estrutura de contratos. Rode no Supabase (SQL Editor) o arquivo <b>supabase/migrations/20261114120000_contratos.sql</b>.</span></div>`;
-    return aviso + (state.ct.modelo ? ctFormHTML() : ctHomeHTML());
+    return aviso + (!state.ct.modelo ? ctHomeHTML() : MODELOS[state.ct.modelo].tipo === 'proposta' ? ppFormHTML() : ctFormHTML());
   },
   mount() {
     const q = $('#ct-q');
     if (q) q.oninput = () => { state.ct.busca = q.value; const pos = q.selectionStart; render(); const n = $('#ct-q'); n.focus(); n.setSelectionRange(pos, pos); };
     $$('#view [data-ct]').forEach(el => { el.oninput = () => {
       if (el.dataset.mask) { const nv = ctMascara(el.dataset.mask, el.value); if (nv !== el.value) el.value = nv; }
-      state.ct.v[el.dataset.ct] = el.value;
+      if (MODELOS[state.ct.modelo]?.tipo === 'proposta') { if (state.pp && !state.pp.travada) { state.pp.v[el.dataset.ct] = el.value; ppAgendarSalvar(); } }
+      else state.ct.v[el.dataset.ct] = el.value;
     }; });
+    if (MODELOS[state.ct.modelo]?.tipo === 'proposta') { ppIndicador(); loadPdfLibForm().catch(() => {}); modeloBytes(PROPOSTA).catch(() => {}); return; }
     if (state.ct.modelo && !state.ct.doc) { loadPdfLibForm().catch(() => {}); modeloBytes(MODELOS[state.ct.modelo]).catch(() => {}); }
   }
 };
@@ -3105,30 +3129,30 @@ function lerFoto(file, max) {
     im.src = url;
   });
 }
-function assinaturaModal(onSave) {
+function assinaturaModal(onSave, opts = {}) {
   const slotHTML = (k, rot) => `<div class="id-slot" data-slot="${k}">
       <div class="id-prev" id="prev-${k}"><div class="id-vazio">${ic(k === 'selfie' ? 'camera' : 'file')}<span>${rot}</span></div></div>
       <div class="row id-acts" id="acts-${k}"></div></div>`;
-  openModal({title: 'Assinatura do(a) proprietário(a)', wide: true,
+  openModal({title: esc(opts.titulo || 'Assinatura do(a) proprietário(a)'), wide: true,
     body: `<ol class="ass-passos" id="ass-passos">
         <li data-p="1"><button type="button" data-ir="1"><b>1</b><span>Documento com foto</span></button></li>
         <li data-p="2"><button type="button" data-ir="2"><b>2</b><span>Selfie com o documento</span></button></li>
         <li data-p="3"><button type="button" data-ir="3"><b>3</b><span>Assinatura</span></button></li></ol>
       <div class="sf-geo" id="ass-geo"></div>
       <section data-passo="1">
-        <p class="ass-inst">Fotografe ou anexe um <b>documento oficial com foto</b> do(a) proprietário(a) (CNH, RG ou outro). Envie a <b>frente</b> e o <b>verso</b>.</p>
+        <p class="ass-inst">Fotografe ou anexe um <b>documento oficial com foto</b> de quem vai assinar (CNH, RG ou outro). Envie a <b>frente</b> e o <b>verso</b>.</p>
         <div class="id-grid">${slotHTML('frente', 'Frente do documento')}${slotHTML('verso', 'Verso do documento')}</div>
         <label class="check" style="margin-top:12px"><input type="checkbox" id="sem-verso">Documento sem verso (ex.: CNH digital impressa)</label>
       </section>
       <section data-passo="2" hidden>
-        <p class="ass-inst">O(A) proprietário(a) tira uma <b>selfie segurando o documento</b> ao lado do rosto, com a foto do documento visível. A foto é tirada pela câmera, na hora.</p>
+        <p class="ass-inst">Quem vai assinar tira uma <b>selfie segurando o documento</b> ao lado do rosto, com a foto do documento visível. A foto é tirada pela câmera, na hora.</p>
         ${slotHTML('selfie', 'A câmera frontal abre aqui')}
       </section>
       <section data-passo="3" hidden>
         <p class="ass-inst">Assine com o dedo, a caneta (Apple Pencil) ou o mouse dentro da área branca.</p>
         <div class="sig-wrap"><div class="sig-line"></div><span class="sig-hint" id="sig-hint">Assine aqui</span><canvas id="sig" aria-label="Área para assinar"></canvas></div>
         <div class="row" style="margin-top:10px"><button type="button" class="btn sm" id="sig-clear">${ic('trash')}Limpar assinatura</button></div>
-        <label class="check ass-aceite"><input type="checkbox" id="ass-aceite"><span>${esc(ACEITE_TXT)}</span></label>
+        <label class="check ass-aceite"><input type="checkbox" id="ass-aceite"><span>${esc(opts.aceite || ACEITE_TXT)}</span></label>
       </section>`,
     foot: `<button class="btn left" id="ass-voltar">${ic('left')}Voltar</button><button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="ass-avancar">Continuar${ic('right')}</button>`,
     onMount: m => {
@@ -3388,6 +3412,418 @@ function ctExcluir(id) {
 }
 
 /* =========================================================
+   Propostas de Compra (com link público para o proprietário)
+   ========================================================= */
+const ACEITE_PROPOSTA = 'Li e autorizo a assinatura eletrônica desta proposta, nos termos da cláusula de assinatura eletrônica.';
+const CLAUSULA_PROPOSTA = 'O(A) PROPONENTE e o(a) PROPRIETÁRIO(A) declaram que leram este instrumento e autorizam, de forma livre e expressa, que ele seja assinado eletronicamente, reconhecendo como válidas e de sua autoria as assinaturas realizadas por meio do sistema da intermediadora, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2/2001. Declaram ainda que apresentaram documento oficial com foto e selfie segurando o documento para comprovação de sua identidade, e consentem com o registro de data, hora, endereço IP, localização e coordenadas geográficas do dispositivo utilizado, bem como com o tratamento desses dados exclusivamente para comprovação destas assinaturas, conforme a Lei nº 13.709/2018 (LGPD).';
+const PROPOSTA = {
+  chave: 'proposta-compra', tipo: 'proposta', nome: 'Proposta de Compra', titulo: 'Proposta para Compra de Imóvel', arquivo: 'modelos/proposta-compra.pdf',
+  desc: 'O comprador assina aqui; o proprietário aceita ou faz contra-proposta por link.',
+  secoes: [
+    {t: 'Dados do imóvel', campos: [{n: 'ref_imovel', l: 'Ref. imóvel'}, {n: 'imovel', l: 'Imóvel', span: 1}]},
+    {t: 'Dados do proponente', campos: [{n: 'nome', l: 'Nome completo', span: 1, ac: 'name'}, {n: 'cpf_cnpj', l: 'CPF/CNPJ', mask: 'doc', im: 'numeric'}, {n: 'telefone_ou_e_mail', l: 'Telefone ou e-mail'}]},
+    {t: 'Dados do cônjuge', campos: [{n: 'nome_2', l: 'Nome', span: 1}, {n: 'cpf', l: 'CPF', mask: 'doc', im: 'numeric'}, {n: 'telefone_ou_e_mail_2', l: 'Telefone ou e-mail'}]},
+    {t: 'Condições de negociação', campos: [{n: 'valor_total', l: 'Valor total', mask: 'money', im: 'numeric'}, {n: 'condicoes_de_pagamento', l: 'Condições de pagamento', area: true, span: 1}, {n: 'condicoes_gerais', l: 'Condições gerais', area: true, span: 1}]}
+  ],
+  intro: 'Por este instrumento, fica a empresa <b>PATRIMONIO GESTÃO DE BENS LONDRINA</b>, inscrita no CNPJ sob nº 64.068.053/0001-27, portadora do <b>CRECI sob o nº J9323</b>, com endereço sito à Rua Bento Munhoz da Rocha Neto Nº 2555 Sala 01 e 02, Jardim do Lago - Londrina/PR, autorizada a transmitir ao(s) proprietário(s) do imóvel abaixo descrito, proposta para a compra da referida propriedade, respeitando os seguintes termos:',
+  termos: [
+    'Esta proposta submete-se ao disposto nos artigos 722 a 729 da Lei nº 10.406/2002, destacando-se a obrigação da Imobiliária de executar a mediação com a diligência e a prudência que o negócio requer, prestando, espontaneamente, todas as informações sobre o andamento de negociações, especialmente acerca da segurança ou riscos envolvidos, das alterações de valores e do mais que possa influir nos resultados desta incumbência;',
+    'Aceita a proposta, autorizo a Imobiliária a providenciar o recibo de sinal de negócio (arras) e contrato de compra e venda, para assinatura das partes, comprometendo-me a apresentar e/ou pagar eventuais despesas para a preparação da documentação necessária à efetivação da transação;',
+    'O (s) proprietário (s) pagará (ão) a <b>PATRIMONIO GESTÃO DE BENS LONDRINA</b> a comissão de <b>6%</b> (seis por cento) sobre o valor da presente transação, sendo que poderá haver o rateio de pagamento da comissão entre proprietário(s) e comprador(es), mediante aceitação expressa da intermediadora, a depender da modalidade do negócio imobiliário.',
+    'Caso a proposta não seja aceita em até <b>05 (cinco) dias úteis</b> fica(m) o(s) proponente(s) desobrigado(s) de todas as condições ora estabelecidas.',
+    'Em caso de aceite da presente proposta por ambas as partes, e havendo posterior desistência imotivada por qualquer delas, a parte desistente pagará à parte prejudicada e a imobiliária, multa compensatória equivalente a <b>10% (dez por cento)</b> do valor total do negócio, sem prejuízo de eventuais perdas e danos, quando cabíveis.',
+    'Após o aceite da proposta, as partes terão o prazo de <b>até 05 dias úteis</b> para providenciar a documentação necessária ao contrato de Compra e Venda.'
+  ],
+  // Caixas dos campos no PDF (pontos; origem no canto inferior esquerdo): [x1, y1, x2, y2]
+  caixas: {
+    ref_imovel: [0, 100, 451, 557, 466], imovel: [0, 79, 432, 557, 447], nome: [0, 75, 383, 557, 398], cpf_cnpj: [0, 96, 364, 557, 379],
+    telefone_ou_e_mail: [0, 132, 345, 557, 360], nome_2: [0, 75, 295, 557, 310], cpf: [0, 68, 276, 295, 291], telefone_ou_e_mail_2: [0, 394, 276, 557, 291],
+    valor_total: [0, 95, 227, 557, 242], condicoes_de_pagamento: [0, 39, 177, 557, 210], condicoes_gerais: [0, 128, 142, 557, 173], data: [0, 446, 116, 554, 130],
+    valor_total_2: [1, 95, 725, 557, 740], condicoes_de_pagamento_2: [1, 39, 660, 557, 708], condicoes_gerais_2: [1, 39, 595, 557, 643], londrina: [1, 422, 449, 559, 464]
+  },
+  // Linhas de assinatura (distância do topo da página, em pontos)
+  linhas: {proponente: [0, 46, 287, 765.5], contraProprietario: [1, 46.5, 287.5, 305], aceiteProprietario: [1, 46, 287, 446.5], aceiteProponente: [1, 307.5, 548.5, 446.5]},
+  registroTopo: 478
+};
+MODELOS[PROPOSTA.chave] = PROPOSTA;
+const PP_STATUS = {
+  aguardando_assinaturas: ['Aguardando assinaturas', 'bad'], aguardando_aceite: ['Aguardando aceite', 'warn'],
+  contraproposta: ['Contra-proposta recebida', 'orange'], concluido: ['Concluído', 'ok'], cancelada: ['Cancelada', 'neutral']
+};
+let PROPOSTAS_OK = true;
+const ppPill = r => { const [t, k] = PP_STATUS[r.status] || ['—', 'neutral']; return `<span class="pill ${k}">${t}</span>`; };
+const ppVencido = r => (r.status === 'aguardando_aceite' || r.status === 'contraproposta') && r.token_expira && new Date(r.token_expira) < new Date();
+const ppLink = tk => `${location.origin}${location.pathname}?proposta=${tk}`;
+const dataLonga = c => `${+c.D} de ${MESES[c.M - 1]} de ${c.Y}`;
+const dataHoraBr = iso => iso ? new Date(iso).toLocaleString('pt-BR', {timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : '—';
+const propostasLista = () => list('propostas').sort((a, b) => (b.criadoTs || 0) - (a.criadoTs || 0));
+
+/* ---------- PDF da proposta ---------- */
+// Escreve um texto dentro de uma caixa do modelo, reduzindo a fonte e quebrando linhas se precisar
+function textoNaCaixa(pdf, T, nome, txt) {
+  const [pi, x1, y1, x2, y2] = PROPOSTA.caixas[nome], pg = pdf.getPages()[pi];
+  const pars = String(txt || '').split(/\r?\n/).map(s => T.limpa(s)).filter((s, i, a) => s || (i && i < a.length - 1));
+  if (!pars.some(Boolean)) return;
+  const larg = x2 - x1 - 6, alt = y2 - y1 - 2;
+  let sz = 9, linhas = [];
+  for (; sz >= 5; sz -= 0.5) {
+    linhas = pars.flatMap(p => p ? T.quebra(p, T.font, sz, larg) : ['']);
+    if (linhas.length * sz * 1.18 <= alt) break;
+  }
+  const lh = sz * 1.18, cabem = Math.max(1, Math.floor(alt / lh));
+  if (linhas.length > cabem) { linhas = linhas.slice(0, cabem); linhas[cabem - 1] = linhas[cabem - 1].replace(/.{0,2}$/, '…'); }
+  let y = linhas.length === 1 ? y1 + (y2 - y1 - sz) / 2 + sz * 0.22 : y2 - 1.5 - sz;
+  for (const l of linhas) { pg.drawText(l, {x: x1 + 3, y, size: sz, font: T.font, color: T.tinta}); y -= lh; }
+}
+async function assinaturaNaLinha(pdf, png, chave) {
+  const [pi, x0, x1, linha] = PROPOSTA.linhas[chave], pg = pdf.getPages()[pi], H = pg.getHeight();
+  const img = await pdf.embedPng(png), bw = x1 - x0 - 8, bh = 46, k = Math.min(bw / img.width, bh / img.height), w = img.width * k, h = img.height * k;
+  pg.drawImage(img, {x: x0 + (x1 - x0 - w) / 2, y: H - linha + 2, width: w, height: h});
+}
+// Bloco do registro de uma assinatura (colunas na página 2)
+function blocoRegistro(pdf, T, col, titulo, a, hashDossie) {
+  const pg = pdf.getPages()[1], H = pg.getHeight(), W = pg.getWidth(), t0 = PROPOSTA.registroTopo;
+  // Colunas: 1 = proponente, 2 = proprietário (lado a lado); 3 = aceite da contra-proposta (abaixo, largura total)
+  const [x, larg, topo] = {1: [36, 255, t0 + 96], 2: [304, 255, t0 + 96], 3: [36, W - 72, t0 + 206]}[col], g = a.geo || {}, c = carimbo(a);
+  pg.drawText(T.limpa(titulo), {x, y: H - topo - 8, size: 8, font: T.bold, color: T.ouro});
+  const sz = 6.8, lh = sz + 2.6; let y = H - topo - 12 - sz;
+  for (const [rot, val] of [
+    ['Nome', a.nome || '—'], ['CPF/CNPJ', a.cpf || '—'],
+    ['Data e hora', c ? `${c.txt} (Brasília, servidor)` : '—'], ['IP', a.ip || 'não identificado'],
+    ['Local', g.endereco || 'não identificado'], ['Coordenadas', geoTxt(g)],
+    ['Identificação', 'documento com foto e selfie com o documento (dossiê)'],
+    ['Dossiê (SHA-256)', hashDossie ? hashDossie.slice(0, 32) + ' ' + hashDossie.slice(32) : '—']]) {
+    const r0 = T.limpa(rot) + ': ', wr = T.bold.widthOfTextAtSize(r0, sz);
+    pg.drawText(r0, {x, y, size: sz, font: T.bold, color: T.tinta});
+    T.quebra(val, T.font, sz, larg, wr).forEach((l, i) => { pg.drawText(l, {x: x + (i ? 0 : wr), y, size: sz, font: T.font, color: T.tinta}); y -= lh; });
+  }
+}
+// Etapa 1: página 1 preenchida + assinatura do proponente; página 2 com a cláusula e o registro
+async function ppPdfEtapa1(v, png, prop, hashDossie) {
+  const {PDFDocument} = window.PDFLib;
+  const pdf = await PDFDocument.load(await modeloBytes(PROPOSTA));
+  const T = await ferramentasPdf(pdf), form = pdf.getForm();
+  form.getFields().forEach(f => { try { f.setText && f.setText(''); } catch (e) {} });
+  form.updateFieldAppearances(T.font); form.flatten();
+  const a = prop.proponenteAss, c = carimbo(a);
+  ['ref_imovel', 'imovel', 'nome', 'cpf_cnpj', 'telefone_ou_e_mail', 'nome_2', 'cpf', 'telefone_ou_e_mail_2', 'valor_total', 'condicoes_de_pagamento', 'condicoes_gerais']
+    .forEach(n => textoNaCaixa(pdf, T, n, v[n]));
+  textoNaCaixa(pdf, T, 'data', dataLonga(c));
+  await assinaturaNaLinha(pdf, png, 'proponente');
+  const pg = pdf.getPages()[1], H = pg.getHeight(), L = 36, larg = pg.getWidth() - 72;
+  let y = T.titulo(pg, 'Cláusula de assinatura eletrônica', L, H - PROPOSTA.registroTopo, larg);
+  y = T.paragrafo(pg, CLAUSULA_PROPOSTA, L, y, larg, 7.4, 9.6);
+  T.titulo(pg, `Registro das assinaturas eletrônicas · Proposta ${prop.id}`, L, H - PROPOSTA.registroTopo - 80, larg, 9);
+  blocoRegistro(pdf, T, 1, 'PROPONENTE · assinou a proposta', {...a, nome: v.nome, cpf: v.cpf_cnpj}, hashDossie);
+  pdf.setTitle(T.limpa(`${PROPOSTA.titulo} · ${v.nome || prop.id}`)); pdf.setCreator('Imobiliária 2.0 · Gestão comercial'); pdf.setProducer('Imobiliária 2.0 · Gestão comercial');
+  return pdf.save();
+}
+// Etapa 2 (link público): contra-proposta, aceite do proprietário ou aceite da contra-proposta pelo proponente
+async function ppPdfEtapa2(bytes, acao, contra, png, a, hashDossie) {
+  const {PDFDocument} = window.PDFLib;
+  const pdf = await PDFDocument.load(bytes);
+  const T = await ferramentasPdf(pdf), c = carimbo(a);
+  if (acao === 'contraproposta') {
+    ['valor_total_2', 'condicoes_de_pagamento_2', 'condicoes_gerais_2'].forEach(n => textoNaCaixa(pdf, T, n, contra[n]));
+    await assinaturaNaLinha(pdf, png, 'contraProprietario');
+    blocoRegistro(pdf, T, 2, 'PROPRIETÁRIO(A) · fez contra-proposta', a, hashDossie);
+  } else if (acao === 'aceite') {
+    textoNaCaixa(pdf, T, 'londrina', dataLonga(c));
+    await assinaturaNaLinha(pdf, png, 'aceiteProprietario');
+    blocoRegistro(pdf, T, 2, 'PROPRIETÁRIO(A) · aceitou a proposta', a, hashDossie);
+  } else {
+    textoNaCaixa(pdf, T, 'londrina', dataLonga(c));
+    await assinaturaNaLinha(pdf, png, 'aceiteProponente');
+    blocoRegistro(pdf, T, 3, 'PROPONENTE · aceitou a contra-proposta', a, hashDossie);
+  }
+  return pdf.save();
+}
+const ppEnviar = async (path, blob) => {
+  const up = await sb.storage.from('contratos').upload(path, blob, {contentType: 'application/pdf', upsert: false});
+  if (up.error && !/exist|duplicate/i.test(up.error.message || '')) throw up.error;
+};
+const blobPdf = bytes => new Blob([bytes], {type: 'application/pdf'});
+
+/* ---------- Dados (sistema) ---------- */
+const ppReg = row => ({...(row.data || {}), id: row.id, status: row.status, token: row.token, token_expira: row.token_expira});
+let ppTimer = null;
+function ppAgendarSalvar() { clearTimeout(ppTimer); state.pp.pendente = true; ppTimer = setTimeout(() => ppSalvar(), 900); }
+async function ppSalvar(forcar) {
+  clearTimeout(ppTimer);
+  const p = state.pp; if (!p || (!p.pendente && !forcar) || p.travada) return !!p?.id;
+  const v = {...p.v}, id = p.id || uid();
+  if (!p.id && !Object.values(v).some(x => String(x || '').trim()) && !forcar) return false;
+  p.pendente = false; p.salvando = true; ppIndicador();
+  const {data, error} = await sb.from('propostas').upsert({id, data: {modelo: PROPOSTA.chave, campos: v, proponente: (v.nome || '').trim(), imovel: (v.imovel || v.ref_imovel || '').trim(), valor: v.valor_total || ''}}).select('id,data,status,token,token_expira').single();
+  p.salvando = false;
+  if (error) { p.pendente = true; ppIndicador('erro'); writeErr(error); return false; }
+  p.id = data.id; p.salvoEm = Date.now(); S.propostas.set(data.id, ppReg(data)); ppIndicador();
+  return true;
+}
+function ppIndicador(erro) {
+  const el = $('#pp-salvo'); if (!el || !state.pp) return;
+  const p = state.pp;
+  el.textContent = erro ? 'Não salvo — verifique a internet' : p.salvando ? 'Salvando…' : p.salvoEm ? `Salvo às ${new Date(p.salvoEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}` : p.id ? 'Salvo' : 'Ainda não salvo';
+  el.className = 'small ' + (erro ? 'pp-erro' : 'muted');
+}
+function ppNova() { state.pp = {id: null, v: {}, pendente: false, salvando: false, salvoEm: 0, etapa: '', doc: null}; }
+function ppAbrirRascunho(id) {
+  const r = S.propostas.get(id); if (!r) return;
+  state.pp = {id, v: {...(r.campos || {})}, pendente: false, salvando: false, salvoEm: r.criadoTs || 0, etapa: '', doc: null, travada: !!r.proponenteAss};
+  state.ct.modelo = PROPOSTA.chave; render(); window.scrollTo(0, 0);
+}
+
+/* ---------- Telas (sistema) ---------- */
+function ppListaHTML() {
+  const q = state.ct.busca.toLowerCase();
+  const itens = propostasLista().filter(r => !q || [r.proponente, r.imovel, r.corretorNome, PP_STATUS[r.status]?.[0]].join(' ').toLowerCase().includes(q));
+  return `<section class="card"><div class="card-h"><h3>Propostas realizadas</h3><span class="hint">${itens.length} proposta(s)${can('equipe') ? '' : ' suas'}</span></div>
+    <div class="card-b stack">
+    ${PROPOSTAS_OK ? '' : `<div class="banner">${ic('info')}<span>O banco ainda não tem a estrutura de propostas. Rode no Supabase (SQL Editor) o arquivo <b>supabase/migrations/20261115140000_propostas.sql</b>.</span></div>`}
+    ${itens.length ? `<div class="tbl-wrap"><table class="t ct-docs pp-tab"><thead><tr><th>Proponente</th><th>Valor</th><th>Status</th><th>Corretor</th><th class="r">Proposta</th></tr></thead><tbody>
+      ${itens.map(r => `<tr>
+        <td><b>${r.proponente ? esc(r.proponente) : '<span class="muted">Sem nome</span>'}</b><div class="muted small">${esc(r.imovel || '')}${r.criadoTs ? ` · criada em ${new Date(r.criadoTs).toLocaleDateString('pt-BR', {timeZone: TZ})}` : ''}</div></td>
+        <td data-l="Valor">${esc(r.valor || '—')}</td>
+        <td data-l="Status">${ppPill(r)}${ppVencido(r) ? '<div class="pp-venc">link vencido</div>' : ''}</td>
+        <td data-l="Corretor">${esc(r.corretorNome || corretor(r.corretorId)?.nome || '—')}</td>
+        <td class="r"><div class="row" style="justify-content:flex-end;gap:6px;flex-wrap:nowrap">${r.status === 'aguardando_assinaturas' && r.corretorId === ME.id
+          ? `<button class="btn sm" data-act="pp-editar" data-id="${r.id}">${ic('edit')}Continuar</button>` : ''}<button class="btn sm" data-act="pp-ver" data-id="${r.id}">${ic('eye')}Abrir</button></div></td></tr>`).join('')}
+    </tbody></table></div>` : `<div class="empty"><b>Nenhuma proposta ainda</b>Use o modelo <b>Proposta de Compra</b> acima para criar a primeira.</div>`}
+    </div></section>`;
+}
+function ppFormHTML() {
+  const p = state.pp, v = p.v, et = p.etapa, trava = !!p.travada;
+  const campo = c => c.area
+    ? `<div class="field${c.span ? ' span-2' : ''}"><label for="ct-${c.n}">${esc(c.l)}</label><textarea class="input" id="ct-${c.n}" data-ct="${c.n}" maxlength="1500" rows="4" ${trava ? 'readonly' : 'data-guard'}>${esc(v[c.n])}</textarea></div>`
+    : ctCampoHTML(c, v, trava);
+  return `<div class="ct-form">
+    ${trava ? `<div class="banner">${ic('info')}<span class="grow">A assinatura do proponente foi iniciada mas não terminou de ser salva. Os campos ficam bloqueados; toque em <b>Assinar (proponente)</b> para assinar de novo.</span></div>` : ''}
+    <div class="banner">${ic('info')}<span class="grow">Preencha a proposta do comprador; nenhum campo é obrigatório. Ela é <b>salva automaticamente</b> em Propostas realizadas. Depois toque em <b>Assinar (proponente)</b>: o comprador envia o documento com foto, tira a selfie e assina. Em seguida o sistema gera o <b>link para o proprietário</b>.</span><span id="pp-salvo" class="small muted"></span></div>
+    <section class="card"><div class="card-h"><h3>${esc(PROPOSTA.titulo)}</h3></div><div class="card-b"><p class="ct-texto">${PROPOSTA.intro}</p><ol class="pp-termos">${PROPOSTA.termos.map(t => `<li>${t}</li>`).join('')}</ol></div></section>
+    ${PROPOSTA.secoes.map(s => `<section class="card"><div class="card-h"><h3>${esc(s.t)}</h3></div><div class="card-b ct-grid">${s.campos.map(campo).join('')}</div></section>`).join('')}
+    <section class="card"><div class="card-h"><h3>Cláusula de assinatura eletrônica</h3></div><div class="card-b"><p class="ct-texto">${esc(CLAUSULA_PROPOSTA)}</p></div></section>
+    <div class="ct-bar">
+      <button class="btn primary" data-act="pp-assinar" ${et === 'gerando' || et === 'enviando' ? 'disabled' : ''}>${ic('sign')}${et === 'gerando' ? 'Gerando documento…' : et === 'enviando' ? 'Salvando no servidor…' : 'Assinar (proponente)'}</button>
+      <button class="btn" data-act="pp-salvar">${ic('download')}Salvar rascunho</button>
+      ${et === 'erro' ? `<button class="btn danger" data-act="pp-reenviar">Tentar salvar de novo</button>` : ''}
+    </div>
+  </div>`;
+}
+
+/* ---------- Assinatura do proponente (no aparelho do corretor) ---------- */
+async function ppAssinar(png, ident) {
+  const p = state.pp; if (!p) return;
+  const r0 = p.id ? S.propostas.get(p.id) : null;
+  if (!r0?.proponenteAss && !(await ppSalvar(true))) return toast('Não foi possível salvar a proposta antes de assinar. Verifique a internet.', 'bad');
+  p.etapa = 'gerando'; p.travada = true; render();
+  try { await Promise.all([loadPdfLibForm(), modeloBytes(PROPOSTA)]); }
+  catch (e) { p.etapa = ''; p.travada = false; render(); return toast('Não foi possível carregar o modelo. Verifique a internet e tente de novo.', 'bad'); }
+  const {data: c1, error} = await sb.rpc('proposta_carimbar_proponente', {p_id: p.id, p_geo: ident.geo, p_identidade: {documento: true, semVerso: !!ident.semVerso, selfieComDocumento: true, aceite: ACEITE_PROPOSTA}});
+  if (error || !c1) { p.etapa = ''; p.travada = false; render(); return writeErr(error); }
+  const prop = {...c1.data, id: c1.id}, v = prop.campos || p.v, a = prop.proponenteAss;
+  try {
+    const regDossie = {id: prop.id, cliente: v.nome, cpf: v.cpf_cnpj, imovel: v.imovel || v.ref_imovel, ip: a.ip, geo: a.geo, assinadoLocal: a.assinadoLocal};
+    const dossie = blobPdf(await montarDossiePdf(PROPOSTA, regDossie, ident, png, ME, {papel: 'Proponente', aceite: ACEITE_PROPOSTA, linha: 'PROPONENTE'}));
+    const hd = await sha256Hex(dossie);
+    const pdf = blobPdf(await ppPdfEtapa1(v, png, prop, hd));
+    p.doc = {id: prop.id, token: c1.token, cid: prop.corretorId, pdf, dossie, hp: await sha256Hex(pdf), hd};
+  } catch (e) { console.error(e); p.etapa = ''; p.travada = false; render(); return toast('Não foi possível gerar os documentos. Tente de novo.', 'bad'); }
+  await ppEnviarProponente();
+}
+async function ppEnviarProponente() {
+  const p = state.pp, d = p?.doc; if (!d) return;
+  p.etapa = 'enviando'; render();
+  try {
+    const base = `${d.cid}/propostas/${d.id}`;
+    await ppEnviar(`${base}-dossie-proponente.pdf`, d.dossie);
+    await ppEnviar(`${base}-${d.token}-proposta.pdf`, d.pdf);
+    const {data, error} = await sb.rpc('proposta_finalizar_proponente', {p_id: d.id, p_hash_pdf: d.hp, p_hash_dossie: d.hd});
+    if (error) throw error;
+    S.propostas.set(d.id, ppReg({id: data.id, data: data.data, status: data.status, token: data.token, token_expira: data.token_expira}));
+    PP_CACHE.set(d.id + '|' + data.data.arquivos.atual, d.pdf);
+    state.pp = null; state.ct.modelo = null; state.dirty = false; render(); window.scrollTo(0, 0);
+    toast('Proposta assinada pelo proponente. Envie o link para o proprietário.');
+    ppVer(d.id);
+  } catch (e) {
+    console.error(e); p.etapa = 'erro'; render();
+    toast('A proposta foi assinada, mas não foi salva no servidor. Toque em "Tentar salvar de novo".', 'bad');
+  }
+}
+
+/* ---------- Detalhe da proposta: link, documentos e status ---------- */
+const PP_CACHE = new Map();
+async function ppBaixarArquivo(id, path) {
+  const k = id + '|' + path; if (PP_CACHE.has(k)) return PP_CACHE.get(k);
+  const {data, error} = await sb.storage.from('contratos').download(path); if (error) throw error;
+  const b = data.type === 'application/pdf' ? data : blobPdf(data); PP_CACHE.set(k, b); return b;
+}
+function ppMensagem(r) {
+  const c = r.token_expira ? new Date(r.token_expira).toLocaleDateString('pt-BR', {timeZone: TZ}) : '';
+  return r.status === 'contraproposta'
+    ? `Olá! O proprietário respondeu com uma contra-proposta para o imóvel ${r.imovel || ''}. Para ver e aceitar, acesse o link (válido até ${c}):\n${ppLink(r.token)}`
+    : `Olá! Segue a proposta de compra do imóvel ${r.imovel || ''} para sua análise. Pelo link você pode aceitar ou fazer uma contra-proposta (válido até ${c}):\n${ppLink(r.token)}`;
+}
+function ppVer(id) {
+  const r = S.propostas.get(id); if (!r) return;
+  const arq = r.arquivos || {}, ativo = (r.status === 'aguardando_aceite' || r.status === 'contraproposta') && r.token;
+  const linha = (rot, a) => a ? `<li><b>${rot}</b> · ${a.assinadoLocal ? carimbo(a).txt : '—'}${a.ip ? ` · IP ${esc(a.ip)}` : ''}${a.nome ? ` · ${esc(a.nome)}` : ''}</li>` : '';
+  const docs = [['atual', 'Documento atual', arq.atual], ['dossieProponente', 'Dossiê do proponente', arq.dossieProponente], ['dossieProprietario', 'Dossiê do proprietário', arq.dossieProprietario], ['dossieProponenteAceite', 'Dossiê do aceite da contra-proposta', arq.dossieProponenteAceite]].filter(x => x[2]);
+  openModal({title: `Proposta · ${esc(r.proponente || 'sem nome')}`, wide: true,
+    body: `<div class="row" style="margin-bottom:10px">${ppPill(r)}${ppVencido(r) ? '<span class="pill bad">Link vencido</span>' : ''}<span class="muted small">${esc(r.imovel || '')}${r.valor ? ' · ' + esc(r.valor) : ''} · corretor(a) ${esc(r.corretorNome || '—')}</span></div>
+      <ul class="pp-linha">${r.criadoTs ? `<li><b>Criada</b> · ${dataHoraBr(new Date(r.criadoTs).toISOString())}</li>` : ''}${linha('Proponente assinou', r.proponenteAss)}${r.proprietarioAss ? linha(r.acao === 'contraproposta' ? 'Proprietário fez contra-proposta' : 'Proprietário aceitou', r.proprietarioAss) : ''}${linha('Proponente aceitou a contra-proposta', r.aceiteContraAss)}</ul>
+      ${ativo ? `<div class="pp-link"><div class="small"><b>${r.status === 'contraproposta' ? 'Link para o proponente aceitar a contra-proposta' : 'Link para o proprietário'}</b> · válido até ${dataHoraBr(r.token_expira)}</div>
+        <div class="row" style="gap:8px;margin-top:8px"><input class="input" id="pp-url" readonly value="${esc(ppLink(r.token))}" style="flex:1;min-width:200px">
+        <button class="btn" id="pp-copiar">${ic('copy')}Copiar</button><button class="btn wa" id="pp-wa">${ic('whats')}WhatsApp</button><button class="btn" id="pp-mail">${ic('mail')}E-mail</button></div></div>` : ''}
+      ${r.status === 'aguardando_assinaturas' ? `<p class="muted small">O proponente ainda não assinou. Use <b>Continuar</b> na lista para terminar o preenchimento e assinar.</p>` : ''}
+      ${docs.length ? `<div class="seg" role="tablist" style="margin:14px 0 12px;flex-wrap:wrap">${docs.map(([k, l], i) => `<button type="button" data-pp-doc="${k}" aria-pressed="${!i}">${l}</button>`).join('')}</div><div class="ct-pdf" id="pp-pdf"><div class="empty">Carregando o documento…</div></div>` : ''}`,
+    foot: `${isMaster() ? `<button class="btn danger left" id="pp-del">${ic('trash')}Excluir</button>` : ''}
+      ${ativo || r.status === 'aguardando_assinaturas' ? `<button class="btn ${isMaster() ? '' : 'left'}" id="pp-cancelar">Cancelar proposta</button>` : ''}
+      ${ativo ? `<button class="btn" id="pp-novo-link">Gerar novo link</button>` : ''}
+      ${docs.length ? `<button class="btn" id="pp-down">${ic('download')}Download</button><button class="btn" id="pp-print">${ic('printer')}Imprimir</button>` : ''}
+      <button class="btn primary" data-act="modal-close">Fechar</button>`,
+    onMount: m => {
+      let atual = null;
+      const meu = r.corretorId === ME.id;
+      const ok = (sel, fn) => { const b = $(sel, m); if (b) b.onclick = fn; };
+      ok('#pp-copiar', () => copyText(ppLink(r.token), 'Link copiado.'));
+      ok('#pp-wa', () => { const t = encodeURIComponent(ppMensagem(r)); abrirLink(MOVEL ? 'https://wa.me/?text=' + t : 'https://web.whatsapp.com/send?text=' + t, MOVEL ? '_blank' : 'whatsapp-web'); });
+      ok('#pp-mail', () => {
+        const para = r.status === 'contraproposta' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.campos?.telefone_ou_e_mail || '') ? r.campos.telefone_ou_e_mail : '';
+        abrirLink(`mailto:${encodeURIComponent(para).replace('%40', '@')}?subject=${encodeURIComponent(PROPOSTA.titulo + (r.imovel ? ' · ' + r.imovel : ''))}&body=${encodeURIComponent(ppMensagem(r))}`);
+      });
+      ok('#pp-novo-link', () => { if (!meu) return denied(); confirmBox('Gerar um novo link? O link atual deixa de funcionar e o novo vale por 5 dias úteis.', 'Gerar novo link', async () => {
+        const {data, error} = await sb.rpc('proposta_novo_link', {p_id: id}); if (error) return writeErr(error);
+        S.propostas.set(id, {...r, token: data.token, token_expira: data.token_expira}); render(); toast('Novo link gerado.'); ppVer(id); }); });
+      ok('#pp-cancelar', () => { if (!meu) return denied(); confirmBox('Cancelar esta proposta? O link deixa de funcionar.', 'Cancelar proposta', async () => {
+        const {error} = await sb.rpc('proposta_cancelar', {p_id: id}); if (error) return writeErr(error);
+        S.propostas.set(id, {...r, status: 'cancelada', token: null, token_expira: null}); render(); toast('Proposta cancelada.'); }); });
+      ok('#pp-del', () => confirmBox(`Excluir definitivamente a proposta de <b>${esc(r.proponente || 'sem nome')}</b>? Os PDFs e dossiês também serão apagados.`, 'Excluir', async () => {
+        if (!(await remove('propostas', id))) return;
+        const arqs = Object.entries(arq).filter(([k, v]) => !/^hash|^atual$/.test(k) && typeof v === 'string').map(([, v]) => v);
+        if (arqs.length) await sb.storage.from('contratos').remove([...new Set(arqs)]).catch(() => {});
+        toast('Proposta excluída.'); }));
+      const doc = k => ({blob: atual, nome: `proposta-${slugify(r.proponente || id)}-${k}.pdf`});
+      ok('#pp-down', () => atual && baixarDoc(doc(m.dataset.aba || 'atual')));
+      ok('#pp-print', e => atual && imprimirDoc(doc(m.dataset.aba || 'atual'), e.currentTarget));
+      const abrir = async k => {
+        m.dataset.aba = k; atual = null;
+        $$('[data-pp-doc]', m).forEach(b => b.setAttribute('aria-pressed', b.dataset.ppDoc === k));
+        const box = $('#pp-pdf', m); box.innerHTML = '<div class="empty">Carregando o documento…</div>';
+        try {
+          const b = await ppBaixarArquivo(id, arq[k]); if (!m.isConnected || m.dataset.aba !== k) return;
+          atual = b; const imgs = await paginasPdf(b, 1.6);
+          if (m.isConnected && m.dataset.aba === k) box.innerHTML = imgs.map((s, i) => `<img src="${s}" alt="Página ${i + 1}">`).join('');
+        } catch (e) { if (m.isConnected) box.innerHTML = '<div class="empty"><b>Não foi possível abrir o documento</b>Verifique a internet e tente de novo.</div>'; }
+      };
+      $$('[data-pp-doc]', m).forEach(b => b.onclick = () => abrir(b.dataset.ppDoc));
+      if (docs.length) abrir('atual');
+    }});
+}
+
+/* =========================================================
+   Página pública (link): proprietário aceita ou faz contra-proposta;
+   proponente aceita a contra-proposta. Sem login.
+   ========================================================= */
+let PUBLICO = null;
+function pubTela(html) { $('#publico-root').innerHTML = `<div class="pub"><header class="pub-h"><div><b>${esc(PROPOSTA.titulo)}</b><span>Assinatura eletrônica</span></div></header>${html}</div>`; }
+function pubErro(tipo) {
+  const msg = {expirado: ['Este link venceu', 'O prazo deste link terminou. Peça ao corretor um novo link.'],
+    concluido: ['Proposta já concluída', 'Esta proposta já foi assinada por todas as partes.'],
+    cancelada: ['Proposta cancelada', 'Esta proposta foi cancelada pelo corretor.']}[tipo] || ['Link inválido', 'Confira se o link foi copiado inteiro ou peça um novo ao corretor.'];
+  pubTela(`<section class="card"><div class="card-b"><div class="empty"><b>${msg[0]}</b>${msg[1]}</div></div></section>`);
+}
+async function pubIniciar(token) {
+  PUBLICO = {token, acao: 'aceite', pessoa: {nome: '', cpf: ''}, contra: {}};
+  $('#login-root').hidden = true; $('.app').hidden = true; $('#publico-root').hidden = false;
+  pubTela('<section class="card"><div class="card-b"><div class="empty">Carregando a proposta…</div></div></section>');
+  if (!sb) return pubErro('invalido');
+  const {data, error} = await sb.rpc('proposta_publica', {p_token: token});
+  if (error || !data) return pubErro('invalido');
+  if (data.erro) return pubErro(data.erro);
+  PUBLICO.d = data;
+  if (data.etapa === 'proponente') { PUBLICO.acao = 'aceite_contra'; PUBLICO.pessoa = {nome: data.campos?.nome || '', cpf: data.campos?.cpf_cnpj || ''}; }
+  pubRender();
+  try {
+    const {data: b, error: e2} = await sb.storage.from('contratos').download(data.pdf); if (e2) throw e2;
+    PUBLICO.pdf = b.type === 'application/pdf' ? b : blobPdf(b);
+    const imgs = await paginasPdf(PUBLICO.pdf, 1.6);
+    const box = $('#pub-pdf'); if (box) box.innerHTML = imgs.map((s, i) => `<img src="${s}" alt="Página ${i + 1} da proposta">`).join('');
+  } catch (e) { const box = $('#pub-pdf'); if (box) box.innerHTML = '<div class="empty"><b>Não foi possível abrir o documento</b>Verifique a internet e recarregue a página.</div>'; }
+  loadPdfLibForm().catch(() => {});
+}
+function pubRender() {
+  const P = PUBLICO, d = P.d, prop = d.etapa === 'proprietario', contra = P.acao === 'contraproposta';
+  const ct = d.contra || {};
+  const campo = (n, l, area, extra = '') => `<div class="field span-2"><label for="pub-${n}">${l}</label>${area
+    ? `<textarea class="input" id="pub-${n}" data-pub="${n}" maxlength="1500" rows="4">${esc(P.contra[n])}</textarea>`
+    : `<input class="input" id="pub-${n}" data-pub="${n}" maxlength="100" value="${esc(P.contra[n])}" ${extra}>`}</div>`;
+  pubTela(`
+    <section class="card"><div class="card-b stack">
+      <p class="ct-texto">${prop ? `Você recebeu uma <b>proposta de compra</b> do seu imóvel${d.campos?.imovel ? ` (<b>${esc(d.campos.imovel)}</b>)` : ''}, enviada por <b>${esc(d.corretorNome || 'Patrimônio Gestão de Bens')}</b>. Leia o documento abaixo. A primeira página não pode ser alterada.`
+        : `O proprietário respondeu com uma <b>contra-proposta</b>. Leia o documento abaixo e, se concordar, aceite e assine.`}</p>
+      <p class="muted small" style="margin:0">Este link vale até <b>${dataHoraBr(d.expira)}</b>.</p>
+    </div></section>
+    <section class="card"><div class="card-h"><h3>Documento</h3></div><div class="card-b"><div class="ct-pdf" id="pub-pdf"><div class="empty">Carregando o documento…</div></div></div></section>
+    <section class="card"><div class="card-h"><h3>${prop ? 'Sua resposta' : 'Aceite da contra-proposta'}</h3></div><div class="card-b stack">
+      ${prop ? `<div class="seg" role="group" aria-label="Resposta"><button type="button" data-pub-acao="aceite" aria-pressed="${!contra}">Aceitar a proposta</button><button type="button" data-pub-acao="contraproposta" aria-pressed="${contra}">Fazer contra-proposta</button></div>` : ''}
+      ${!prop ? `<div class="pp-contra-resumo"><div><b>Valor total:</b> ${esc(ct.valor_total_2 || '—')}</div><div><b>Condições de pagamento:</b> ${esc(ct.condicoes_de_pagamento_2 || '—')}</div><div><b>Condições gerais:</b> ${esc(ct.condicoes_gerais_2 || '—')}</div></div>` : ''}
+      <div class="ct-grid">
+        <div class="field"><label for="pub-nome">Seu nome completo *</label><input class="input" id="pub-nome" data-pessoa="nome" maxlength="120" autocomplete="name" value="${esc(P.pessoa.nome)}"></div>
+        <div class="field"><label for="pub-cpf">Seu CPF/CNPJ *</label><input class="input" id="pub-cpf" data-pessoa="cpf" maxlength="20" inputmode="numeric" value="${esc(P.pessoa.cpf)}"></div>
+        ${prop && contra ? campo('valor_total_2', 'Valor total da contra-proposta', false, 'inputmode="numeric" placeholder="R$ 0,00" data-mask="money"') + campo('condicoes_de_pagamento_2', 'Condições de pagamento', true) + campo('condicoes_gerais_2', 'Condições gerais', true) : ''}
+      </div>
+      <div class="banner">${ic('info')}<span><b>Cláusula de assinatura eletrônica.</b> ${esc(CLAUSULA_PROPOSTA)}</span></div>
+      <div class="row"><button class="btn primary" id="pub-assinar">${ic('sign')}${prop ? (contra ? 'Assinar a contra-proposta' : 'Aceitar e assinar') : 'Aceitar a contra-proposta e assinar'}</button></div>
+      <p class="muted small" style="margin:0">Para assinar você vai enviar a foto de um documento com foto, tirar uma selfie segurando o documento e assinar na tela. A localização do aparelho é obrigatória.</p>
+    </div></section>`);
+  const box = $('#pub-pdf');
+  if (P.pdf && box) paginasPdf(P.pdf, 1.6).then(imgs => { const b = $('#pub-pdf'); if (b) b.innerHTML = imgs.map((s, i) => `<img src="${s}" alt="Página ${i + 1} da proposta">`).join(''); }).catch(() => {});
+  $$('[data-pub-acao]').forEach(b => b.onclick = () => { P.acao = b.dataset.pubAcao; pubRender(); });
+  $$('[data-pessoa]').forEach(el => el.oninput = () => { if (el.dataset.pessoa === 'cpf') { const nv = ctMascara('doc', el.value); if (nv !== el.value) el.value = nv; } P.pessoa[el.dataset.pessoa] = el.value; });
+  $$('[data-pub]').forEach(el => el.oninput = () => { if (el.dataset.mask) { const nv = ctMascara(el.dataset.mask, el.value); if (nv !== el.value) el.value = nv; } P.contra[el.dataset.pub] = el.value; });
+  $('#pub-assinar').onclick = () => {
+    if (!P.pessoa.nome.trim() || !P.pessoa.cpf.trim()) { toast('Informe seu nome completo e CPF/CNPJ.', 'warn'); (P.pessoa.nome.trim() ? $('#pub-cpf') : $('#pub-nome')).focus(); return; }
+    if (P.acao === 'contraproposta' && !Object.values(P.contra).some(x => String(x || '').trim())) { toast('Preencha a contra-proposta (valor ou condições).', 'warn'); $('#pub-valor_total_2').focus(); return; }
+    if (!P.pdf) return toast('O documento ainda está carregando. Aguarde um instante.', 'warn');
+    assinaturaModal((png, ident) => pubAssinar(png, ident), {titulo: prop ? 'Assinatura do(a) proprietário(a)' : 'Assinatura do(a) proponente', aceite: ACEITE_PROPOSTA});
+  };
+}
+async function pubAssinar(png, ident) {
+  const P = PUBLICO;
+  const espera = msg => pubTela(`<section class="card"><div class="card-b"><div class="empty"><b>${msg}</b>Não feche esta página.</div></div></section>`);
+  espera('Registrando a assinatura…');
+  try {
+    await loadPdfLibForm();
+    const {data: c, error} = await sb.rpc('proposta_publica_carimbar', {p_token: P.token, p_acao: P.acao, p_geo: ident.geo,
+      p_identidade: {documento: true, semVerso: !!ident.semVerso, selfieComDocumento: true, aceite: ACEITE_PROPOSTA}, p_pessoa: P.pessoa, p_contra: P.contra});
+    if (error || !c) throw error || new Error('carimbo');
+    espera('Gerando os documentos…');
+    const a = c.carimbo, papel = P.acao === 'aceite_contra' ? 'Proponente' : 'Proprietário(a)';
+    const regDossie = {id: c.id, cliente: a.nome, cpf: a.cpf, imovel: c.campos?.imovel || c.campos?.ref_imovel, ip: a.ip, geo: a.geo, assinadoLocal: a.assinadoLocal};
+    const dossie = blobPdf(await montarDossiePdf(PROPOSTA, regDossie, ident, png, {nome: c.corretorNome}, {papel, aceite: ACEITE_PROPOSTA, linha: papel.toUpperCase()}));
+    const hd = await sha256Hex(dossie);
+    const pdf = blobPdf(await ppPdfEtapa2(await P.pdf.arrayBuffer(), P.acao, c.contra || {}, png, a, hd));
+    const hp = await sha256Hex(pdf);
+    espera('Enviando…');
+    const base = `${c.corretorId}/propostas/${c.id}-${P.token}`;
+    await ppEnviar(base + (P.acao === 'aceite_contra' ? '-dossie-proponente-aceite.pdf' : '-dossie-proprietario.pdf'), dossie);
+    await ppEnviar(base + (P.acao === 'contraproposta' ? '-contraproposta.pdf' : '-final.pdf'), pdf);
+    const {data: f, error: e2} = await sb.rpc('proposta_publica_finalizar', {p_token: P.token, p_hash_pdf: hp, p_hash_dossie: hd});
+    if (e2) throw e2;
+    P.final = {blob: pdf, nome: `proposta-${slugify(c.campos?.nome || c.id)}-${P.acao === 'contraproposta' ? 'contraproposta' : 'assinada'}.pdf`};
+    pubTela(`<section class="card"><div class="card-b stack" style="align-items:center;text-align:center">
+      <span class="pill ok">${f.status === 'concluido' ? 'Concluído' : 'Contra-proposta enviada'}</span>
+      <p class="ct-texto">${f.status === 'concluido' ? 'Assinatura registrada. A proposta está <b>concluída</b> e o corretor já foi avisado.' : 'Sua contra-proposta foi assinada e enviada. O corretor vai encaminhá-la ao proponente.'}<br><span class="muted small">Assinado em ${carimbo(a).txt} (horário de Brasília).</span></p>
+      <div class="row" style="justify-content:center"><button class="btn primary" id="pub-baixar">${ic('download')}Baixar o documento</button></div>
+    </div></section>`);
+    $('#pub-baixar').onclick = () => baixarDoc(P.final);
+  } catch (e) {
+    console.error(e);
+    pubTela(`<section class="card"><div class="card-b"><div class="empty"><b>Não foi possível concluir a assinatura</b>Verifique a internet e abra o link de novo. Se o problema continuar, fale com o corretor.</div></div></section>`);
+  }
+}
+
+/* =========================================================
    Ações (delegação de cliques)
    ========================================================= */
 const shiftMonth = (o, n) => { o.month = addMonths(o.month, n); };
@@ -3485,8 +3921,10 @@ const ACTIONS = {
     $('#mt-eq').dispatchEvent(new Event('input', {bubbles: true})); state.dirty = true;
   },
   // modelos de contrato
-  'ct-abrir': el => { const k = el.dataset.m; if (!MODELOS[k]) return; if (state.ct.modelo !== k) ctLimpar(); state.ct.modelo = k; render(); window.scrollTo(0, 0); },
-  'ct-voltar': () => { state.ct.modelo = null; if (state.ct.doc && state.ct.etapa !== 'erro' && state.ct.etapa !== 'enviando') ctLimpar(); state.dirty = false; render(); window.scrollTo(0, 0); },
+  'ct-abrir': el => { const k = el.dataset.m; if (!MODELOS[k]) return;
+    if (MODELOS[k].tipo === 'proposta') { if (!PROPOSTAS_OK) return toast('O banco ainda não tem a estrutura de propostas. Veja o aviso na tela.', 'warn'); ppNova(); state.ct.modelo = k; render(); window.scrollTo(0, 0); return; }
+    if (state.ct.modelo !== k) ctLimpar(); state.ct.modelo = k; render(); window.scrollTo(0, 0); },
+  'ct-voltar': () => { if (state.pp) { if (state.pp.pendente) ppSalvar(); state.pp = null; } state.ct.modelo = null; if (state.ct.doc && state.ct.etapa !== 'erro' && state.ct.etapa !== 'enviando') ctLimpar(); state.dirty = false; render(); window.scrollTo(0, 0); },
   'ct-op': el => {
     if (state.ct.doc) return;
     const md = MODELOS[state.ct.modelo], g = ctGrupo(md, el.dataset.g), n = el.dataset.n, v = state.ct.v, on = !v[n];
@@ -3509,6 +3947,15 @@ const ACTIONS = {
     else zera();
   },
   'ct-ver': el => ctVer(el.dataset.id),
+  'pp-ver': el => ppVer(el.dataset.id),
+  'pp-editar': el => ppAbrirRascunho(el.dataset.id),
+  'pp-salvar': async () => { if (state.pp?.travada) return; if (await ppSalvar(true)) toast('Proposta salva em Propostas realizadas.'); },
+  'pp-reenviar': () => ppEnviarProponente(),
+  'pp-assinar': () => {
+    if (!sb || !PROPOSTAS_OK) return toast('O banco ainda não tem a estrutura de propostas. Veja o aviso na tela.', 'warn');
+    if (!state.pp || state.pp.etapa === 'gerando' || state.pp.etapa === 'enviando') return;
+    assinaturaModal((png, ident) => ppAssinar(png, ident), {titulo: 'Assinatura do(a) proponente', aceite: ACEITE_PROPOSTA});
+  },
   'ct-baixar': async el => {
     el.disabled = true;
     try { baixarDoc(await obterDoc(el.dataset.id)); } catch (e) { toast('Não foi possível baixar o documento. Verifique a internet e tente de novo.', 'bad'); }
@@ -3538,6 +3985,8 @@ document.addEventListener('input', e => { if (e.target.closest('[data-guard]')) 
 
 /* ---------- Início ---------- */
 (function boot() {
+  const tk = new URLSearchParams(location.search).get('proposta');
+  if (tk) { pubIniciar(tk); return; }
   const h = location.hash.slice(1); if (VIEWS[h]) state.view = h;
   render();
   initAuth();
