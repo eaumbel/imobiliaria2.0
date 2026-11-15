@@ -19,6 +19,8 @@ Sistema de gestão da equipe de corretores: painel de BI e metas, vendas e comis
 | `gestao/modelos/autorizacao-venda.pdf` | Modelo do contrato Autorização de Venda (PDF com campos preenchíveis) |
 | `supabase/migrations/20261114120000_contratos.sql` | Contratos assinados: tabela, carimbo de data/hora do servidor, arquivos PDF e permissões |
 | `supabase/migrations/20261115100000_contratos_identidade.sql` | Contratos: IP pelo servidor, dossiê de comprovação e impressões digitais (SHA-256) |
+| `gestao/modelos/proposta-compra.pdf` | Modelo da Proposta de Compra (PDF com campos preenchíveis) |
+| `supabase/migrations/20261115140000_propostas.sql` | Propostas de compra: tabela, status, link público (5 dias úteis) e funções de assinatura |
 
 ## Configuração (uma vez)
 
@@ -88,6 +90,21 @@ A **localização é obrigatória**: sem a permissão de localização no aparel
 **Configuração (uma vez):** rode no SQL Editor do Supabase, nesta ordem:
 1. `supabase/migrations/20261114120000_contratos.sql`: tabela `contratos`, armazenamento privado `contratos` e a permissão do menu (ligada por padrão para todos os perfis; dá para mudar em **Usuários → Permissões**).
 2. `supabase/migrations/20261115100000_contratos_identidade.sql`: IP pelo servidor, dossiê de comprovação e impressões digitais.
+
+### Proposta de Compra
+
+Segundo modelo do menu **Modelos de Contrato**, com as mesmas regras de assinatura (documento com foto, selfie com o documento, assinatura na tela, localização obrigatória, IP e data/hora do servidor, cláusula de assinatura eletrônica e dossiê de comprovação de cada parte).
+
+1. O corretor preenche a **página 1** (proposta do comprador). A proposta é **salva automaticamente** e aparece em **Propostas realizadas** com o status 🔴 **Aguardando assinaturas**.
+2. O **proponente** assina no aparelho do corretor → status 🟡 **Aguardando aceite**. O sistema gera um **link público** (WhatsApp, e-mail ou copiar), válido por **5 dias úteis**.
+3. O **proprietário** abre o link, sem login. A página 1 aparece só para leitura e a página 2 fica livre. Ele escolhe:
+   - **Aceitar a proposta**: assina em Aceitação da proposta → 🟢 **Concluído**.
+   - **Fazer contra-proposta**: preenche e assina a contra-proposta → 🟠 **Contra-proposta recebida**, e o sistema gera um novo link para o proponente.
+4. O **proponente** abre o novo link e aceita a contra-proposta, assinando na linha PROPONENTE da Aceitação → 🟢 **Concluído**.
+
+O corretor pode **gerar um novo link** (o anterior deixa de valer) ou **cancelar** a proposta. Cada etapa guarda o seu PDF e o dossiê de quem assinou, com impressão digital SHA-256; a versão assinada só pelo proponente fica guardada para provar que a página 1 não mudou. O link só dá acesso ao PDF atual daquela proposta, nunca aos dossiês.
+
+**Configuração (uma vez):** rode no SQL Editor do Supabase `supabase/migrations/20261115140000_propostas.sql`.
 
 **Novos modelos:** coloque o PDF preenchível em `gestao/modelos/` e cadastre os campos em `MODELOS`, no `gestao/index.html`.
 
