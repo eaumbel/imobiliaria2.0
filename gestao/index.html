@@ -388,6 +388,10 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .ct-op[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .ct-op[aria-pressed="true"]::before{border-color:var(--accent);background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E") center/12px no-repeat}
 .ct-op[disabled]{cursor:default;opacity:1}
+.ct-op.radio::before{border-radius:50%}
+.ct-extra{display:flex;flex-direction:column;gap:6px;margin-top:10px;max-width:220px}
+.ct-extra label{font-size:13px;font-weight:700}
+.ct-op.radio[aria-pressed="true"]::before{background:radial-gradient(circle,#fff 0 3px,var(--accent) 3.5px)}
 .ct-fixo{display:flex;align-items:center;background:var(--surface-2);font-weight:700}
 .input[readonly]{background:var(--surface-2)}
 .ct-texto{font-size:13.5px;line-height:1.65;margin:0}
@@ -2654,7 +2658,8 @@ const MODELOS = {
         {n: 'e_mail', l: 'E-mail', type: 'email', ac: 'email'}]},
       {t: 'Dados do imóvel', campos: [
         {g: 'tipo', l: 'Tipo do imóvel', unico: true, span: 1, opcoes: [['marcar_casa', 'Casa'], ['marcar_apartamento', 'Apartamento'], ['marcar_terreno', 'Terreno'], ['marcar_barracao', 'Barracão'], ['marcar_sala', 'Sala'], ['marcar_loja', 'Loja'], ['marcar_area', 'Área']]},
-        {n: 'condominio', l: 'Condomínio'}, {fixo: 'Exclusividade', v: 'Não'},
+        {n: 'condominio', l: 'Condomínio'}, {g: 'exclusividade', l: 'Exclusividade', unico: true, radio: true, opcoes: [['exclusividade_sim', 'Sim'], ['exclusividade_nao', 'Não']],
+          extra: {n: 'exclusividade_dias', l: 'Quantidade de dias', se: 'exclusividade_sim'}},
         {n: 'apartamento', l: 'Apartamento'}, {n: 'torre', l: 'Torre'},
         {n: 'quadra', l: 'Quadra'}, {n: 'lote', l: 'Lote'},
         {n: 'quantidade_de_vagas', l: 'Quantidade de vagas', im: 'numeric'},
@@ -2678,6 +2683,9 @@ const MODELOS = {
       {t: 'Cláusula de assinatura eletrônica', p: CLAUSULA_ASSINATURA_HTML}
     ],
     cidade: 'Londrina',
+    padrao: {exclusividade_nao: true},
+    // Onde o modelo imprime "EXCLUSIVIDADE: NÃO" (página 1): o texto fixo é trocado pelas opções Sim/Não
+    exclusividade: {x: 464.5925, yMin: 226.0033, yMax: 236.6053, larg: 21.1},
     // Posições na página 2 do PDF (pontos, origem no canto inferior esquerdo; a altura é somada na hora)
     pos: {pagina: 1, assinatura: {x0: 46, x1: 288, topo: 222, base: 272}, corretor: {cx: 428.5, larg: 236, linha: 275}, ano: {x: 363.712, yMin: 318.8033, yMax: 329.4053, ref: 'Londrina', refLarg: 36.9645}, carimbo: 352}
   }
@@ -2695,6 +2703,7 @@ function ctMascara(tipo, s) {
   const d = String(s || '').replace(/\D/g, '');
   const pad = (dig, pat) => { let o = '', i = 0; for (const ch of pat) { if (i >= dig.length) break; if (ch === '0') o += dig[i++]; else o += ch; } return o; };
   if (tipo === 'money') return d ? moneyCents(parseCents(d)) : '';
+  if (tipo === 'dias') return d.replace(/^0+/, '').slice(0, 3);
   if (tipo === 'cep') return pad(d.slice(0, 8), '00000-000');
   if (tipo === 'doc') return d.length <= 11 ? pad(d, '000.000.000-00') : pad(d.slice(0, 14), '00.000.000/0000-00');
   return s;
@@ -2801,6 +2810,23 @@ async function montarContratoPdf(md, valores, assinaturaPng, reg, cor, hashDossi
   const tam = p.ano.refLarg / font.widthOfTextAtSize(p.ano.ref, 1);
   pg.drawRectangle({x: p.ano.x - 1, y: H - p.ano.yMax - 0.5, width: font.widthOfTextAtSize('2026.', tam) + 3, height: p.ano.yMax - p.ano.yMin + 1, color: rgb(1, 1, 1)});
   pg.drawText(c.Y + '.', {x: p.ano.x, y: H - (p.ano.yMax - 0.212 * tam), size: tam, font, color: tinta});
+  // Exclusividade: opções Sim/Não no lugar do "NÃO" impresso no modelo
+  if (md.exclusividade) {
+    const e = md.exclusividade, pg1 = pdf.getPages()[0], H1 = pg1.getHeight(), sz = 9.5;
+    const base = H1 - (e.yMax - 0.212 * sz), cy = base + sz * 0.33, r = 3.6;
+    pg1.drawRectangle({x: e.x - 1, y: H1 - e.yMax - 0.5, width: e.larg + 3, height: e.yMax - e.yMin + 1, color: rgb(1, 1, 1)});
+    let x = e.x + 1;
+    const dias = String(valores.exclusividade_dias || '').replace(/\D/g, '');
+    const opcoes = valores.exclusividade_sim
+      ? [['exclusividade_sim', 'SIM' + (dias ? ` · ${+dias} ${+dias === 1 ? 'DIA' : 'DIAS'}` : '')]]
+      : [['exclusividade_sim', 'SIM'], ['exclusividade_nao', 'NÃO']];
+    for (const [k, rot] of opcoes) {
+      pg1.drawCircle({x: x + r, y: cy, size: r, borderColor: tinta, borderWidth: 0.9});
+      if (valores[k]) pg1.drawCircle({x: x + r, y: cy, size: r - 1.6, color: tinta});
+      pg1.drawText(rot, {x: x + 2 * r + 3, y: base, size: sz, font: bold, color: tinta});
+      x += 2 * r + 3 + bold.widthOfTextAtSize(rot, sz) + 10;
+    }
+  }
   // Assinatura do(a) proprietário(a), acima da linha
   if (assinaturaPng) {
     const img = await pdf.embedPng(assinaturaPng), a = p.assinatura;
@@ -3042,7 +3068,7 @@ function ctCampoHTML(c, v, trava) {
   const sp = c.span ? ' span-2' : '';
   if (c.fixo) return `<div class="field${sp}"><label>${esc(c.fixo)}</label><div class="input ct-fixo">${esc(c.v)}</div></div>`;
   if (c.g) return `<div class="field${sp}"><label id="ct-g-${c.g}">${esc(c.l)}</label><div class="ct-ops" role="group" aria-labelledby="ct-g-${c.g}">${c.opcoes.map(([n, l]) =>
-    `<button type="button" class="ct-op" data-act="ct-op" data-n="${n}" data-g="${c.g}" aria-pressed="${!!v[n]}" ${trava ? 'disabled' : ''}>${esc(l)}</button>`).join('')}</div></div>`;
+    `<button type="button" class="ct-op${c.radio ? ' radio' : ''}" data-act="ct-op" data-n="${n}" data-g="${c.g}" ${c.radio ? 'role="radio" aria-checked="' + !!v[n] + '"' : ''} aria-pressed="${!!v[n]}" ${trava ? 'disabled' : ''}>${esc(l)}</button>`).join('')}</div>${c.extra && v[c.extra.se] ? `<div class="ct-extra"><label for="ct-${c.extra.n}">${esc(c.extra.l)}</label><input class="input" id="ct-${c.extra.n}" data-ct="${c.extra.n}" data-mask="dias" inputmode="numeric" maxlength="3" placeholder="Ex.: 90" value="${esc(v[c.extra.n])}" ${trava ? 'readonly' : 'data-guard'}></div>` : ''}</div>`;
   return `<div class="field${sp}"><label for="ct-${c.n}">${esc(c.l)}</label><input class="input" id="ct-${c.n}" data-ct="${c.n}" ${c.mask ? `data-mask="${c.mask}"` : ''} value="${esc(v[c.n])}" maxlength="100"
     ${c.type ? `type="${c.type}"` : ''} ${c.im ? `inputmode="${c.im}"` : ''} ${c.ac ? `autocomplete="${c.ac}"` : 'autocomplete="off"'} ${c.mask === 'money' ? 'placeholder="R$ 0,00"' : ''} ${trava ? 'readonly' : 'data-guard'}></div>`;
 }
@@ -3349,7 +3375,7 @@ async function ctSalvarArquivo(d) {
   }
   if (state.view === 'contratos') render();
 }
-function ctLimpar() { state.ct.v = {}; state.ct.doc = null; state.ct.assinatura = ''; state.ct.ident = null; state.ct.etapa = ''; state.dirty = false; }
+function ctLimpar(k = state.ct.modelo) { state.ct.v = {...(MODELOS[k]?.padrao || {})}; state.ct.doc = null; state.ct.assinatura = ''; state.ct.ident = null; state.ct.etapa = ''; state.dirty = false; }
 async function obterDossie(id) {
   const d = await obterDoc(id);
   if (d.dossieBlob) return d.dossieBlob;
@@ -3923,13 +3949,19 @@ const ACTIONS = {
   // modelos de contrato
   'ct-abrir': el => { const k = el.dataset.m; if (!MODELOS[k]) return;
     if (MODELOS[k].tipo === 'proposta') { if (!PROPOSTAS_OK) return toast('O banco ainda não tem a estrutura de propostas. Veja o aviso na tela.', 'warn'); ppNova(); state.ct.modelo = k; render(); window.scrollTo(0, 0); return; }
-    if (state.ct.modelo !== k) ctLimpar(); state.ct.modelo = k; render(); window.scrollTo(0, 0); },
+    if (state.ct.modelo !== k) ctLimpar(k); state.ct.modelo = k; render(); window.scrollTo(0, 0); },
   'ct-voltar': () => { if (state.pp) { if (state.pp.pendente) ppSalvar(); state.pp = null; } state.ct.modelo = null; if (state.ct.doc && state.ct.etapa !== 'erro' && state.ct.etapa !== 'enviando') ctLimpar(); state.dirty = false; render(); window.scrollTo(0, 0); },
   'ct-op': el => {
     if (state.ct.doc) return;
     const md = MODELOS[state.ct.modelo], g = ctGrupo(md, el.dataset.g), n = el.dataset.n, v = state.ct.v, on = !v[n];
+    if (g.radio && v[n]) return;
     if (g.unico) g.opcoes.forEach(([x]) => { v[x] = false; }); v[n] = on;
-    $$(`#view [data-g="${g.g}"]`).forEach(b => b.setAttribute('aria-pressed', !!v[b.dataset.n]));
+    $$(`#view [data-g="${g.g}"]`).forEach(b => { b.setAttribute('aria-pressed', !!v[b.dataset.n]); if (g.radio) b.setAttribute('aria-checked', !!v[b.dataset.n]); });
+    if (g.extra) {
+      if (!v[g.extra.se]) v[g.extra.n] = '';
+      render();
+      if (v[g.extra.se]) { const i = $('#ct-' + g.extra.n); if (i) i.focus(); }
+    }
   },
   'ct-assinar': () => {
     if (!sb || !CONTRATOS_OK) return toast('O banco ainda não tem a estrutura de contratos. Veja o aviso no topo da tela.', 'warn');
