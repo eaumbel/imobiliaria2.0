@@ -60,7 +60,7 @@ a{color:var(--accent)}
 
 /* ---------- Shell ---------- */
 .app{display:grid;grid-template-columns:248px 1fr;min-height:100%}
-.side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:22px 14px 16px}
+.side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;height:100dvh;padding:22px 14px 16px}
 .brand{display:flex;align-items:center;gap:11px;padding:0 8px 22px}
 .brand-mark{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffffff,#e4e7ea 70%);display:grid;place-items:center;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.35)}
 .brand-mark img{width:34px;height:34px;display:block}
@@ -68,7 +68,12 @@ a{color:var(--accent)}
 .login-brand .brand-mark img{width:50px;height:50px}
 .brand b{font-family:var(--font-display);font-size:15.5px;display:block;color:#fff;letter-spacing:-.01em}
 .brand span{font-size:12px;color:var(--side-muted)}
-.nav{display:flex;flex-direction:column;gap:2px}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin:0 -6px;padding:0 6px 6px;scrollbar-width:thin;scrollbar-color:#4a5058 transparent}
+/* menu com rolagem: o logo e o bloco do usuário ficam fixos, só a lista de opções rola */
+.nav::-webkit-scrollbar{width:8px}.nav::-webkit-scrollbar-track{background:transparent}.nav::-webkit-scrollbar-thumb{background:#4a5058;border-radius:8px;border:2px solid var(--side)}.nav::-webkit-scrollbar-thumb:hover{background:#5d646d}
+.side > .brand,.side > .me,.side > .side-foot{flex:none}
+/* enquanto houver opções abaixo, a base da lista esmaece (no Mac e no celular a barra só aparece ao rolar) */
+.nav.tem-mais{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 44px),transparent)}
 .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--side-muted);padding:16px 12px 6px;font-weight:700}
 .nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--side-ink);text-decoration:none;font-weight:600;font-size:14.5px;transition:background .15s}
 .nav a svg{width:19px;height:19px;flex:none;opacity:.75}
@@ -335,7 +340,7 @@ table.t.vis td{white-space:nowrap}
 .check{display:flex;gap:9px;align-items:center;font-size:13.5px;font-weight:600;cursor:pointer}
 .check input{width:17px;height:17px;accent-color:var(--accent)}
 .btn.block{width:100%;height:46px;font-size:15px}
-.me{margin-top:auto;padding:12px;border-radius:12px;background:var(--side-2);display:flex;flex-direction:column;gap:10px}
+.me{margin-top:10px;padding:12px;border-radius:12px;background:var(--side-2);display:flex;flex-direction:column;gap:10px}
 .me-top{display:flex;gap:10px;align-items:center;min-width:0}
 .me-top b{color:#fff;font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .me-top span{font-size:11.5px;color:#c9ced4;font-weight:700}
@@ -1061,12 +1066,17 @@ const NAV = [
   {id: 'usuarios', grp: 'Operação', label: 'Usuários', icon: 'users', sub: 'Cadastro da equipe e tipos de acesso'},
   {id: 'meusdados', grp: 'Minha conta', label: 'Meus dados', icon: 'user', sub: 'Seu cadastro: nome, contato, CRECI e senha'}
 ];
+function navFade() { const n = $('#nav'); if (n) n.classList.toggle('tem-mais', n.scrollTop + n.clientHeight < n.scrollHeight - 4); }
+document.addEventListener('scroll', e => { if (e.target && e.target.id === 'nav') navFade(); }, true);
+window.addEventListener('resize', navFade);
 function renderNav() {
   let html = '', last = '';
   NAV.forEach(n => { if (!canView(n.id)) return;
     if (n.grp !== last) { html += `<div class="nav-label">${n.grp}</div>`; last = n.grp; }
     html += `<a href="#${n.id}" ${state.view === n.id ? 'aria-current="page"' : ''}>${ic(n.icon)}<span>${n.label}</span></a>`; });
   $('#nav').innerHTML = html;
+  const cur = $('#nav a[aria-current="page"]'); if (cur) cur.scrollIntoView({block: 'nearest'});
+  navFade();
 }
 function render() {
   if (PUBLICO) return;
