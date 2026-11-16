@@ -689,6 +689,7 @@ const avatar = c => `<span class="avatar" style="background:${avColor(c?.id)}">$
 const firstName = n => String(n || '').split(' ')[0];
 
 const ICON = {
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5"/>',
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>',
   chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   cal: '<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -891,7 +892,7 @@ const can = p => { if (!ME) return false; const pf = perfilOf(ME); if (pf === 'm
 const participa = c => c.participa != null ? c.participa !== false : perfilOf(c) !== 'master';
 const vendedores = () => corretores(true).filter(participa);
 const VIEW_PERM = {diario: 'diario', metas: 'metas', usuarios: 'usuarios', relatorios: 'relatorios', agenda: 'agenda', conhecimento: 'conhecimento', treinamentos: 'treinamentos', ponto: 'ponto', vendas: 'vendas', contratos: 'contratos'};
-const canView = v => !VIEW_PERM[v] || can(VIEW_PERM[v]);
+const canView = v => v === 'meusdados' ? !!ME && !ME.virtual : (!VIEW_PERM[v] || can(VIEW_PERM[v]));
 const isMine = id => !!ME && id === ME.id;
 const canOp = corretorId => can('operacaoTodos') || isMine(corretorId);
 const ACT_PERM = {'ct-abrir': 'contratos', 'ct-assinar': 'contratos', 'pp-assinar': 'contratos', 'pp-editar': 'contratos', 'kb-new': 'conteudo', 'kb-edit': 'conteudo', 'kb-del': 'conteudo', 'tr-new': 'conteudo', 'tr-edit': 'conteudo', 'tr-del': 'conteudo',
@@ -1057,7 +1058,8 @@ const NAV = [
   {id: 'vendas', grp: 'Operação', label: 'Vendas', icon: 'key', sub: 'Registro de vendas, permutas e comissões'},
   {id: 'contratos', grp: 'Operação', label: 'Modelos de Contrato', icon: 'sign', sub: 'Contratos preenchidos e assinados na tela'},
   {id: 'metas', grp: 'Operação', label: 'Metas', icon: 'target', sub: 'Meta da equipe e individual por mês'},
-  {id: 'usuarios', grp: 'Operação', label: 'Usuários', icon: 'users', sub: 'Cadastro da equipe e tipos de acesso'}
+  {id: 'usuarios', grp: 'Operação', label: 'Usuários', icon: 'users', sub: 'Cadastro da equipe e tipos de acesso'},
+  {id: 'meusdados', grp: 'Minha conta', label: 'Meus dados', icon: 'user', sub: 'Seu cadastro: nome, contato, CRECI e senha'}
 ];
 function renderNav() {
   let html = '', last = '';
@@ -2351,6 +2353,60 @@ function userList() {
         <td><label class="switch"><input type="checkbox" data-ativo="${c.id}" ${!isMaster() && perfilOf(c) === 'master' ? 'disabled' : ''} ${c.ativo !== false ? 'checked' : ''}><i></i><span>${c.ativo !== false ? 'Ativo' : 'Inativo'}</span></label></td>
         <td class="r">${isMaster() || perfilOf(c) !== 'master' ? `<button class="btn sm" data-act="us-edit" data-id="${c.id}">${ic('edit')}Editar</button>` : ''}</td></tr>`).join('')}
     </tbody></table>` : `<div class="empty"><b>Nenhum corretor encontrado</b>${S.corretores.size ? 'Ajuste o filtro ou a busca.' : 'Use “Novo corretor” para cadastrar o primeiro.'}</div>`}</div></div>`;
+}
+
+/* =========================================================
+   VIEW: Meus dados (todos os tipos de usuário editam o próprio cadastro)
+   ========================================================= */
+VIEWS.meusdados = {
+  html() {
+    const c = ME || {};
+    const ro = (l, v) => `<div class="field"><label>${l}</label><input class="input" value="${esc(v)}" disabled style="background:var(--surface-2);color:var(--muted);cursor:not-allowed"></div>`;
+    return `<form class="card" data-guard onsubmit="return false" autocomplete="off">
+      <div class="card-h"><div class="who">${avatar(c)}<div><b>${esc(c.nome)}</b><span>${PERFIS[perfilOf(c)] || ''}</span></div></div></div>
+      <div class="card-b stack">
+        <div class="grid-2">
+          <div class="field span-2"><label for="md-nome">Nome completo *</label><input class="input" id="md-nome" value="${esc(c.nome)}" autocomplete="name" maxlength="200"></div>
+          <div class="field"><label for="md-tel">Telefone *</label><input class="input" id="md-tel" inputmode="tel" value="${esc(c.telefone)}" placeholder="(43) 99999-0000" autocomplete="tel"></div>
+          <div class="field"><label for="md-email">E-mail *</label><input class="input" id="md-email" type="email" value="${esc(c.email)}" placeholder="seu@email.com.br" autocomplete="email" maxlength="200"></div>
+          <div class="field"><label for="md-creci">CRECI${perfilOf(c) === 'master' ? '' : ' *'}</label><input class="input" id="md-creci" value="${esc(c.creci)}" placeholder="Ex.: F-41233" maxlength="30"></div>
+          <div class="field"><label for="md-esp">Especialidade</label><input class="input" id="md-esp" value="${esc(c.especialidade)}" list="md-esp-list" placeholder="Escolha ou digite" maxlength="80"><datalist id="md-esp-list">${ESPEC.map(e => `<option>${e}</option>`).join('')}</datalist></div>
+        </div>
+        <div style="border-top:1px solid var(--line);padding-top:16px;margin-top:4px"><div style="font-weight:800;margin-bottom:10px">Acesso</div>
+          <div class="grid-2">${ro('Login', c.login)}${ro('Tipo de acesso', PERFIS[perfilOf(c)] || '')}</div>
+          <div class="help" style="margin-top:8px">Login e tipo de acesso são definidos pelo gestor de vendas em Usuários.</div>
+        </div>
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <button class="btn" data-act="me-senha">${ic('lock')}Alterar minha senha</button>
+          <button class="btn primary" id="md-save">Salvar meus dados</button>
+        </div>
+      </div></form>`;
+  },
+  mount() {
+    const tel = $('#md-tel'); tel.oninput = () => tel.value = maskTel(tel.value);
+    $('#md-save').onclick = salvarMeusDados;
+  }
+};
+async function salvarMeusDados() {
+  if (!ME || ME.virtual) return;
+  const obrig = ['md-nome', 'md-tel', 'md-email', ...(perfilOf(ME) === 'master' ? [] : ['md-creci'])];
+  if (!requireFields(obrig)) return;
+  const dados = {p_nome: val('md-nome'), p_telefone: val('md-tel'), p_email: val('md-email').toLowerCase(), p_creci: val('md-creci'), p_especialidade: val('md-esp')};
+  if (dados.p_nome.length < 3) { $('#md-nome').classList.add('err'); return toast('Informe o nome completo.', 'warn'); }
+  if (dados.p_telefone.replace(/\D/g, '').length < 10) { $('#md-tel').classList.add('err'); return toast('Informe um telefone com DDD.', 'warn'); }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(dados.p_email)) { $('#md-email').classList.add('err'); return toast('Confira o e-mail informado.', 'warn'); }
+  const btn = $('#md-save'); btn.disabled = true;
+  try {
+    const {data, error} = await sb.rpc('salvar_meus_dados', dados);
+    if (error) {
+      if (/salvar_meus_dados|PGRST202|does not exist|schema cache/i.test(error.message + ' ' + (error.code || ''))) return toast('O servidor ainda não foi atualizado para “Meus dados”. Avise o administrador do sistema.', 'bad');
+      if (error.code === '22023' || error.code === '42501') return toast(error.message, 'warn');
+      return writeErr(error);
+    }
+    const r = Array.isArray(data) ? data[0] : data;
+    if (r) { const atual = perfilParaUser(r); S.corretores.set(atual.id, atual); ME = atual; }
+    state.dirty = false; toast('Seus dados foram atualizados.'); scheduleReload('corretores'); render();
+  } finally { const b = $('#md-save'); if (b) b.disabled = false; }
 }
 
 /* =========================================================
