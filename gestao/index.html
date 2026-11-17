@@ -1053,7 +1053,7 @@ const state = {
   kbBusca: '',
   diario: {tab: 'meu', data: today(), dia: today(), cor: 'all'},
   vendas: {mes: monthKey(today()), corretor: 'all', busca: ''},
-  ang: {de: monthKey(today()) + '-01', ate: '', corretor: 'all'},
+  ang: {de: monthKey(today()) + '-01', ate: '', corretor: 'all', angariador: 'all'},
   rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today()},
   ct: {modelo: null, v: {}, doc: null, assinatura: '', ident: null, etapa: '', busca: ''},
   dirty: false, pending: false
@@ -1894,7 +1894,11 @@ function vendaForm(v = {}) {
    ========================================================= */
 let ANGARIACOES_OK = true;
 const angVeTodas = () => can('equipe') || can('operacaoTodos');
-const angVisiveis = () => list('angariacoes').filter(a => angVeTodas() || isMine(a.corretorId));
+const angVisiveis = () => list('angariacoes').filter(a => angVeTodas() || isMine(a.corretorId) || isMine(a.angariadorId));
+// Angariador: quem fez a angariação (antigas, sem o campo: quem cadastrou). Só quem lança pela equipe escolhe.
+const angAng = a => a.angariadorId || a.corretorId;
+const angAngNome = a => corretor(angAng(a))?.nome || a.angariadorNome || a.corretorNome || '—';
+const angEscolheAng = () => can('operacaoTodos');
 const angPode = a => can('angariacoes') && (can('operacaoTodos') || isMine(a.corretorId));
 const brD = iso => iso ? iso.split('-').reverse().join('/') : '—';
 const fimDoMes = iso => isoD(new Date(+iso.slice(0, 4), +iso.slice(5, 7), 0));
@@ -1903,7 +1907,7 @@ const angNome = a => corretor(a.corretorId)?.nome || a.corretorNome || '—';
 const angExc = a => a.exclusividade === 'sim' ? `Sim · ${a.dias} dia${+a.dias === 1 ? '' : 's'}` : 'Não';
 function angFiltradas() {
   const f = state.ang, de = f.de || '0000-01-01', ate = angAte();
-  return angVisiveis().filter(a => (a.dataAngariacao || '') >= de && (a.dataAngariacao || '') <= ate && (!angVeTodas() || f.corretor === 'all' || a.corretorId === f.corretor))
+  return angVisiveis().filter(a => (a.dataAngariacao || '') >= de && (a.dataAngariacao || '') <= ate && (!angVeTodas() || !f.corretor || f.corretor === 'all' || a.corretorId === f.corretor) && (!angVeTodas() || !f.angariador || f.angariador === 'all' || angAng(a) === f.angariador))
     .sort((x, y) => (y.dataAngariacao || '').localeCompare(x.dataAngariacao || '') || (y.criadoTs || 0) - (x.criadoTs || 0));
 }
 function angResumo(as) {
@@ -1914,12 +1918,13 @@ VIEWS.angariacoes = {
   actions: () => can('angariacoes') ? `<button class="btn primary" data-act="ang-new">${ic('plus')}Angariação</button>` : '',
   html() {
     const f = state.ang, as = angFiltradas(), r = angResumo(as), ate = angAte();
-    const aviso = ANGARIACOES_OK ? '' : `<div class="banner">${ic('info')}<span>O banco ainda não tem a estrutura de angariações. Rode no Supabase (SQL Editor) o arquivo <b>supabase/migrations/20261117100000_angariacoes.sql</b>.</span></div>`;
-    const cs = corretores().filter(c => c.ativo !== false || list('angariacoes').some(a => a.corretorId === c.id));
+    const aviso = ANGARIACOES_OK ? '' : `<div class="banner">${ic('info')}<span>O banco ainda não tem a estrutura de angariações. Rode no Supabase (SQL Editor) os arquivos <b>supabase/migrations/20261117100000_angariacoes.sql</b> e <b>20261118100000_angariacoes_angariador.sql</b>.</span></div>`;
+    const cs = corretores().filter(c => c.ativo !== false || list('angariacoes').some(a => a.corretorId === c.id || angAng(a) === c.id));
     return aviso + `<div class="row ang-filtros">
         <div class="field"><label for="ang-de">Data início</label><input class="input" type="date" id="ang-de" value="${esc(f.de)}"></div>
         <div class="field"><label for="ang-ate">Data fim</label><input class="input" type="date" id="ang-ate" value="${esc(ate)}"></div>
-        ${angVeTodas() ? `<div class="field"><label for="ang-cor">Corretor que cadastrou</label><select class="input" id="ang-cor"><option value="all">Todos os corretores</option>${cs.map(c => `<option value="${c.id}" ${f.corretor === c.id ? 'selected' : ''}>${esc(c.nome)}${c.ativo === false ? ' (inativo)' : ''}</option>`).join('')}</select></div>`
+        ${angVeTodas() ? `<div class="field"><label for="ang-angf">Angariador</label><select class="input" id="ang-angf"><option value="all">Todos os angariadores</option>${cs.map(c => `<option value="${c.id}" ${f.angariador === c.id ? 'selected' : ''}>${esc(c.nome)}${c.ativo === false ? ' (inativo)' : ''}</option>`).join('')}</select></div>
+          <div class="field"><label for="ang-cor">Corretor que cadastrou</label><select class="input" id="ang-cor"><option value="all">Todos os corretores</option>${cs.map(c => `<option value="${c.id}" ${f.corretor === c.id ? 'selected' : ''}>${esc(c.nome)}${c.ativo === false ? ' (inativo)' : ''}</option>`).join('')}</select></div>`
           : `<span class="lock-note" style="align-self:flex-end;margin-bottom:10px">${ic('lock')}Suas angariações</span>`}
         <span class="grow"></span>
         <div class="row" style="gap:8px;align-self:flex-end"><button class="btn" data-act="ang-csv" ${as.length ? '' : 'disabled'}>${ic('download')}Exportar Excel</button><button class="btn" data-act="ang-pdf" ${as.length ? '' : 'disabled'}>${ic('report')}Exportar PDF</button></div>
@@ -1931,8 +1936,8 @@ VIEWS.angariacoes = {
         ${kpi('clock', 'Média de dias', r.sim ? Math.round(as.filter(a => a.exclusividade === 'sim').reduce((t, a) => t + (+a.dias || 0), 0) / r.sim) : '—', 'das angariações com exclusividade')}
       </div>
       <div class="card"><div class="card-h"><h2>Angariações registradas</h2><span class="hint">${as.length} registro(s)</span></div>
-        <div class="card-b tbl-wrap">${as.length ? `<table class="t vis"><thead><tr><th>Data da angariação</th><th>Referência</th><th>Exclusividade</th><th class="r">Dias</th><th>Corretor que cadastrou</th><th>Registrada em</th><th></th></tr></thead><tbody>
-          ${as.map(a => `<tr><td class="num">${brD(a.dataAngariacao)}</td><td><b>${esc(a.referencia)}</b></td>
+        <div class="card-b tbl-wrap">${as.length ? `<table class="t vis"><thead><tr><th>Data da angariação</th><th>Referência</th><th>Angariador</th><th>Exclusividade</th><th class="r">Dias</th><th>Corretor que cadastrou</th><th>Registrada em</th><th></th></tr></thead><tbody>
+          ${as.map(a => `<tr><td class="num">${brD(a.dataAngariacao)}</td><td><b>${esc(a.referencia)}</b></td><td>${esc(angAngNome(a))}</td>
             <td>${a.exclusividade === 'sim' ? '<span class="pill ok">Sim</span>' : '<span class="pill neutral">Não</span>'}</td>
             <td class="r num">${a.exclusividade === 'sim' ? esc(a.dias) : '—'}</td>
             <td>${esc(angNome(a))}</td><td class="small muted num">${a.criadoTs ? new Date(a.criadoTs).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'}) : '—'}</td>
@@ -1945,6 +1950,7 @@ VIEWS.angariacoes = {
     $('#ang-de').onchange = e => { const v = e.target.value, fim = angAte(); state.ang.de = v; state.ang.ate = v && v > fim ? '' : fim; render(); };
     $('#ang-ate').onchange = e => { const v = e.target.value; if (v && state.ang.de && v < state.ang.de) { toast('A data fim não pode ser anterior à data início.', 'warn'); render(); return; } state.ang.ate = v; render(); };
     const c = $('#ang-cor'); if (c) c.onchange = () => { state.ang.corretor = c.value; render(); };
+    const g = $('#ang-angf'); if (g) g.onchange = () => { state.ang.angariador = g.value; render(); };
   }
 };
 function angForm(a = {}) {
@@ -1957,6 +1963,10 @@ function angForm(a = {}) {
         <div class="field"><label for="ang-ref">Referência *</label><input class="input" id="ang-ref" maxlength="60" value="${esc(a.referencia)}" placeholder="Código do imóvel, ex.: AP-1042"></div>
         <div class="field"><label for="ang-data">Data da angariação *</label><input class="input" type="date" id="ang-data" value="${esc(a.dataAngariacao || today())}" max="${today()}"></div>
       </div>
+      ${angEscolheAng() ? (() => { const atual = a.id ? angAng(a) : ME.id, us = corretores(true), inat = atual && !us.some(c => c.id === atual) ? corretor(atual) : null;
+        return `<div class="field"><label for="ang-angariador">Angariador *</label><select class="input" id="ang-angariador"><option value="">Selecione</option>
+          ${us.map(c => `<option value="${c.id}" ${c.id === atual ? 'selected' : ''}>${esc(c.nome)} · ${PERFIL_CURTO[perfilOf(c)]}</option>`).join('')}
+          ${inat ? `<option value="${inat.id}" selected>${esc(inat.nome)} (inativo)</option>` : ''}</select></div>`; })() : ''}
       <div class="field"><label id="ang-exc-l">Exclusividade *</label>
         <div class="row ang-exc" role="radiogroup" aria-labelledby="ang-exc-l">
           <label class="check"><input type="radio" name="ang-exc" value="sim" ${exc === 'sim' ? 'checked' : ''}>Sim</label>
@@ -1964,7 +1974,7 @@ function angForm(a = {}) {
         </div></div>
       <div class="field" id="ang-dias-f" ${exc === 'sim' ? '' : 'hidden'} style="max-width:220px"><label for="ang-dias">Dias *</label>
         <input class="input num" id="ang-dias" inputmode="numeric" maxlength="5" value="${esc(a.dias)}" placeholder="Ex.: 90"><div class="help">Até 5 dígitos.</div></div>
-      ${a.id ? `<div class="help">Cadastrada por <b>${esc(angNome(a))}</b>.</div>` : ''}
+      ${a.id ? `<div class="help">Cadastrada por <b>${esc(angNome(a))}</b>${angEscolheAng() ? '' : ` · Angariador: <b>${esc(angAngNome(a))}</b>`}.</div>` : ''}
     </form>`,
     foot: `${a.id ? `<button class="btn danger left" data-act="ang-del" data-id="${a.id}">${ic('trash')}Excluir</button>` : ''}<button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="ang-save">Salvar angariação</button>`,
     onMount: m => {
@@ -1972,14 +1982,16 @@ function angForm(a = {}) {
       m.addEventListener('change', e => { if (e.target.name === 'ang-exc') { const sim = escolha() === 'sim'; $('#ang-dias-f', m).hidden = !sim; if (sim) $('#ang-dias', m).focus(); } });
       const dias = $('#ang-dias', m); dias.oninput = () => { dias.value = dias.value.replace(/\D/g, '').slice(0, 5); dias.classList.remove('err'); };
       $('#ang-save', m).onclick = async () => {
-        if (!requireFields(['ang-ref', 'ang-data'])) return;
+        if (!requireFields(['ang-ref', 'ang-data', ...(angEscolheAng() ? ['ang-angariador'] : [])])) return;
         const bad = (el, msg) => { if (el) { el.classList.add('err'); el.focus(); } toast(msg, 'warn'); };
         const e = escolha();
         if (!e) return bad(m.querySelector('input[name="ang-exc"]'), 'Marque se a angariação tem exclusividade: Sim ou Não.');
         const d = val('ang-dias');
         if (e === 'sim' && !(/^\d{1,5}$/.test(d) && +d >= 1)) return bad(dias, 'Informe a quantidade de dias de exclusividade (de 1 a 99999).');
         if (val('ang-data') > today()) return bad($('#ang-data', m), 'A data da angariação não pode ser no futuro.');
+        const angId = angEscolheAng() ? val('ang-angariador') : (a.id ? angAng(a) : ME.id);
         const rec = {referencia: val('ang-ref'), dataAngariacao: val('ang-data'), exclusividade: e, ...(e === 'sim' ? {dias: +d} : {}),
+          angariadorId: angId, angariadorNome: corretor(angId)?.nome || a.angariadorNome || '',
           corretorId: a.corretorId || ME.id, corretorNome: a.corretorNome || ME.nome, criadoTs: a.criadoTs || Date.now()};
         const btn = $('#ang-save', m); btn.disabled = true;
         const id = a.id || uid();
@@ -2007,11 +2019,12 @@ async function salvarAngariacao(id, rec) {
 // Exportação: planilha (CSV que abre no Excel) e PDF, sempre com o filtro atual
 function angTabela() {
   const as = angFiltradas();
-  return {as, head: ['Data da angariação', 'Referência', 'Exclusividade', 'Dias', 'Corretor que cadastrou', 'Registrada em'],
-    rows: as.map(a => [brD(a.dataAngariacao), a.referencia || '', a.exclusividade === 'sim' ? 'Sim' : 'Não', a.exclusividade === 'sim' ? String(a.dias) : '',
+  return {as, head: ['Data da angariação', 'Referência', 'Angariador', 'Exclusividade', 'Dias', 'Corretor que cadastrou', 'Registrada em'],
+    rows: as.map(a => [brD(a.dataAngariacao), a.referencia || '', angAngNome(a), a.exclusividade === 'sim' ? 'Sim' : 'Não', a.exclusividade === 'sim' ? String(a.dias) : '',
       angNome(a), a.criadoTs ? new Date(a.criadoTs).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'}) : ''])};
 }
-const angArquivo = ext => `angariacoes-${state.ang.de || 'inicio'}_a_${angAte()}${angVeTodas() && state.ang.corretor !== 'all' ? '-' + slugify(corretor(state.ang.corretor)?.nome || '') : ''}.${ext}`;
+const angFiltro = v => !!v && v !== 'all';
+const angArquivo = ext => `angariacoes-${state.ang.de || 'inicio'}_a_${angAte()}${angVeTodas() && angFiltro(state.ang.angariador) ? '-' + slugify(corretor(state.ang.angariador)?.nome || '') : ''}${angVeTodas() && angFiltro(state.ang.corretor) ? '-cad-' + slugify(corretor(state.ang.corretor)?.nome || '') : ''}.${ext}`;
 function baixarBlob(blob, nome) {
   const url = URL.createObjectURL(blob), el = document.createElement('a');
   el.href = url; el.download = nome; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 10000);
@@ -2027,31 +2040,32 @@ function angCsv() {
 async function angPdf(btn) {
   const {as, head, rows} = angTabela(); if (!as.length) return toast('Não há angariações no filtro atual.', 'warn');
   if (!pdfPronto()) { if (btn) btn.disabled = true; try { await loadPdfLib(); } catch (e) { if (btn) btn.disabled = false; return toast('Não foi possível carregar o gerador de PDF. Verifique a internet e tente de novo.', 'bad'); } if (btn) btn.disabled = false; }
-  const r = angResumo(as), geral = angVeTodas() && state.ang.corretor === 'all';
-  const quem = !angVeTodas() ? ME.nome : geral ? 'Todos os corretores' : (corretor(state.ang.corretor)?.nome || '—');
+  const f = state.ang, r = angResumo(as), geral = angVeTodas() && (!f.angariador || f.angariador === 'all');
+  const quem = !angVeTodas() ? ME.nome : [!f.angariador || f.angariador === 'all' ? 'Todos os angariadores' : 'Angariador: ' + (corretor(f.angariador)?.nome || '—'),
+    ...(!f.corretor || f.corretor === 'all' ? [] : ['cadastradas por ' + (corretor(f.corretor)?.nome || '—')])].join(' · ');
   const m = {titulo: 'Relatório de angariações', subtitulo: `${quem} · ${brD(state.ang.de)} a ${brD(angAte())}`, wide: false, secoes: [],
     resumo: [['Angariações', r.n], ['Com exclusividade', r.sim], ['Sem exclusividade', r.nao], ['% com exclusividade', r.pct == null ? '—' : pct(r.pct)]],
     gerado: new Date().toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'}) + ' por ' + (ME?.nome || '')};
   if (geral) {
-    const por = {}; as.forEach(a => { const k = angNome(a); por[k] = por[k] || {n: 0, s: 0}; por[k].n++; if (a.exclusividade === 'sim') por[k].s++; });
-    m.secoes.push({titulo: 'Resumo por corretor', head: ['Corretor', 'Angariações', 'Com exclusividade', 'Sem exclusividade'], right: [1, 2, 3],
+    const por = {}; as.forEach(a => { const k = angAngNome(a); por[k] = por[k] || {n: 0, s: 0}; por[k].n++; if (a.exclusividade === 'sim') por[k].s++; });
+    m.secoes.push({titulo: 'Resumo por angariador', head: ['Angariador', 'Angariações', 'Com exclusividade', 'Sem exclusividade'], right: [1, 2, 3],
       body: Object.entries(por).sort((x, y) => y[1].n - x[1].n).map(([k, v]) => [k, v.n, v.s, v.n - v.s]), foot: ['Total', r.n, r.sim, r.nao]});
   }
-  m.secoes.push({titulo: 'Angariações registradas', head, right: [3], body: rows});
+  m.secoes.push({titulo: 'Angariações registradas', head, right: [4], body: rows});
   baixarBlob(buildPdf(m).output('blob'), angArquivo('pdf'));
   toast('PDF salvo.');
 }
 // Bloco do Painel: respeita período e corretor escolhidos no Painel
 function angPainelHTML(ms, cid) {
   if (!can('angariacoes') && !angVeTodas()) return '';
-  const set = new Set(ms), as = angVisiveis().filter(a => set.has(String(a.dataAngariacao || '').slice(0, 7)) && (cid === 'all' || a.corretorId === cid));
+  const set = new Set(ms), as = angVisiveis().filter(a => set.has(String(a.dataAngariacao || '').slice(0, 7)) && (cid === 'all' || angAng(a) === cid));
   const r = angResumo(as), sorted = [...ms].sort();
-  const link = `<button class="btn sm" data-act="ang-ver" data-de="${sorted[0]}-01" data-ate="${fimDoMes(sorted[sorted.length - 1] + '-01')}" data-cor="${cid}">Ver angariações</button>`;
+  const link = `<button class="btn sm" data-act="ang-ver" data-de="${sorted[0]}-01" data-ate="${fimDoMes(sorted[sorted.length - 1] + '-01')}" data-ang="${cid}">Ver angariações</button>`;
   let porCor = '';
   if (cid === 'all' && angVeTodas() && as.length) {
-    const por = {}; as.forEach(a => { por[a.corretorId] = por[a.corretorId] || {a, n: 0, s: 0}; por[a.corretorId].n++; if (a.exclusividade === 'sim') por[a.corretorId].s++; });
-    porCor = `<table class="t" style="margin-top:14px"><thead><tr><th>Corretor</th><th class="r">Angariações</th><th class="r">Com exclusividade</th><th class="r">Sem exclusividade</th></tr></thead><tbody>
-      ${Object.values(por).sort((x, y) => y.n - x.n).map(v => `<tr><td>${esc(angNome(v.a))}</td><td class="r num"><b>${v.n}</b></td><td class="r num">${v.s}</td><td class="r num">${v.n - v.s}</td></tr>`).join('')}</tbody></table>`;
+    const por = {}; as.forEach(a => { const k = angAng(a); por[k] = por[k] || {a, n: 0, s: 0}; por[k].n++; if (a.exclusividade === 'sim') por[k].s++; });
+    porCor = `<table class="t" style="margin-top:14px"><thead><tr><th>Angariador</th><th class="r">Angariações</th><th class="r">Com exclusividade</th><th class="r">Sem exclusividade</th></tr></thead><tbody>
+      ${Object.values(por).sort((x, y) => y.n - x.n).map(v => `<tr><td>${esc(angAngNome(v.a))}</td><td class="r num"><b>${v.n}</b></td><td class="r num">${v.s}</td><td class="r num">${v.n - v.s}</td></tr>`).join('')}</tbody></table>`;
   }
   return `<section class="card">
     <div class="card-h"><h2>Angariações</h2><span class="hint">${periodLabel()}${cid === 'all' ? '' : ' · ' + esc(firstName(corretor(cid)?.nome))}</span><span class="grow"></span>${link}</div>
@@ -4136,7 +4150,7 @@ const ACTIONS = {
     confirmBox(`Excluir a angariação <b>${esc(a.referencia)}</b> de ${brD(a.dataAngariacao)}?`, 'Excluir', async () => { if (await remove('angariacoes', a.id)) toast('Angariação excluída.'); }); },
   'ang-csv': () => angCsv(),
   'ang-pdf': el => angPdf(el),
-  'ang-ver': el => { state.ang.de = el.dataset.de; state.ang.ate = el.dataset.ate; state.ang.corretor = el.dataset.cor || 'all';
+  'ang-ver': el => { state.ang.de = el.dataset.de; state.ang.ate = el.dataset.ate; state.ang.corretor = 'all'; state.ang.angariador = el.dataset.ang || 'all';
     if (location.hash !== '#angariacoes') location.hash = 'angariacoes'; else go('angariacoes'); },
   'vd-edit': el => { const v = S.vendas.get(el.dataset.id); if (v) vendaForm(v); },
   'vd-del': el => { const v = S.vendas.get(el.dataset.id); if (v && !canOp(v.vendedorId)) return denied(); if (v) confirmBox(`Excluir a venda <b>${esc(v.referencia)}</b> de ${brlC(v.valor)}?`, 'Excluir', async () => { if (await remove('vendas', v.id)) toast('Venda excluída.'); }); },
