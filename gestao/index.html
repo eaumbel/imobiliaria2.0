@@ -488,6 +488,7 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .vd-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .ang-filtros{align-items:flex-end;flex-wrap:wrap;gap:12px}.ang-filtros .field{margin:0;min-width:170px}
 .ang-exc{gap:22px}.ang-exc .check{font-weight:700}
+.ang-dup{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--bad-soft);color:var(--ink);border:1px solid var(--bad);font-size:14px;line-height:1.45}.ang-dup svg{width:20px;height:20px;flex:none;color:var(--bad);margin-top:1px}.ang-dup b{font-weight:800}.ang-dup .small{color:var(--muted);margin-top:4px}
 .ang-stats{grid-template-columns:repeat(4,1fr)}
 
 /* ---------- Diário de bordo ---------- */
@@ -1959,6 +1960,7 @@ function angForm(a = {}) {
   const exc = a.exclusividade || '';
   openModal({title: a.id ? 'Editar angariação' : 'Nova angariação',
     body: `<form class="stack" id="ang-form" onsubmit="return false" autocomplete="off">
+      <div class="ang-dup" id="ang-dup" role="alert" hidden></div>
       <div class="grid-2">
         <div class="field"><label for="ang-ref">Referência *</label><input class="input" id="ang-ref" maxlength="60" value="${esc(a.referencia)}" placeholder="Código do imóvel, ex.: AP-1042"></div>
         <div class="field"><label for="ang-data">Data da angariação *</label><input class="input" type="date" id="ang-data" value="${esc(a.dataAngariacao || today())}" max="${today()}"></div>
@@ -1980,6 +1982,9 @@ function angForm(a = {}) {
     onMount: m => {
       const escolha = () => (m.querySelector('input[name="ang-exc"]:checked') || {}).value || '';
       m.addEventListener('change', e => { if (e.target.name === 'ang-exc') { const sim = escolha() === 'sim'; $('#ang-dias-f', m).hidden = !sim; if (sim) $('#ang-dias', m).focus(); } });
+      const dupBox = $('#ang-dup', m), refEl = $('#ang-ref', m);
+      const mostraDup = html => { dupBox.innerHTML = `${ic('info')}<div><b>Referência já cadastrada</b><div>${html}</div><div class="small">Esta angariação não foi cadastrada novamente.</div></div>`; dupBox.hidden = false; refEl.classList.add('err'); refEl.focus(); };
+      refEl.addEventListener('input', () => { dupBox.hidden = true; refEl.classList.remove('err'); });
       const dias = $('#ang-dias', m); dias.oninput = () => { dias.value = dias.value.replace(/\D/g, '').slice(0, 5); dias.classList.remove('err'); };
       $('#ang-save', m).onclick = async () => {
         if (!requireFields(['ang-ref', 'ang-data', ...(angEscolheAng() ? ['ang-angariador'] : [])])) return;
@@ -1994,8 +1999,11 @@ function angForm(a = {}) {
           angariadorId: angId, angariadorNome: corretor(angId)?.nome || a.angariadorNome || '',
           corretorId: a.corretorId || ME.id, corretorNome: a.corretorNome || ME.nome, criadoTs: a.criadoTs || Date.now()};
         const btn = $('#ang-save', m); btn.disabled = true;
+        // Verificação da referência no servidor (enxerga as angariações de todos)
+        const dup = await angRefExistente(rec.referencia, a.id);
+        if (dup) { btn.disabled = false; return mostraDup(angDupTexto(dup)); }
         const id = a.id || uid();
-        const ok = await salvarAngariacao(id, rec);
+        const ok = await salvarAngariacao(id, rec, msg => mostraDup(esc(msg)));
         btn.disabled = false;
         if (!ok) return;
         closeModal(); toast(a.id ? 'Angariação atualizada.' : 'Angariação registrada.');
@@ -2003,7 +2011,22 @@ function angForm(a = {}) {
       };
     }});
 }
-async function salvarAngariacao(id, rec) {
+// Referência repetida: compara ignorando maiúsculas, espaços e pontuação ("AP-1042" = "ap 1042")
+const refNorm = t => String(t || '').normalize('NFC').toUpperCase().replace(/[^\p{L}\p{N}]/gu, '');
+async function angRefExistente(ref, ignorarId) {
+  try {
+    const {data, error} = await sb.rpc('angariacao_referencia', {p_ref: ref, p_ignorar_id: ignorarId || null});
+    if (!error) return data || null;
+  } catch (e) {}
+  // Sem a atualização do banco (ou sem conexão): confere ao menos as angariações visíveis; o banco ainda barra na gravação
+  const x = list('angariacoes').find(o => o.id !== ignorarId && refNorm(o.referencia) === refNorm(ref));
+  return x ? {referencia: x.referencia, dataAngariacao: x.dataAngariacao, criadoTs: x.criadoTs, corretorNome: angNome(x)} : null;
+}
+function angDupTexto(d) {
+  const quando = d.criadoTs ? new Date(+d.criadoTs).toLocaleString('pt-BR', {timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}).replace(', ', ' às ') : 'data não registrada';
+  return `A referência <b>${esc(d.referencia)}</b> já foi cadastrada em <b>${quando}</b> por <b>${esc(d.corretorNome || 'outro usuário')}</b>${d.dataAngariacao ? ` (angariação de ${brD(d.dataAngariacao)})` : ''}.`;
+}
+async function salvarAngariacao(id, rec, onDup) {
   const antes = S.angariacoes.get(id);
   S.angariacoes.set(id, {...rec, id}); scheduleRender(true);
   const dados = {...rec}; delete dados.id;
@@ -2012,7 +2035,8 @@ async function salvarAngariacao(id, rec) {
     scheduleReload('angariacoes'); return true;
   } catch (e) {
     if (antes) S.angariacoes.set(id, antes); else S.angariacoes.delete(id); scheduleRender(true);
-    if (e && e.code === '22023') toast(e.message, 'warn'); else writeErr(e);
+    if (e && e.code === '23505' && onDup) onDup(e.message);
+    else if (e && e.code === '22023') toast(e.message, 'warn'); else writeErr(e);
     return false;
   }
 }
