@@ -486,6 +486,9 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .suffix .input{padding-right:34px}
 .suffix span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700;font-size:13px}
 .vd-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.ang-filtros{align-items:flex-end;flex-wrap:wrap;gap:12px}.ang-filtros .field{margin:0;min-width:170px}
+.ang-exc{gap:22px}.ang-exc .check{font-weight:700}
+.ang-stats{grid-template-columns:repeat(4,1fr)}
 
 /* ---------- Diário de bordo ---------- */
 .di-top{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start}
@@ -587,6 +590,8 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
   .grid-3{grid-template-columns:1fr 1fr}
 }
 @media (max-width: 620px){
+  .ang-stats{grid-template-columns:repeat(2,1fr)}
+  .ang-filtros .field{min-width:0;flex:1 1 140px}
   .goal{grid-template-columns:1fr;justify-items:center;text-align:center}
   .goal-stats{grid-template-columns:1fr 1fr 1fr;text-align:left}
   .kpis{grid-template-columns:1fr 1fr;gap:12px}
@@ -742,7 +747,7 @@ const ic = (n, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentC
 /* =========================================================
    Camada de dados — Supabase (banco, login e tempo real)
    ========================================================= */
-const COLS = ['corretores', 'metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario', 'contratos', 'propostas'];
+const COLS = ['corretores', 'metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario', 'contratos', 'propostas', 'angariacoes'];
 const TABELAS = ['metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario'];
 const S = {}; COLS.forEach(c => S[c] = new Map());
 let MODE = 'loading', CORR_READY = false;
@@ -777,6 +782,11 @@ async function loadTable(c) {
     const {data, error} = await sb.from('propostas').select('id,data,status,token,token_expira');
     PROPOSTAS_OK = !error; S.propostas = new Map((data || []).map(r => [r.id, ppReg(r)])); return;
   }
+  if (c === 'angariacoes') {
+    // Tolerante: se a migração de angariações ainda não rodou, o resto do sistema continua funcionando.
+    const {data, error} = await sb.from(c).select('id,data');
+    ANGARIACOES_OK = !error; S.angariacoes = new Map((data || []).map(r => [r.id, {...(r.data || {}), id: r.id}])); return;
+  }
   if (c === 'contratos') {
     // Tolerante: se a migração de contratos ainda não rodou, o resto do sistema continua funcionando.
     const {data, error} = await sb.from(c).select('id,data');
@@ -800,7 +810,7 @@ async function loadAll() {
   catch (e) { clearTimeout(timer); setSync('stale'); toast('Não foi possível carregar os dados. Verifique a internet e recarregue a página.', 'bad'); }
   if (!canal) {
     canal = sb.channel('mudancas');
-    ['perfis', ...TABELAS, ...(CONTRATOS_OK ? ['contratos'] : []), ...(PROPOSTAS_OK ? ['propostas'] : [])].forEach(t => canal.on('postgres_changes', {event: '*', schema: 'public', table: t}, () => scheduleReload(t === 'perfis' ? 'corretores' : t)));
+    ['perfis', ...TABELAS, ...(CONTRATOS_OK ? ['contratos'] : []), ...(PROPOSTAS_OK ? ['propostas'] : []), ...(ANGARIACOES_OK ? ['angariacoes'] : [])].forEach(t => canal.on('postgres_changes', {event: '*', schema: 'public', table: t}, () => scheduleReload(t === 'perfis' ? 'corretores' : t)));
     canal.subscribe();
   }
 }
@@ -863,7 +873,7 @@ const corretor = id => S.corretores.get(id);
    ========================================================= */
 const PERFIS = {master: 'Master · Gestor de Vendas', coordenador: 'Coordenador', corretor: 'Corretor'};
 const PERFIL_CURTO = {master: 'Master', coordenador: 'Coordenador', corretor: 'Corretor'};
-const MENUS_ON = {diario: 1, relatorios: 1, agenda: 1, conhecimento: 1, treinamentos: 1, ponto: 1, vendas: 1, contratos: 1};
+const MENUS_ON = {diario: 1, relatorios: 1, agenda: 1, conhecimento: 1, treinamentos: 1, ponto: 1, vendas: 1, angariacoes: 1, contratos: 1};
 const PERMS = {
   master:      {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 1, usuarios: 1, conteudo: 1, operacaoTodos: 1},
   coordenador: {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 0, usuarios: 0, conteudo: 1, operacaoTodos: 1},
@@ -877,6 +887,7 @@ const PERM_DEFS = [
   {k: 'treinamentos', g: 'Menus que aparecem', l: 'Treinamentos'},
   {k: 'ponto', g: 'Menus que aparecem', l: 'Assiduidade'},
   {k: 'vendas', g: 'Menus que aparecem', l: 'Vendas'},
+  {k: 'angariacoes', g: 'Menus que aparecem', l: 'Angariações', d: 'Cada um vê as angariações que cadastrou; quem vê a equipe vê todas.'},
   {k: 'contratos', g: 'Menus que aparecem', l: 'Modelos de Contrato', d: 'Preencher e assinar contratos. Cada um vê os documentos que gerou; quem vê a equipe vê todos.'},
   {k: 'metas', g: 'Menus que aparecem', l: 'Metas'},
   {k: 'usuarios', g: 'Menus que aparecem', l: 'Usuários', d: 'Cadastrar e editar a equipe. Só o Master altera permissões e cria outros Masters.'},
@@ -896,12 +907,12 @@ const can = p => { if (!ME) return false; const pf = perfilOf(ME); if (pf === 'm
   const ov = ME.permissoes?.[p]; if (ov === true || ov === false) return ov; return perfilPode(pf, p); };
 const participa = c => c.participa != null ? c.participa !== false : perfilOf(c) !== 'master';
 const vendedores = () => corretores(true).filter(participa);
-const VIEW_PERM = {diario: 'diario', metas: 'metas', usuarios: 'usuarios', relatorios: 'relatorios', agenda: 'agenda', conhecimento: 'conhecimento', treinamentos: 'treinamentos', ponto: 'ponto', vendas: 'vendas', contratos: 'contratos'};
+const VIEW_PERM = {diario: 'diario', metas: 'metas', usuarios: 'usuarios', relatorios: 'relatorios', agenda: 'agenda', conhecimento: 'conhecimento', treinamentos: 'treinamentos', ponto: 'ponto', vendas: 'vendas', angariacoes: 'angariacoes', contratos: 'contratos'};
 const canView = v => v === 'meusdados' ? !!ME && !ME.virtual : (!VIEW_PERM[v] || can(VIEW_PERM[v]));
 const isMine = id => !!ME && id === ME.id;
 const canOp = corretorId => can('operacaoTodos') || isMine(corretorId);
 const ACT_PERM = {'ct-abrir': 'contratos', 'ct-assinar': 'contratos', 'pp-assinar': 'contratos', 'pp-editar': 'contratos', 'kb-new': 'conteudo', 'kb-edit': 'conteudo', 'kb-del': 'conteudo', 'tr-new': 'conteudo', 'tr-edit': 'conteudo', 'tr-del': 'conteudo',
-  'pt-ordem': 'operacaoTodos', 'mt-copy': 'metasEdit', 'mt-split': 'metasEdit', 'us-novo': 'usuarios', 'us-lista': 'usuarios', 'us-edit': 'usuarios', 'us-limpar': 'usuarios'};
+  'pt-ordem': 'operacaoTodos', 'mt-copy': 'metasEdit', 'mt-split': 'metasEdit', 'ang-new': 'angariacoes', 'us-novo': 'usuarios', 'us-lista': 'usuarios', 'us-edit': 'usuarios', 'us-limpar': 'usuarios'};
 const denied = () => toast('Seu perfil de acesso não permite esta ação.', 'warn');
 const mastersAtivos = (exceptId) => list('corretores').filter(u => u.id !== exceptId && perfilOf(u) === 'master' && u.ativo !== false && u.senhaHash);
 
@@ -1042,6 +1053,7 @@ const state = {
   kbBusca: '',
   diario: {tab: 'meu', data: today(), dia: today(), cor: 'all'},
   vendas: {mes: monthKey(today()), corretor: 'all', busca: ''},
+  ang: {de: monthKey(today()) + '-01', ate: '', corretor: 'all'},
   rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today()},
   ct: {modelo: null, v: {}, doc: null, assinatura: '', ident: null, etapa: '', busca: ''},
   dirty: false, pending: false
@@ -1061,6 +1073,7 @@ const NAV = [
   {id: 'treinamentos', grp: 'Gestão', label: 'Treinamentos', icon: 'grad', sub: 'Materiais e capacitações da equipe'},
   {id: 'ponto', grp: 'Operação', label: 'Assiduidade', icon: 'clock', sub: 'Presença, roleta e visitas do dia'},
   {id: 'vendas', grp: 'Operação', label: 'Vendas', icon: 'key', sub: 'Registro de vendas, permutas e comissões'},
+  {id: 'angariacoes', grp: 'Operação', label: 'Angariações', icon: 'home', sub: 'Imóveis angariados, com ou sem exclusividade'},
   {id: 'contratos', grp: 'Operação', label: 'Modelos de Contrato', icon: 'sign', sub: 'Contratos preenchidos e assinados na tela'},
   {id: 'metas', grp: 'Operação', label: 'Metas', icon: 'target', sub: 'Meta da equipe e individual por mês'},
   {id: 'usuarios', grp: 'Operação', label: 'Usuários', icon: 'users', sub: 'Cadastro da equipe e tipos de acesso'},
@@ -1272,6 +1285,8 @@ VIEWS.inicio = {
         ${kpi('clock', 'Presença', pct(pres), pres == null ? 'sem registros na Assiduidade' : 'dias com "Veio" na Assiduidade')}
       </div>
     </section>
+
+    ${angPainelHTML(ms, cid)}
 
     <section class="dash-grid">
       <div class="card">
@@ -1872,6 +1887,180 @@ function vendaForm(v = {}) {
         if (await save('vendas', v.id || uid(), rec)) { toast('Venda salva.'); state.vendas.mes = monthKey(rec.data); }
       };
     }});
+}
+
+/* =========================================================
+   VIEW: Angariações
+   ========================================================= */
+let ANGARIACOES_OK = true;
+const angVeTodas = () => can('equipe') || can('operacaoTodos');
+const angVisiveis = () => list('angariacoes').filter(a => angVeTodas() || isMine(a.corretorId));
+const angPode = a => can('angariacoes') && (can('operacaoTodos') || isMine(a.corretorId));
+const brD = iso => iso ? iso.split('-').reverse().join('/') : '—';
+const fimDoMes = iso => isoD(new Date(+iso.slice(0, 4), +iso.slice(5, 7), 0));
+const angAte = () => state.ang.ate || fimDoMes(state.ang.de || today());
+const angNome = a => corretor(a.corretorId)?.nome || a.corretorNome || '—';
+const angExc = a => a.exclusividade === 'sim' ? `Sim · ${a.dias} dia${+a.dias === 1 ? '' : 's'}` : 'Não';
+function angFiltradas() {
+  const f = state.ang, de = f.de || '0000-01-01', ate = angAte();
+  return angVisiveis().filter(a => (a.dataAngariacao || '') >= de && (a.dataAngariacao || '') <= ate && (!angVeTodas() || f.corretor === 'all' || a.corretorId === f.corretor))
+    .sort((x, y) => (y.dataAngariacao || '').localeCompare(x.dataAngariacao || '') || (y.criadoTs || 0) - (x.criadoTs || 0));
+}
+function angResumo(as) {
+  const sim = as.filter(a => a.exclusividade === 'sim').length;
+  return {n: as.length, sim, nao: as.length - sim, pct: as.length ? sim / as.length : null};
+}
+VIEWS.angariacoes = {
+  actions: () => can('angariacoes') ? `<button class="btn primary" data-act="ang-new">${ic('plus')}Angariação</button>` : '',
+  html() {
+    const f = state.ang, as = angFiltradas(), r = angResumo(as), ate = angAte();
+    const aviso = ANGARIACOES_OK ? '' : `<div class="banner">${ic('info')}<span>O banco ainda não tem a estrutura de angariações. Rode no Supabase (SQL Editor) o arquivo <b>supabase/migrations/20261117100000_angariacoes.sql</b>.</span></div>`;
+    const cs = corretores().filter(c => c.ativo !== false || list('angariacoes').some(a => a.corretorId === c.id));
+    return aviso + `<div class="row ang-filtros">
+        <div class="field"><label for="ang-de">Data início</label><input class="input" type="date" id="ang-de" value="${esc(f.de)}"></div>
+        <div class="field"><label for="ang-ate">Data fim</label><input class="input" type="date" id="ang-ate" value="${esc(ate)}"></div>
+        ${angVeTodas() ? `<div class="field"><label for="ang-cor">Corretor que cadastrou</label><select class="input" id="ang-cor"><option value="all">Todos os corretores</option>${cs.map(c => `<option value="${c.id}" ${f.corretor === c.id ? 'selected' : ''}>${esc(c.nome)}${c.ativo === false ? ' (inativo)' : ''}</option>`).join('')}</select></div>`
+          : `<span class="lock-note" style="align-self:flex-end;margin-bottom:10px">${ic('lock')}Suas angariações</span>`}
+        <span class="grow"></span>
+        <div class="row" style="gap:8px;align-self:flex-end"><button class="btn" data-act="ang-csv" ${as.length ? '' : 'disabled'}>${ic('download')}Exportar Excel</button><button class="btn" data-act="ang-pdf" ${as.length ? '' : 'disabled'}>${ic('report')}Exportar PDF</button></div>
+      </div>
+      <div class="vd-sum">
+        ${kpi('home', 'Angariações', r.n, 'de ' + brD(f.de) + ' a ' + brD(ate))}
+        ${kpi('lock', 'Com exclusividade', r.sim, r.pct == null ? '—' : pct(r.pct) + ' do total')}
+        ${kpi('key', 'Sem exclusividade', r.nao, r.pct == null ? '—' : pct(1 - r.pct) + ' do total')}
+        ${kpi('clock', 'Média de dias', r.sim ? Math.round(as.filter(a => a.exclusividade === 'sim').reduce((t, a) => t + (+a.dias || 0), 0) / r.sim) : '—', 'das angariações com exclusividade')}
+      </div>
+      <div class="card"><div class="card-h"><h2>Angariações registradas</h2><span class="hint">${as.length} registro(s)</span></div>
+        <div class="card-b tbl-wrap">${as.length ? `<table class="t vis"><thead><tr><th>Data da angariação</th><th>Referência</th><th>Exclusividade</th><th class="r">Dias</th><th>Corretor que cadastrou</th><th>Registrada em</th><th></th></tr></thead><tbody>
+          ${as.map(a => `<tr><td class="num">${brD(a.dataAngariacao)}</td><td><b>${esc(a.referencia)}</b></td>
+            <td>${a.exclusividade === 'sim' ? '<span class="pill ok">Sim</span>' : '<span class="pill neutral">Não</span>'}</td>
+            <td class="r num">${a.exclusividade === 'sim' ? esc(a.dias) : '—'}</td>
+            <td>${esc(angNome(a))}</td><td class="small muted num">${a.criadoTs ? new Date(a.criadoTs).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'}) : '—'}</td>
+            <td>${angPode(a) ? `<div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm icon" data-act="ang-edit" data-id="${a.id}" aria-label="Editar angariação">${ic('edit')}</button><button class="btn sm icon danger" data-act="ang-del" data-id="${a.id}" aria-label="Excluir angariação">${ic('trash')}</button></div>` : ''}</td></tr>`).join('')}
+          </tbody></table>`
+          : `<div class="empty"><b>Nenhuma angariação no período</b>${can('angariacoes') ? 'Use “+ Angariação” para registrar a primeira, ou ajuste as datas.' : 'Ajuste as datas do filtro.'}</div>`}</div></div>`;
+  },
+  mount() {
+    // mudar a data início mantém a data fim que está na tela (só ajusta se o início passar dela)
+    $('#ang-de').onchange = e => { const v = e.target.value, fim = angAte(); state.ang.de = v; state.ang.ate = v && v > fim ? '' : fim; render(); };
+    $('#ang-ate').onchange = e => { const v = e.target.value; if (v && state.ang.de && v < state.ang.de) { toast('A data fim não pode ser anterior à data início.', 'warn'); render(); return; } state.ang.ate = v; render(); };
+    const c = $('#ang-cor'); if (c) c.onchange = () => { state.ang.corretor = c.value; render(); };
+  }
+};
+function angForm(a = {}) {
+  if (!ANGARIACOES_OK) return toast('O banco ainda não tem a estrutura de angariações. Veja o aviso no topo da tela.', 'warn');
+  if (a.id ? !angPode(a) : !can('angariacoes')) return denied();
+  const exc = a.exclusividade || '';
+  openModal({title: a.id ? 'Editar angariação' : 'Nova angariação',
+    body: `<form class="stack" id="ang-form" onsubmit="return false" autocomplete="off">
+      <div class="grid-2">
+        <div class="field"><label for="ang-ref">Referência *</label><input class="input" id="ang-ref" maxlength="60" value="${esc(a.referencia)}" placeholder="Código do imóvel, ex.: AP-1042"></div>
+        <div class="field"><label for="ang-data">Data da angariação *</label><input class="input" type="date" id="ang-data" value="${esc(a.dataAngariacao || today())}" max="${today()}"></div>
+      </div>
+      <div class="field"><label id="ang-exc-l">Exclusividade *</label>
+        <div class="row ang-exc" role="radiogroup" aria-labelledby="ang-exc-l">
+          <label class="check"><input type="radio" name="ang-exc" value="sim" ${exc === 'sim' ? 'checked' : ''}>Sim</label>
+          <label class="check"><input type="radio" name="ang-exc" value="nao" ${exc === 'nao' ? 'checked' : ''}>Não</label>
+        </div></div>
+      <div class="field" id="ang-dias-f" ${exc === 'sim' ? '' : 'hidden'} style="max-width:220px"><label for="ang-dias">Dias *</label>
+        <input class="input num" id="ang-dias" inputmode="numeric" maxlength="5" value="${esc(a.dias)}" placeholder="Ex.: 90"><div class="help">Até 5 dígitos.</div></div>
+      ${a.id ? `<div class="help">Cadastrada por <b>${esc(angNome(a))}</b>.</div>` : ''}
+    </form>`,
+    foot: `${a.id ? `<button class="btn danger left" data-act="ang-del" data-id="${a.id}">${ic('trash')}Excluir</button>` : ''}<button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="ang-save">Salvar angariação</button>`,
+    onMount: m => {
+      const escolha = () => (m.querySelector('input[name="ang-exc"]:checked') || {}).value || '';
+      m.addEventListener('change', e => { if (e.target.name === 'ang-exc') { const sim = escolha() === 'sim'; $('#ang-dias-f', m).hidden = !sim; if (sim) $('#ang-dias', m).focus(); } });
+      const dias = $('#ang-dias', m); dias.oninput = () => { dias.value = dias.value.replace(/\D/g, '').slice(0, 5); dias.classList.remove('err'); };
+      $('#ang-save', m).onclick = async () => {
+        if (!requireFields(['ang-ref', 'ang-data'])) return;
+        const bad = (el, msg) => { if (el) { el.classList.add('err'); el.focus(); } toast(msg, 'warn'); };
+        const e = escolha();
+        if (!e) return bad(m.querySelector('input[name="ang-exc"]'), 'Marque se a angariação tem exclusividade: Sim ou Não.');
+        const d = val('ang-dias');
+        if (e === 'sim' && !(/^\d{1,5}$/.test(d) && +d >= 1)) return bad(dias, 'Informe a quantidade de dias de exclusividade (de 1 a 99999).');
+        if (val('ang-data') > today()) return bad($('#ang-data', m), 'A data da angariação não pode ser no futuro.');
+        const rec = {referencia: val('ang-ref'), dataAngariacao: val('ang-data'), exclusividade: e, ...(e === 'sim' ? {dias: +d} : {}),
+          corretorId: a.corretorId || ME.id, corretorNome: a.corretorNome || ME.nome, criadoTs: a.criadoTs || Date.now()};
+        const btn = $('#ang-save', m); btn.disabled = true;
+        const id = a.id || uid();
+        const ok = await salvarAngariacao(id, rec);
+        btn.disabled = false;
+        if (!ok) return;
+        closeModal(); toast(a.id ? 'Angariação atualizada.' : 'Angariação registrada.');
+        if (rec.dataAngariacao < state.ang.de || rec.dataAngariacao > angAte()) { state.ang.de = monthKey(rec.dataAngariacao) + '-01'; state.ang.ate = ''; render(); }
+      };
+    }});
+}
+async function salvarAngariacao(id, rec) {
+  const antes = S.angariacoes.get(id);
+  S.angariacoes.set(id, {...rec, id}); scheduleRender(true);
+  const dados = {...rec}; delete dados.id;
+  try {
+    const {error} = await sb.from('angariacoes').upsert({id, data: dados}); if (error) throw error;
+    scheduleReload('angariacoes'); return true;
+  } catch (e) {
+    if (antes) S.angariacoes.set(id, antes); else S.angariacoes.delete(id); scheduleRender(true);
+    if (e && e.code === '22023') toast(e.message, 'warn'); else writeErr(e);
+    return false;
+  }
+}
+// Exportação: planilha (CSV que abre no Excel) e PDF, sempre com o filtro atual
+function angTabela() {
+  const as = angFiltradas();
+  return {as, head: ['Data da angariação', 'Referência', 'Exclusividade', 'Dias', 'Corretor que cadastrou', 'Registrada em'],
+    rows: as.map(a => [brD(a.dataAngariacao), a.referencia || '', a.exclusividade === 'sim' ? 'Sim' : 'Não', a.exclusividade === 'sim' ? String(a.dias) : '',
+      angNome(a), a.criadoTs ? new Date(a.criadoTs).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'}) : ''])};
+}
+const angArquivo = ext => `angariacoes-${state.ang.de || 'inicio'}_a_${angAte()}${angVeTodas() && state.ang.corretor !== 'all' ? '-' + slugify(corretor(state.ang.corretor)?.nome || '') : ''}.${ext}`;
+function baixarBlob(blob, nome) {
+  const url = URL.createObjectURL(blob), el = document.createElement('a');
+  el.href = url; el.download = nome; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+function angCsv() {
+  const {as, head, rows} = angTabela(); if (!as.length) return toast('Não há angariações no filtro atual.', 'warn');
+  // ";" e BOM: abre direto no Excel em português; células que começam com = + - @ viram texto (evita fórmula injetada)
+  const cel = v => { let t = String(v ?? ''); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return /[;"\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const csv = '﻿' + [head, ...rows].map(r => r.map(cel).join(';')).join('\r\n');
+  baixarBlob(new Blob([csv], {type: 'text/csv;charset=utf-8'}), angArquivo('csv'));
+  toast('Planilha salva. Abra no Excel.');
+}
+async function angPdf(btn) {
+  const {as, head, rows} = angTabela(); if (!as.length) return toast('Não há angariações no filtro atual.', 'warn');
+  if (!pdfPronto()) { if (btn) btn.disabled = true; try { await loadPdfLib(); } catch (e) { if (btn) btn.disabled = false; return toast('Não foi possível carregar o gerador de PDF. Verifique a internet e tente de novo.', 'bad'); } if (btn) btn.disabled = false; }
+  const r = angResumo(as), geral = angVeTodas() && state.ang.corretor === 'all';
+  const quem = !angVeTodas() ? ME.nome : geral ? 'Todos os corretores' : (corretor(state.ang.corretor)?.nome || '—');
+  const m = {titulo: 'Relatório de angariações', subtitulo: `${quem} · ${brD(state.ang.de)} a ${brD(angAte())}`, wide: false, secoes: [],
+    resumo: [['Angariações', r.n], ['Com exclusividade', r.sim], ['Sem exclusividade', r.nao], ['% com exclusividade', r.pct == null ? '—' : pct(r.pct)]],
+    gerado: new Date().toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'}) + ' por ' + (ME?.nome || '')};
+  if (geral) {
+    const por = {}; as.forEach(a => { const k = angNome(a); por[k] = por[k] || {n: 0, s: 0}; por[k].n++; if (a.exclusividade === 'sim') por[k].s++; });
+    m.secoes.push({titulo: 'Resumo por corretor', head: ['Corretor', 'Angariações', 'Com exclusividade', 'Sem exclusividade'], right: [1, 2, 3],
+      body: Object.entries(por).sort((x, y) => y[1].n - x[1].n).map(([k, v]) => [k, v.n, v.s, v.n - v.s]), foot: ['Total', r.n, r.sim, r.nao]});
+  }
+  m.secoes.push({titulo: 'Angariações registradas', head, right: [3], body: rows});
+  baixarBlob(buildPdf(m).output('blob'), angArquivo('pdf'));
+  toast('PDF salvo.');
+}
+// Bloco do Painel: respeita período e corretor escolhidos no Painel
+function angPainelHTML(ms, cid) {
+  if (!can('angariacoes') && !angVeTodas()) return '';
+  const set = new Set(ms), as = angVisiveis().filter(a => set.has(String(a.dataAngariacao || '').slice(0, 7)) && (cid === 'all' || a.corretorId === cid));
+  const r = angResumo(as), sorted = [...ms].sort();
+  const link = `<button class="btn sm" data-act="ang-ver" data-de="${sorted[0]}-01" data-ate="${fimDoMes(sorted[sorted.length - 1] + '-01')}" data-cor="${cid}">Ver angariações</button>`;
+  let porCor = '';
+  if (cid === 'all' && angVeTodas() && as.length) {
+    const por = {}; as.forEach(a => { por[a.corretorId] = por[a.corretorId] || {a, n: 0, s: 0}; por[a.corretorId].n++; if (a.exclusividade === 'sim') por[a.corretorId].s++; });
+    porCor = `<table class="t" style="margin-top:14px"><thead><tr><th>Corretor</th><th class="r">Angariações</th><th class="r">Com exclusividade</th><th class="r">Sem exclusividade</th></tr></thead><tbody>
+      ${Object.values(por).sort((x, y) => y.n - x.n).map(v => `<tr><td>${esc(angNome(v.a))}</td><td class="r num"><b>${v.n}</b></td><td class="r num">${v.s}</td><td class="r num">${v.n - v.s}</td></tr>`).join('')}</tbody></table>`;
+  }
+  return `<section class="card">
+    <div class="card-h"><h2>Angariações</h2><span class="hint">${periodLabel()}${cid === 'all' ? '' : ' · ' + esc(firstName(corretor(cid)?.nome))}</span><span class="grow"></span>${link}</div>
+    <div class="card-b">${!ANGARIACOES_OK ? '<div class="muted small">Estrutura de angariações ainda não instalada no banco.</div>' : `<div class="goal-stats ang-stats">
+      <div class="mini"><span>Angariações</span><b class="num">${r.n}</b></div>
+      <div class="mini"><span>Com exclusividade</span><b class="num">${r.sim}</b></div>
+      <div class="mini"><span>Sem exclusividade</span><b class="num">${r.nao}</b></div>
+      <div class="mini"><span>% com exclusividade</span><b class="num">${r.pct == null ? '—' : pct(r.pct)}</b></div>
+    </div>${porCor}`}</div></section>`;
 }
 
 /* =========================================================
@@ -3941,6 +4130,14 @@ const ACTIONS = {
     if (w) w.location.href = data.signedUrl; else location.href = data.signedUrl;
   },
   'vd-new': () => vendaForm(),
+  'ang-new': () => angForm(),
+  'ang-edit': el => { const a = S.angariacoes.get(el.dataset.id); if (a) angForm(a); },
+  'ang-del': el => { const a = S.angariacoes.get(el.dataset.id); if (!a) return; if (!angPode(a)) return denied();
+    confirmBox(`Excluir a angariação <b>${esc(a.referencia)}</b> de ${brD(a.dataAngariacao)}?`, 'Excluir', async () => { if (await remove('angariacoes', a.id)) toast('Angariação excluída.'); }); },
+  'ang-csv': () => angCsv(),
+  'ang-pdf': el => angPdf(el),
+  'ang-ver': el => { state.ang.de = el.dataset.de; state.ang.ate = el.dataset.ate; state.ang.corretor = el.dataset.cor || 'all';
+    if (location.hash !== '#angariacoes') location.hash = 'angariacoes'; else go('angariacoes'); },
   'vd-edit': el => { const v = S.vendas.get(el.dataset.id); if (v) vendaForm(v); },
   'vd-del': el => { const v = S.vendas.get(el.dataset.id); if (v && !canOp(v.vendedorId)) return denied(); if (v) confirmBox(`Excluir a venda <b>${esc(v.referencia)}</b> de ${brlC(v.valor)}?`, 'Excluir', async () => { if (await remove('vendas', v.id)) toast('Venda excluída.'); }); },
   'vd-prev': () => { state.vendas.mes = addMonths(state.vendas.mes, -1); render(); },
