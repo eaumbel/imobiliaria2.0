@@ -16,7 +16,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 // Versão desta função: aparece no "Teste da inteligência" (Diário de bordo → Configurações),
 // para conferir se o código publicado no Supabase é o mais recente.
-const VERSAO_FUNCAO = "2026-11-19.3";
+const VERSAO_FUNCAO = "2026-11-19.4";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -345,23 +345,29 @@ ${texto}
         ];
     const limiteMs = Number(Deno.env.get("LIMITE_IA_MS")) || 110_000; // o Supabase encerra a função em ~150 s; paramos antes, com mensagem clara
     const ate = Date.now() + limiteMs;
-    let g: Response | null = null, gj: any = {}, modo = MODOS[0];
+    let g: Response | null = null, gj: any = {}, modo = MODOS[0], tentativasGemini = 0;
     try {
       for (const m of MODOS) {
         modo = m;
-        const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), Math.max(1000, ate - Date.now()));
-        try {
-          g = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-            method: "POST", signal: ctl.signal,
-            headers: { "content-type": "application/json", "x-goog-api-key": chaveGemini },
-            body: JSON.stringify({
-              systemInstruction: { parts: [{ text: sistema + formato }] },
-              contents: [{ role: "user", parts: [{ text: usuario }] }],
-              generationConfig: { responseMimeType: "application/json", temperature: 0.4, maxOutputTokens: m.max, ...m.cfg },
-            }),
-          });
-          gj = await g.json().catch(() => ({}));
-        } finally { clearTimeout(t); }
+        // O Gemini responde 503/500 quando está sobrecarregado ("The model is overloaded"): espera e tenta de novo
+        for (let tentativa = 0; ; tentativa++) {
+          const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), Math.max(1000, ate - Date.now()));
+          try {
+            g = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+              method: "POST", signal: ctl.signal,
+              headers: { "content-type": "application/json", "x-goog-api-key": chaveGemini },
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: sistema + formato }] },
+                contents: [{ role: "user", parts: [{ text: usuario }] }],
+                generationConfig: { responseMimeType: "application/json", temperature: 0.4, maxOutputTokens: m.max, ...m.cfg },
+              }),
+            });
+            gj = await g.json().catch(() => ({}));
+          } finally { clearTimeout(t); }
+          const espera = [2000, 4000, 8000][tentativa];
+          if ((g.status === 503 || g.status === 500) && espera && Date.now() + espera + 15000 < ate) { tentativasGemini++; await new Promise((ok) => setTimeout(ok, espera)); continue; }
+          break;
+        }
         // modelo não aceita esta forma de controlar o raciocínio: tenta a próxima
         if (!g.ok && g.status === 400 && /thinking/i.test(gj?.error?.message ?? "")) continue;
         break;
@@ -376,8 +382,8 @@ ${texto}
       if (g.status === 400 && /API key/i.test(msg)) return erro(500, "A chave GEMINI_API_KEY configurada no Supabase é inválida.");
       if (g.status === 403) return erro(500, "A chave GEMINI_API_KEY não tem permissão. Gere outra em aistudio.google.com.");
       if (g.status === 404) return erro(500, "Modelo de IA não encontrado. Ajuste o segredo MODELO_IA no Supabase.");
-      if (g.status === 429) return erro(503, "Limite gratuito de análises atingido por agora. Tente de novo em alguns minutos.");
-      if (g.status >= 500) return erro(503, "O serviço de inteligência está ocupado. Tente de novo em um minuto.");
+      if (g.status === 429) return erro(503, `Limite de uso do Gemini (${modelo}) atingido por agora${msg ? ": " + msg.replace(/[.\s]+$/, "") : ""}. Tente de novo em alguns minutos ou passe a usar a OpenAI (segredo OPENAI_API_KEY).`);
+      if (g.status >= 500) return erro(503, `O Gemini (${modelo}) está sobrecarregado ou indisponível no momento${tentativasGemini ? ` (tentamos ${tentativasGemini + 1} vezes)` : ""}${msg ? ": " + msg.replace(/[.\s]+$/, "") : ""}. Tente de novo em alguns minutos ou passe a usar a OpenAI (segredo OPENAI_API_KEY).`);
       return erro(502, `O serviço de inteligência (Gemini · ${modelo}) recusou a análise: ` + msg);
     }
     const txt = (gj?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? "").join("").trim();
@@ -418,7 +424,7 @@ ${texto}
     if (r.status === 401) return erro(500, "A chave ANTHROPIC_API_KEY configurada no Supabase é inválida.");
     if (/credit|billing|balance/i.test(msg)) return erro(402, "A conta da API da Anthropic está sem créditos.");
     if (r.status === 404 || /model/i.test(msg)) return erro(500, "Modelo de IA não encontrado. Ajuste o segredo MODELO_IA no Supabase.");
-    if (r.status === 429 || r.status === 529) return erro(503, "O serviço de inteligência está ocupado. Tente de novo em um minuto.");
+    if (r.status === 429 || r.status === 529) return erro(503, `O Claude está ocupado no momento${msg ? ": " + msg.replace(/[.\s]+$/, "") : ""}. Tente de novo em um minuto.`);
     return erro(502, "O serviço de inteligência recusou a análise: " + msg);
   }
   const uso = (j.content ?? []).find((b: any) => b.type === "tool_use");
@@ -484,8 +490,8 @@ function msgOpenAI(status: number, msg: string, codigo: string | undefined, mode
   if (status === 401) return "A chave OPENAI_API_KEY configurada no Supabase é inválida.";
   if (codigo === "insufficient_quota" || /quota|billing|credit/i.test(msg)) return "A conta da OpenAI está sem créditos. Avise o administrador.";
   if (status === 404 || codigo === "model_not_found") return `Modelo de IA não encontrado (${modelo}). Ajuste o segredo MODELO_OPENAI no Supabase.`;
-  if (status === 429) return "Muitas solicitações no momento. Tente novamente em instantes.";
-  if (status >= 500) return "O serviço de inteligência está ocupado. Tente de novo em um minuto.";
+  if (status === 429) return `A OpenAI (${modelo}) recebeu muitas solicitações no momento${msg ? ": " + msg.replace(/[.\s]+$/, "") : ""}. Tente novamente em instantes.`;
+  if (status >= 500) return `A OpenAI (${modelo}) está indisponível no momento (código ${status})${msg ? ": " + msg.replace(/[.\s]+$/, "") : ""}. Tente de novo em um minuto.`;
   return `O serviço de inteligência (OpenAI · ${modelo}) recusou a análise: ` + msg;
 }
 function erroOpenAI(status: number, msg: string, codigo: string | undefined, modelo: string) {

@@ -2487,7 +2487,7 @@ function diarioConfigHTML() {
     <div class="row" style="justify-content:flex-end"><button class="btn" data-act="dc-padrao">Restaurar sugestões</button><button class="btn primary" id="dc-save">Salvar configurações</button></div>`;
 }
 // Teste da inteligência: mostra o que a função publicada no Supabase está usando e o resultado de uma chamada curta
-const IA_VERSAO_ESPERADA = '2026-11-19.3';
+const IA_VERSAO_ESPERADA = '2026-11-19.4';
 async function testarIA(btn) {
   const box = $('#dc-ia-res'); if (!box) return;
   btn.disabled = true; box.innerHTML = '<div class="small muted">Testando…</div>';
