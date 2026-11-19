@@ -42,7 +42,7 @@ const ACAO_TXT: Record<string, string> = {
 // Estrutura esperada da resposta (usada no prompt e na ferramenta do Claude)
 const S = (type: string, extra: Record<string, unknown> = {}) => ({ type, ...extra });
 const STR = S("string");
-const LISTA_STR = S("array", { items: STR });
+const LISTA_CURTA = S("array", { maxItems: 4, items: STR });
 const ESQUEMA = {
   type: "object",
   properties: {
@@ -55,17 +55,17 @@ const ESQUEMA = {
       },
       required: ["o_que_aconteceu", "produtividade", "principal_avanco", "principal_problema", "atencao_amanha"],
     }),
-    pontos_fortes: S("array", { maxItems: 4, items: S("object", { properties: { titulo: STR, evidencia: STR, impacto: STR, como_repetir: STR }, required: ["titulo", "evidencia", "impacto", "como_repetir"] }) }),
-    pontos_fracos: S("array", { maxItems: 4, items: S("object", { properties: { titulo: STR, evidencia: STR, impacto: STR, como_corrigir: STR }, required: ["titulo", "evidencia", "impacto", "como_corrigir"] }) }),
-    plano_acao: S("array", { maxItems: 4, items: S("object", { properties: { prioridade: S("string", { enum: ["alta", "media", "baixa"] }), prazo: STR, acao: STR, meta: STR, conclusao: STR }, required: ["prioridade", "acao", "conclusao"] }) }),
+    pontos_fortes: S("array", { maxItems: 3, items: S("object", { properties: { titulo: STR, evidencia: STR, impacto: STR, como_repetir: STR }, required: ["titulo", "evidencia", "impacto", "como_repetir"] }) }),
+    pontos_fracos: S("array", { maxItems: 3, items: S("object", { properties: { titulo: STR, evidencia: STR, impacto: STR, como_corrigir: STR }, required: ["titulo", "evidencia", "impacto", "como_corrigir"] }) }),
+    plano_acao: S("array", { maxItems: 3, items: S("object", { properties: { prioridade: S("string", { enum: ["alta", "media", "baixa"] }), prazo: STR, acao: STR, meta: STR, conclusao: STR }, required: ["prioridade", "acao", "conclusao"] }) }),
     desafio: STR,
     pergunta_reflexao: STR,
-    fatos: LISTA_STR, interpretacoes: LISTA_STR, lacunas: LISTA_STR,
-    oportunidades_perdidas: LISTA_STR,
+    fatos: LISTA_CURTA, interpretacoes: LISTA_CURTA, lacunas: LISTA_CURTA,
+    oportunidades_perdidas: LISTA_CURTA,
     pilares: S("array", { maxItems: 12, items: S("object", { properties: { item: STR, situacao: S("string", { enum: ["atendido", "parcial", "nao_atendido", "sem_evidencia"] }), avaliacao: STR }, required: ["item", "situacao", "avaliacao"] }) }),
-    tecnicas: S("array", { maxItems: 4, items: S("object", { properties: { tecnica: STR, como_aplicar: STR }, required: ["tecnica", "como_aplicar"] }) }),
-    nota_detalhes: S("array", { maxItems: 5, items: S("object", { properties: { criterio: STR, pontos: S("integer"), maximo: S("integer"), comentario: STR }, required: ["criterio", "pontos", "maximo", "comentario"] }) }),
-    melhorar_diario: LISTA_STR,
+    tecnicas: S("array", { maxItems: 3, items: S("object", { properties: { tecnica: STR, como_aplicar: STR }, required: ["tecnica", "como_aplicar"] }) }),
+    nota_detalhes: S("array", { maxItems: 4, items: S("object", { properties: { criterio: STR, pontos: S("integer"), maximo: S("integer"), comentario: STR }, required: ["criterio", "pontos", "maximo", "comentario"] }) }),
+    melhorar_diario: LISTA_CURTA,
     registros: S("array", {
       maxItems: 10,
       items: S("object", {
@@ -97,7 +97,13 @@ Deno.serve(async (req) => {
   const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
   const { data: ud } = await admin.auth.getUser(token);
   if (!ud?.user) return erro(401, "Sessão expirada. Entre novamente.");
-  const { data: me } = await admin.from("perfis").select("nome, perfil, ativo, especialidade").eq("id", ud.user.id).maybeSingle();
+  // Perfil, configuração e uso das últimas 24 h: consultas independentes, feitas ao mesmo tempo
+  const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const [{ data: me }, { data: cfgRow }, { count: usadas }] = await Promise.all([
+    admin.from("perfis").select("nome, perfil, ativo, especialidade").eq("id", ud.user.id).maybeSingle(),
+    admin.from("config").select("data").eq("id", "diario").maybeSingle(),
+    admin.from("uso_ia").select("id", { count: "exact", head: true }).eq("usuario", ud.user.id).gte("em", desde),
+  ]);
   if (!me || !me.ativo) return erro(403, "Seu acesso está inativo.");
 
   let body: Record<string, any>;
@@ -107,13 +113,10 @@ Deno.serve(async (req) => {
   if (texto.length < 15) return erro(400, "Descreva o seu dia com um pouco mais de detalhe.");
   const ctx = body.contexto ?? {};
 
-  const { data: cfgRow } = await admin.from("config").select("data").eq("id", "diario").maybeSingle();
   const c = { ...PADRAO, ...(cfgRow?.data ?? {}) } as typeof PADRAO;
 
   // Limite de análises por corretor a cada 24 horas
   const limite = Math.max(1, Math.min(50, Number(c.limite) || 3));
-  const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { count: usadas } = await admin.from("uso_ia").select("id", { count: "exact", head: true }).eq("usuario", ud.user.id).gte("em", desde);
   if ((usadas ?? 0) >= limite) return erro(429, `Você já usou as ${limite} análises das últimas 24 horas. Tente de novo mais tarde.`);
   const lista = (a: string[]) => (Array.isArray(a) && a.length ? a.map((x) => "- " + x).join("\n") : "- (não definido)");
   const palavras = (Array.isArray(c.palavras) ? c.palavras : PADRAO.palavras).map((p) => `- "${p.termo}" → ${ACAO_TXT[p.acao] ?? p.acao}`).join("\n");
@@ -151,12 +154,14 @@ NOTA DE EXECUÇÃO (0 a 100), somando estes critérios em "nota_detalhes":
 - Qualidade do registro: clareza, números, próximos passos (0–20)
 
 CONTEÚDO
-- diagnostico: o_que_aconteceu, produtividade, principal_avanco, principal_problema, atencao_amanha (2 a 4 frases cada).
-- pontos_fortes e pontos_fracos: só com evidência no relato; se não houver, devolva lista vazia.
-- plano_acao: 2 a 4 ações para o próximo dia útil, cada uma com prioridade, prazo (AAAA-MM-DD), meta mensurável e critério de conclusão.
+SEJA DIRETO: frases curtas e objetivas, sem repetir a mesma informação em seções diferentes.
+- diagnostico: o_que_aconteceu, produtividade, principal_avanco, principal_problema, atencao_amanha (1 a 2 frases cada).
+- pontos_fortes e pontos_fracos: até 3 cada, só com evidência no relato; se não houver, devolva lista vazia. Cada campo em 1 frase.
+- plano_acao: 2 a 3 ações para o próximo dia útil, cada uma com prioridade, prazo (AAAA-MM-DD), meta mensurável e critério de conclusão.
+- fatos, interpretacoes, lacunas, oportunidades_perdidas e melhorar_diario: até 4 itens curtos cada.
 - desafio: um desafio prático e curto para amanhã. pergunta_reflexao: uma pergunta que faça o corretor pensar.
-- pilares: avalie cada valor, dever e virtude como atendido, parcial, nao_atendido ou sem_evidencia.
-- tecnicas: técnicas comerciais aplicáveis ao caso (ex.: perguntas de diagnóstico, SPIN, ancoragem de preço, fechamento por alternativa, follow-up com prazo).
+- pilares: avalie cada valor, dever e virtude como atendido, parcial, nao_atendido ou sem_evidencia, com "avaliacao" de no máximo 15 palavras.
+- tecnicas: até 3 técnicas comerciais aplicáveis ao caso (ex.: perguntas de diagnóstico, SPIN, ancoragem de preço, fechamento por alternativa, follow-up com prazo).
 
 LANÇAMENTOS AUTOMÁTICOS ("registros")
 Crie itens somente quando o texto descrever um fato que corresponda a estas palavras-chave (ou expressão de mesmo sentido, claramente):
@@ -179,21 +184,34 @@ ${texto}
   // ---------- Google Gemini ----------
   if (chaveGemini) {
     const formato = `\n\nResponda SOMENTE com um objeto JSON válido (sem texto fora dele) que siga exatamente este esquema JSON:\n${JSON.stringify(ESQUEMA)}`;
-    let g: Response;
+    // O modelo Flash "pensa" antes de responder (raciocínio interno), o que é a maior parte da espera.
+    // Para preencher um relatório com estrutura fixa isso não é necessário: desligamos (RACIOCINIO_IA=1 religa).
+    // Se o modelo escolhido não aceitar a opção, repete a chamada sem ela.
+    const modelo = Deno.env.get("MODELO_IA") ?? "gemini-flash-latest";
+    const chamar = (semRaciocinio: boolean) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": chaveGemini },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: sistema + formato }] },
+        contents: [{ role: "user", parts: [{ text: usuario }] }],
+        generationConfig: {
+          responseMimeType: "application/json", temperature: 0.4, maxOutputTokens: 4096,
+          ...(semRaciocinio ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+        },
+      }),
+    });
+    const semRaciocinio = Deno.env.get("RACIOCINIO_IA") !== "1";
+    let g: Response, gj: any;
     try {
-      g = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${Deno.env.get("MODELO_IA") ?? "gemini-flash-latest"}:generateContent`, {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": chaveGemini },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: sistema + formato }] },
-          contents: [{ role: "user", parts: [{ text: usuario }] }],
-          generationConfig: { responseMimeType: "application/json", temperature: 0.4, maxOutputTokens: 8192 },
-        }),
-      });
+      g = await chamar(semRaciocinio);
+      gj = await g.json().catch(() => ({}));
+      if (!g.ok && g.status === 400 && semRaciocinio && /thinking/i.test(gj?.error?.message ?? "")) {
+        g = await chamar(false);
+        gj = await g.json().catch(() => ({}));
+      }
     } catch {
       return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
     }
-    const gj = await g.json().catch(() => ({}));
     if (!g.ok) {
       const msg = gj?.error?.message ?? "";
       if (g.status === 400 && /API key/i.test(msg)) return erro(500, "A chave GEMINI_API_KEY configurada no Supabase é inválida.");
@@ -205,7 +223,10 @@ ${texto}
     }
     const txt = (gj?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? "").join("").trim();
     let a: any;
-    try { a = JSON.parse(txt.replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch { return erro(502, "A inteligência não devolveu uma análise válida. Tente de novo."); }
+    try { a = JSON.parse(txt.replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch {
+      if (gj?.candidates?.[0]?.finishReason === "MAX_TOKENS") return erro(502, "O relato gerou uma análise longa demais. Tente de novo com um texto mais curto.");
+      return erro(502, "A inteligência não devolveu uma análise válida. Tente de novo.");
+    }
     await admin.from("uso_ia").insert({ usuario: ud.user.id });
     return resp(200, normalizar(a));
   }
@@ -218,7 +239,7 @@ ${texto}
       headers: { "content-type": "application/json", "x-api-key": chaveClaude!, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: Deno.env.get("MODELO_IA") ?? "claude-sonnet-5-5",
-        max_tokens: 6000,
+        max_tokens: 4096,
         system: sistema + "\n\nResponda chamando a ferramenta registrar_relatorio.",
         tools: [{ name: "registrar_relatorio", description: "Registra o relatório do dia do corretor.", input_schema: ESQUEMA }],
         tool_choice: { type: "tool", name: "registrar_relatorio" },

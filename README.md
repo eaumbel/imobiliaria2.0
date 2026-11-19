@@ -117,5 +117,8 @@ A análise do dia é feita pela função `diario-ia`, que funciona com **Google 
 3. **Chave da IA (gratuita):** em https://aistudio.google.com → **Get API key** → **Create API key**. Cadastre em Supabase → Edge Functions → **Secrets** com o nome `GEMINI_API_KEY`.
    - No plano gratuito do Gemini, o Google pode usar os textos enviados para melhorar os produtos dele. Para evitar isso, ative o faturamento no Google Cloud (plano pago) ou use a Anthropic (`ANTHROPIC_API_KEY`).
 4. Opcional: o segredo `MODELO_IA` troca o modelo (padrão `gemini-flash-latest` no Gemini, `claude-sonnet-5-5` na Anthropic).
+5. Opcional: o segredo `RACIOCINIO_IA` com valor `1` religa o "raciocínio" prévio do Gemini. Por padrão ele fica desligado, porque é a maior parte da espera e não é necessário para preencher o relatório.
+
+**Atualizar a função:** publicar o site não atualiza a função. Quando `supabase/functions/diario-ia/index.ts` mudar, abra Edge Functions → `diario-ia` → **Code**, cole o arquivo novo e clique em **Deploy**.
 
 O prompt do mentor (com versão), o limite de análises por corretor a cada 24h, o mantra da equipe (valores, deveres, virtudes) e as palavras-chave ficam em **Diário de bordo → Configurações** (só o Master).
