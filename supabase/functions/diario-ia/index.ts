@@ -84,6 +84,7 @@ const ESQUEMA = {
 const brl = (v: unknown) => (typeof v === "number" && isFinite(v) ? v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "não informado");
 
 Deno.serve(async (req) => {
+  const inicio = Date.now();
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return erro(405, "Método não permitido.");
 
@@ -184,34 +185,48 @@ ${texto}
   // ---------- Google Gemini ----------
   if (chaveGemini) {
     const formato = `\n\nResponda SOMENTE com um objeto JSON válido (sem texto fora dele) que siga exatamente este esquema JSON:\n${JSON.stringify(ESQUEMA)}`;
-    // O modelo Flash "pensa" antes de responder (raciocínio interno), o que é a maior parte da espera.
-    // Para preencher um relatório com estrutura fixa isso não é necessário: desligamos (RACIOCINIO_IA=1 religa).
-    // Se o modelo escolhido não aceitar a opção, repete a chamada sem ela.
+    // O modelo "pensa" antes de responder (raciocínio interno), o que é a maior parte da espera. Para preencher
+    // um relatório com estrutura fixa isso não é necessário. Cada geração do Gemini aceita uma forma diferente
+    // de reduzir o raciocínio; tentamos da mais rápida para a mais compatível (RACIOCINIO_IA=1 deixa o padrão).
+    // No Gemini o raciocínio consome o mesmo limite de tokens da resposta: quando ele não pode ser desligado,
+    // o limite sobe para o relatório não sair cortado.
     const modelo = Deno.env.get("MODELO_IA") ?? "gemini-flash-latest";
-    const chamar = (semRaciocinio: boolean) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": chaveGemini },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: sistema + formato }] },
-        contents: [{ role: "user", parts: [{ text: usuario }] }],
-        generationConfig: {
-          responseMimeType: "application/json", temperature: 0.4, maxOutputTokens: 4096,
-          ...(semRaciocinio ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
-        },
-      }),
-    });
-    const semRaciocinio = Deno.env.get("RACIOCINIO_IA") !== "1";
-    let g: Response, gj: any;
+    const MODOS: { nome: string; cfg: Record<string, unknown>; max: number }[] = Deno.env.get("RACIOCINIO_IA") === "1"
+      ? [{ nome: "padrao", cfg: {}, max: 16384 }]
+      : [
+          { nome: "desligado", cfg: { thinkingConfig: { thinkingBudget: 0 } }, max: 4096 },
+          { nome: "minimo", cfg: { thinkingConfig: { thinkingLevel: "minimal" } }, max: 16384 },
+          { nome: "baixo", cfg: { thinkingConfig: { thinkingLevel: "low" } }, max: 16384 },
+          { nome: "padrao", cfg: {}, max: 16384 },
+        ];
+    const limiteMs = Number(Deno.env.get("LIMITE_IA_MS")) || 110_000; // o Supabase encerra a função em ~150 s; paramos antes, com mensagem clara
+    const ate = Date.now() + limiteMs;
+    let g: Response | null = null, gj: any = {}, modo = MODOS[0];
     try {
-      g = await chamar(semRaciocinio);
-      gj = await g.json().catch(() => ({}));
-      if (!g.ok && g.status === 400 && semRaciocinio && /thinking/i.test(gj?.error?.message ?? "")) {
-        g = await chamar(false);
-        gj = await g.json().catch(() => ({}));
+      for (const m of MODOS) {
+        modo = m;
+        const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), Math.max(1000, ate - Date.now()));
+        try {
+          g = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+            method: "POST", signal: ctl.signal,
+            headers: { "content-type": "application/json", "x-goog-api-key": chaveGemini },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: sistema + formato }] },
+              contents: [{ role: "user", parts: [{ text: usuario }] }],
+              generationConfig: { responseMimeType: "application/json", temperature: 0.4, maxOutputTokens: m.max, ...m.cfg },
+            }),
+          });
+          gj = await g.json().catch(() => ({}));
+        } finally { clearTimeout(t); }
+        // modelo não aceita esta forma de controlar o raciocínio: tenta a próxima
+        if (!g.ok && g.status === 400 && /thinking/i.test(gj?.error?.message ?? "")) continue;
+        break;
       }
-    } catch {
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return erro(504, `A inteligência demorou mais de ${limiteMs / 1000} s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para trocar o modelo (segredo MODELO_IA).`);
       return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
     }
+    if (!g) return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
     if (!g.ok) {
       const msg = gj?.error?.message ?? "";
       if (g.status === 400 && /API key/i.test(msg)) return erro(500, "A chave GEMINI_API_KEY configurada no Supabase é inválida.");
@@ -224,18 +239,19 @@ ${texto}
     const txt = (gj?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? "").join("").trim();
     let a: any;
     try { a = JSON.parse(txt.replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch {
-      if (gj?.candidates?.[0]?.finishReason === "MAX_TOKENS") return erro(502, "O relato gerou uma análise longa demais. Tente de novo com um texto mais curto.");
+      if (gj?.candidates?.[0]?.finishReason === "MAX_TOKENS") return erro(502, `A análise saiu cortada (limite de tamanho atingido no modelo ${modelo}, raciocínio ${modo.nome}). Tente de novo.`);
       return erro(502, "A inteligência não devolveu uma análise válida. Tente de novo.");
     }
     await admin.from("uso_ia").insert({ usuario: ud.user.id });
-    return resp(200, normalizar(a));
+    return resp(200, { ...normalizar(a), meta: { modelo, raciocinio: modo.nome, ms: Date.now() - inicio } });
   }
 
   // ---------- Claude (Anthropic) ----------
   let r: Response;
+  const ctlC = new AbortController(), tC = setTimeout(() => ctlC.abort(), 110_000);
   try {
     r = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
+      method: "POST", signal: ctlC.signal,
       headers: { "content-type": "application/json", "x-api-key": chaveClaude!, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: Deno.env.get("MODELO_IA") ?? "claude-sonnet-5-5",
@@ -246,10 +262,13 @@ ${texto}
         messages: [{ role: "user", content: usuario }],
       }),
     });
-  } catch {
+  } catch (e) {
+    clearTimeout(tC);
+    if ((e as Error)?.name === "AbortError") return erro(504, "A inteligência demorou mais de 110 s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para trocar o modelo (segredo MODELO_IA).");
     return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
   }
   const j = await r.json().catch(() => ({}));
+  clearTimeout(tC);
   if (!r.ok) {
     const msg = j?.error?.message ?? "";
     if (r.status === 401) return erro(500, "A chave ANTHROPIC_API_KEY configurada no Supabase é inválida.");
@@ -261,7 +280,7 @@ ${texto}
   const uso = (j.content ?? []).find((b: any) => b.type === "tool_use");
   if (!uso?.input) return erro(502, "A inteligência não devolveu uma análise válida. Tente de novo.");
   await admin.from("uso_ia").insert({ usuario: ud.user.id });
-  return resp(200, normalizar(uso.input));
+  return resp(200, { ...normalizar(uso.input), meta: { modelo: Deno.env.get("MODELO_IA") ?? "claude-sonnet-5-5", ms: Date.now() - inicio } });
 });
 
 function normalizar(a: any) {

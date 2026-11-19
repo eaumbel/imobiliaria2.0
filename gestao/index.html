@@ -885,7 +885,9 @@ async function fnCall(nome, payload = {}) {
       body: JSON.stringify(payload)});
   } catch (e) { throw new Error('Não foi possível falar com o servidor. Verifique a internet.'); }
   let out = {}; try { out = await res.json(); } catch (e) {}
-  if (!res.ok) throw new Error(out.erro || 'O servidor recusou a operação.');
+  if (!res.ok) throw new Error(out.erro || (res.status === 504 || res.status === 408 ? 'O servidor encerrou a operação por demorar demais (limite de tempo do Supabase). Tente de novo.'
+    : res.status === 546 ? 'O servidor encerrou a operação por limite de recursos do Supabase. Tente de novo.'
+    : `O servidor recusou a operação (código ${res.status}).`));
   return out;
 }
 function writeErr(e) {
@@ -2299,7 +2301,10 @@ function relatorioCardHTML(e, {aberto = true, desfazer = false} = {}) {
   const c = corretor(e.corretorId), a = e.analise, n = nota100(a);
   const body = `<div style="font-weight:800;font-size:13.5px">VGV vendido no dia: ${brlC(vgvDia(e.corretorId, e.data))}</div>
     <div><div class="rc-lbl">Relato (texto)</div><div class="relato">${esc(e.texto || '')}</div></div>
-    ${!a ? `<div class="empty"><b>Ainda sem análise</b>O texto foi salvo. Toque em “Analisar meu dia” para gerar o relatório.</div>` : a.diagnostico ? analiseCompletaHTML(a) : analiseAntigaHTML(a)}
+    ${e.analiseErro && (!a || e.analiseErro.em > (a.em || 0)) ? `<div class="ang-dup" role="alert">${ic('info')}<div><b>${a ? 'A nova análise não foi concluída' : 'A análise não foi concluída'}</b><div>${esc(e.analiseErro.msg)}</div>
+        <div class="small">Tentativa em ${new Date(e.analiseErro.em).toLocaleString('pt-BR', {timeZone: TZ, dateStyle: 'short', timeStyle: 'short'})}, depois de ${e.analiseErro.seg} s. ${a ? 'Abaixo está a análise anterior.' : 'O texto foi salvo.'} Toque em “Analisar meu dia” para tentar de novo.</div></div></div>` : ''}
+    ${!a && e.analiseErro ? ''
+    : !a ? `<div class="empty"><b>Ainda sem análise</b>O texto foi salvo. Toque em “Analisar meu dia” para gerar o relatório.</div>` : a.diagnostico ? analiseCompletaHTML(a) : analiseAntigaHTML(a)}
     ${acoesHTML(e, desfazer)}`;
   return `<details class="card rc" ${aberto ? 'open' : ''}><summary class="rc-h"><div><b>${esc(c?.nome || '—')}</b><span>${esc(dayLong(e.data))} de ${e.data.slice(0, 4)}</span></div><span class="grow"></span>
     <span class="pill ${a ? 'info' : 'neutral'}">${a ? 'Analisado' : 'Sem análise'}</span><span class="rc-nota num" style="color:${notaCor(n)}">${n ?? '—'}<small>/100</small></span><span class="chev">${ic('right')}</span></summary>
@@ -2353,14 +2358,21 @@ async function analisarDia(btn) {
   btn.disabled = true; btn.innerHTML = 'Analisando…';
   const base = {corretorId: ME.id, data, texto, criadoEm: prev?.criadoEm || Date.now(), analise: prev?.analise || null, acoes: prev?.acoes || []};
   if (!await save('diario', id, base)) return restaura();
-  let out;
+  let out; const t0 = Date.now(), seg = () => Math.round((Date.now() - t0) / 1000);
   try { out = await fnCall('diario-ia', {texto, data, contexto: contextoDia(ME.id, data)}); }
-  catch (e) { restaura(); state.dirty = false; render(); return toast(e.message, 'bad'); }
+  catch (e) {
+    // a falha fica gravada no diário (aparece no lugar de "Ainda sem análise"), com o tempo que levou
+    await save('diario', id, {...base, analiseErro: {msg: String(e.message || e), em: Date.now(), seg: seg()}});
+    restaura(); state.dirty = false; render(); return toast(e.message, 'bad');
+  }
   const jaLancou = (prev?.acoes || []).length > 0;
   const acoes = jaLancou ? prev.acoes : await criarRegistros(out.registros || [], id, data);
-  await save('diario', id, {...base, analise: {...(out.analise || {}), em: Date.now()}, acoes});
+  const rec = {...base, analise: {...(out.analise || {}), em: Date.now(), seg: seg(), ...(out.meta ? {meta: out.meta} : {})}, acoes};
+  delete rec.analiseErro;
+  await save('diario', id, rec);
   restaura(); state.dirty = false; render();
-  toast(jaLancou ? 'Relatório atualizado. Os lançamentos da primeira análise foram mantidos.' : acoes.length ? `Relatório pronto e ${acoes.filter(a => a.ok).length} registro(s) lançado(s).` : 'Relatório pronto.');
+  const tempo = ` (${seg()} s)`;
+  toast(jaLancou ? 'Relatório atualizado' + tempo + '. Os lançamentos da primeira análise foram mantidos.' : acoes.length ? `Relatório pronto${tempo} e ${acoes.filter(a => a.ok).length} registro(s) lançado(s).` : 'Relatório pronto' + tempo + '.');
 }
 async function criarRegistros(regs, did, dataDia) {
   // Grava os lançamentos ao mesmo tempo (antes era um de cada vez); a ordem do relatório é mantida
