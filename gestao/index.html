@@ -499,6 +499,7 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 select.input.rel-per{width:170px;flex:none}
 .rel-data{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}.rel-data .input{width:170px}
 .ang-filtros{align-items:flex-end;flex-wrap:wrap;gap:12px}.ang-filtros .field{margin:0;min-width:170px}
+.di-analisado{display:flex;gap:8px;align-items:flex-start;line-height:1.45}.di-analisado svg{width:16px;height:16px;flex:none;color:var(--ok);margin-top:2px}
 .ang-exc{gap:22px}.ang-exc .check{font-weight:700}
 .ang-dup{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--bad-soft);color:var(--ink);border:1px solid var(--bad);font-size:14px;line-height:1.45}.ang-dup svg{width:20px;height:20px;flex:none;color:var(--bad);margin-top:1px}.ang-dup b{font-weight:800}.ang-dup .small{color:var(--muted);margin-top:4px}
 .ang-stats{grid-template-columns:repeat(4,1fr)}
@@ -716,6 +717,7 @@ const avatar = c => `<span class="avatar" style="background:${avColor(c?.id)}">$
 const firstName = n => String(n || '').split(' ')[0];
 
 const ICON = {
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5"/>',
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>',
   chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
@@ -2345,7 +2347,8 @@ VIEWS.diario = {
         <form class="card" data-guard onsubmit="return false"><div class="card-b stack">
           <div class="row" style="justify-content:space-between"><h2 style="font-size:17px">Como foi o seu dia?</h2>
             <input class="input" type="date" id="di-data" value="${d.data}" max="${today()}" style="width:170px" aria-label="Dia"></div>
-          <textarea class="input di-text" id="di-texto" placeholder="Conte o que você fez hoje com números: leads atendidos, ligações, visitas, propostas, vendas, próximos passos e dificuldades. Ex.: Vendi 300 mil reais para o cliente João, apartamento no Edifício Marrocos.">${esc(e?.texto || '')}</textarea>
+          ${e?.analise ? `<div class="small muted di-analisado">${ic('check')}O relato deste dia já foi analisado e está no relatório abaixo. Para complementar, escreva aqui o que mais aconteceu: o texto será somado ao relato e o dia será analisado de novo.</div>` : ''}
+          <textarea class="input di-text" id="di-texto" placeholder="${e?.analise ? 'Complemento do dia (opcional)…' : 'Conte o que você fez hoje com números: leads atendidos, ligações, visitas, propostas, vendas, próximos passos e dificuldades. Ex.: Vendi 300 mil reais para o cliente João, apartamento no Edifício Marrocos.'}">${esc(e?.analise ? '' : (e?.texto || ''))}</textarea>
           <div class="di-tools">${micBtn('di-texto')}<span class="grow"></span><button class="btn primary" id="di-analisar">${ic('spark')}Analisar meu dia</button></div>
           <div class="small muted">Palavras que lançam registros automaticamente: ${cfg.palavras.map(p => `<b>${esc(p.termo)}</b>`).join(', ')}.</div>
         </div></form>
@@ -2368,10 +2371,14 @@ VIEWS.diario = {
   }
 };
 async function analisarDia(btn) {
-  const texto = $('#di-texto').value.trim();
-  if (texto.length < 20) { $('#di-texto').focus(); return toast('Descreva o seu dia com um pouco mais de detalhe para a análise ser útil.', 'warn'); }
   if (recAtivo) recAtivo.stop();
   const data = state.diario.data, id = diarioId(data, ME.id), prev = S.diario.get(id);
+  // Dia já analisado: o campo fica vazio e o que for escrito é somado ao relato salvo (nada se perde).
+  // Campo vazio com relato salvo: analisa de novo o relato salvo.
+  const digitado = $('#di-texto').value.trim(), salvo = String(prev?.texto || '').trim();
+  const texto = prev?.analise && salvo ? (digitado ? salvo + '\n\n' + digitado : salvo) : (digitado || salvo);
+  if (prev?.analise && digitado && digitado.length < 5) { $('#di-texto').focus(); return toast('Escreva um complemento um pouco maior.', 'warn'); }
+  if (texto.length < 20) { $('#di-texto').focus(); return toast('Descreva o seu dia com um pouco mais de detalhe para a análise ser útil.', 'warn'); }
   const restaura = () => { btn.disabled = false; btn.innerHTML = ic('spark') + 'Analisar meu dia'; };
   btn.disabled = true; btn.innerHTML = 'Analisando…';
   const base = {corretorId: ME.id, data, texto, criadoEm: prev?.criadoEm || Date.now(), analise: prev?.analise || null, acoes: prev?.acoes || []};
