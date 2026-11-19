@@ -2459,7 +2459,9 @@ function relatorioDiarioHTML() {
 function diarioConfigHTML() {
   const c = cfgDiario();
   const ta = (id, l, arr, help) => `<div class="field"><label for="${id}">${l}</label><textarea class="input" id="${id}" style="min-height:130px">${esc(arr.join('\n'))}</textarea><div class="help">${help}</div></div>`;
-  return `<form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Prompt do mentor</h2><span class="grow"></span><span class="pill neutral">Versão v${c.versao || 1}</span></div>
+  return `<div class="card"><div class="card-h"><h2>Teste da inteligência</h2><span class="grow"></span><button class="btn" data-act="dc-testar-ia">${ic('spark')}Testar agora</button></div>
+      <div class="card-b" id="dc-ia-res"><div class="small muted">Confere a função <b>diario-ia</b> publicada no Supabase (versão, IA e modelo em uso, chaves cadastradas) e faz uma chamada curta e real à IA, medindo o tempo. Não conta no limite de análises.</div></div></div>
+    <form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Prompt do mentor</h2><span class="grow"></span><span class="pill neutral">Versão v${c.versao || 1}</span></div>
       <div class="card-b stack">
         <div class="help" style="font-size:13px">Diretrizes que a inteligência segue ao analisar cada diário: papel, postura, tom e princípios. O mantra, os pilares, a base de conhecimento (FBI, Cialdini, Chris Voss, Ponto de Reflexão), os critérios da nota e o formato do relatório são aplicados automaticamente.</div>
         <textarea class="input" id="dc-prompt" style="min-height:320px;font-size:14px;line-height:1.6">${esc(c.prompt)}</textarea>
@@ -2483,6 +2485,33 @@ function diarioConfigHTML() {
       <div class="card-b stack" id="dc-kws">${c.palavras.map((p, i) => kwRow(p, i)).join('')}</div>
       <div class="card-b small muted" style="padding-top:0">Quando o corretor escrever algo com essas palavras, o sistema lança o registro com os dados que conseguir identificar (cliente, valor, imóvel, data e hora). Ex.: “vendi 300 mil reais para o João, apartamento no Edifício Marrocos” vira uma venda.</div></form>
     <div class="row" style="justify-content:flex-end"><button class="btn" data-act="dc-padrao">Restaurar sugestões</button><button class="btn primary" id="dc-save">Salvar configurações</button></div>`;
+}
+// Teste da inteligência: mostra o que a função publicada no Supabase está usando e o resultado de uma chamada curta
+const IA_VERSAO_ESPERADA = '2026-11-19.3';
+async function testarIA(btn) {
+  const box = $('#dc-ia-res'); if (!box) return;
+  btn.disabled = true; box.innerHTML = '<div class="small muted">Testando…</div>';
+  const linha = (l, v) => `<tr><td class="muted">${l}</td><td><b>${v}</b></td></tr>`;
+  const sim = b => b ? '<span class="pill ok">cadastrada</span>' : '<span class="pill neutral">não</span>';
+  try {
+    const r = await fnCall('diario-ia', {diagnostico: true});
+    const nomes = {openai: 'OpenAI', gemini: 'Google Gemini', claude: 'Claude (Anthropic)'};
+    const velha = r.versao !== IA_VERSAO_ESPERADA;
+    box.innerHTML = `${velha ? `<div class="ang-dup" role="alert" style="margin-bottom:12px">${ic('info')}<div><b>A função publicada não é a mais recente</b><div>Versão no Supabase: ${esc(r.versao || '—')}; esperada: ${IA_VERSAO_ESPERADA}. Atualize a função <b>diario-ia</b> (Edge Functions → diario-ia → Code → colar o arquivo novo → Deploy).</div></div></div>` : ''}
+      <table class="t"><tbody>
+        ${linha('Resultado do teste', r.teste?.ok ? `<span class="pill ok">OK</span> em ${(r.teste.ms / 1000).toFixed(1)} s` : `<span class="pill bad">Falhou</span> ${esc(r.teste?.msg || '')}`)}
+        ${linha('Inteligência em uso', esc(nomes[r.provedor] || r.provedor))}
+        ${linha('Modelo', esc(r.modelo || '—'))}${r.esforco ? linha('Raciocínio', esc(r.esforco)) : ''}
+        ${linha('Chave OpenAI (OPENAI_API_KEY)', sim(r.chaves?.openai))}${linha('Chave Gemini (GEMINI_API_KEY)', sim(r.chaves?.gemini))}${linha('Chave Claude (ANTHROPIC_API_KEY)', sim(r.chaves?.claude))}
+        ${linha('Versão da função', esc(r.versao || '—'))}
+      </tbody></table>${r.teste?.ok ? '' : `<div class="small muted" style="margin-top:8px">${esc(r.teste?.msg || '')}</div>`}`;
+  } catch (e) {
+    const msg = String(e.message || e);
+    // a função antiga não conhece o teste e responde pedindo o relato
+    const antiga = /Descreva o seu dia/.test(msg);
+    box.innerHTML = `<div class="ang-dup" role="alert">${ic('info')}<div><b>${antiga ? 'A função diario-ia publicada no Supabase é uma versão antiga' : 'O teste não pôde ser concluído'}</b>
+      <div>${antiga ? 'Ela ainda não tem a OpenAI nem as melhorias recentes. No Supabase: Edge Functions → diario-ia → Code → apague tudo, cole o arquivo novo (supabase/functions/diario-ia/index.ts do GitHub, botão “Copy raw file”) e clique em Deploy.' : esc(msg)}</div></div></div>`;
+  } finally { btn.disabled = false; }
 }
 const kwRow = (p, i) => `<div class="kw-row" data-kw><input class="input sm" value="${esc(p.termo)}" placeholder="palavra ou expressão" aria-label="Palavra-chave ${i + 1}">
   <select class="input sm" aria-label="Ação">${Object.entries(DIARIO_ACOES).map(([k, l]) => `<option value="${k}" ${p.acao === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
@@ -4301,6 +4330,7 @@ const ACTIONS = {
   'di-desfazer': el => { const x = S.diario.get(el.dataset.id), i = +el.dataset.i; if (!x || x.corretorId !== ME.id) return denied(); const a = x.acoes?.[i]; if (!a) return;
     confirmBox('Desfazer o lançamento “' + esc(a.resumo) + '”? O registro será excluído.', 'Desfazer', async () => {
       if (await remove(a.col, a.id)) { const acoes = x.acoes.map((y, j) => j === i ? {...y, desfeito: true} : y); await save('diario', x.id, {...x, acoes}); toast('Lançamento desfeito.'); } }); },
+  'dc-testar-ia': el => { if (!isMaster()) return denied(); testarIA(el); },
   'dc-add': () => { const box = $('#dc-kws'); box.insertAdjacentHTML('beforeend', kwRow({termo: '', acao: 'venda'}, box.children.length)); box.lastElementChild.querySelector('input').focus(); state.dirty = true; },
   'dc-prompt-padrao': () => { $('#dc-prompt').value = DIARIO_PADRAO.prompt; state.dirty = true; toast('Prompt sugerido restaurado. Clique em Salvar configurações para aplicar.'); },
   'dc-rm': el => { el.closest('[data-kw]').remove(); state.dirty = true; },

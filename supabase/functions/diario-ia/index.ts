@@ -14,6 +14,10 @@
 // Publicar com "Verify JWT" DESLIGADO (a função confere a sessão).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
+// Versão desta função: aparece no "Teste da inteligência" (Diário de bordo → Configurações),
+// para conferir se o código publicado no Supabase é o mais recente.
+const VERSAO_FUNCAO = "2026-11-19.3";
+
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -132,6 +136,46 @@ Deno.serve(async (req) => {
 
   let body: Record<string, any>;
   try { body = await req.json(); } catch { return erro(400, "Requisição inválida."); }
+
+  // Teste da inteligência (só o Master): mostra versão, provedor, modelo e chaves cadastradas e faz uma
+  // chamada curta e real à IA, medindo o tempo. Não conta no limite de análises.
+  if (body.diagnostico === true) {
+    if (me.perfil !== "master") return erro(403, "Somente o Master pode testar a inteligência.");
+    const modelo = provedor === "openai" ? (Deno.env.get("MODELO_OPENAI") ?? "gpt-6-astra")
+      : provedor === "gemini" ? (Deno.env.get("MODELO_IA") ?? "gemini-flash-latest") : (Deno.env.get("MODELO_IA") ?? "claude-sonnet-5-5");
+    const esforco = ["minimal", "low", "medium", "high"].includes(Deno.env.get("ESFORCO_IA") ?? "") ? Deno.env.get("ESFORCO_IA")! : "low";
+    const t0 = Date.now(), ctl = new AbortController(), tt = setTimeout(() => ctl.abort(), 30_000);
+    const pergunta = "Responda apenas com a palavra: ok";
+    let teste: { ok: boolean; ms: number; msg: string };
+    try {
+      let r: Response, j: any;
+      if (provedor === "openai") {
+        const ir = (comR: boolean) => fetch("https://api.openai.com/v1/responses", { method: "POST", signal: ctl.signal,
+          headers: { "content-type": "application/json", authorization: `Bearer ${chaveOpenAI}` },
+          body: JSON.stringify({ model: modelo, input: pergunta, max_output_tokens: 400, store: false, ...(comR ? { reasoning: { effort: esforco } } : {}) }) });
+        r = await ir(true); j = await r.json().catch(() => ({}));
+        if (!r.ok && r.status === 400 && /reasoning/i.test(j?.error?.message ?? "")) { r = await ir(false); j = await r.json().catch(() => ({})); }
+        teste = r.ok ? { ok: true, ms: Date.now() - t0, msg: "A OpenAI respondeu." } : { ok: false, ms: Date.now() - t0, msg: msgOpenAI(r.status, j?.error?.message ?? "", j?.error?.code, modelo) };
+      } else if (provedor === "gemini") {
+        const ir = (cfg: Record<string, unknown>) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, { method: "POST", signal: ctl.signal,
+          headers: { "content-type": "application/json", "x-goog-api-key": chaveGemini! },
+          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: pergunta }] }], generationConfig: { maxOutputTokens: 400, ...cfg } }) });
+        r = await ir({ thinkingConfig: { thinkingBudget: 0 } }); j = await r.json().catch(() => ({}));
+        if (!r.ok && r.status === 400 && /thinking/i.test(j?.error?.message ?? "")) { r = await ir({}); j = await r.json().catch(() => ({})); }
+        teste = r.ok ? { ok: true, ms: Date.now() - t0, msg: "O Gemini respondeu." } : { ok: false, ms: Date.now() - t0, msg: `Gemini (${modelo}) recusou: ${j?.error?.message ?? "código " + r.status}` };
+      } else {
+        r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal: ctl.signal,
+          headers: { "content-type": "application/json", "x-api-key": chaveClaude!, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({ model: modelo, max_tokens: 20, messages: [{ role: "user", content: pergunta }] }) });
+        j = await r.json().catch(() => ({}));
+        teste = r.ok ? { ok: true, ms: Date.now() - t0, msg: "O Claude respondeu." } : { ok: false, ms: Date.now() - t0, msg: `Claude (${modelo}) recusou: ${j?.error?.message ?? "código " + r.status}` };
+      }
+    } catch (e) {
+      teste = { ok: false, ms: Date.now() - t0, msg: (e as Error)?.name === "AbortError" ? "A IA não respondeu em 30 s." : "Não foi possível falar com o serviço de inteligência." };
+    } finally { clearTimeout(tt); }
+    return resp(200, { versao: VERSAO_FUNCAO, provedor, modelo, esforco: provedor === "openai" ? esforco : null,
+      chaves: { openai: !!chaveOpenAI, gemini: !!chaveGemini, claude: !!chaveClaude }, teste });
+  }
   const texto = String(body.texto ?? "").trim().slice(0, 8000);
   const dataDia = /^\d{4}-\d{2}-\d{2}$/.test(String(body.data ?? "")) ? String(body.data) : new Date().toISOString().slice(0, 10);
   if (texto.length < 15) return erro(400, "Descreva o seu dia com um pouco mais de detalhe.");
@@ -436,11 +480,15 @@ function esquemaEstrito(no: any, opcional = false): any {
   return out;
 }
 
+function msgOpenAI(status: number, msg: string, codigo: string | undefined, modelo: string) {
+  if (status === 401) return "A chave OPENAI_API_KEY configurada no Supabase é inválida.";
+  if (codigo === "insufficient_quota" || /quota|billing|credit/i.test(msg)) return "A conta da OpenAI está sem créditos. Avise o administrador.";
+  if (status === 404 || codigo === "model_not_found") return `Modelo de IA não encontrado (${modelo}). Ajuste o segredo MODELO_OPENAI no Supabase.`;
+  if (status === 429) return "Muitas solicitações no momento. Tente novamente em instantes.";
+  if (status >= 500) return "O serviço de inteligência está ocupado. Tente de novo em um minuto.";
+  return `O serviço de inteligência (OpenAI · ${modelo}) recusou a análise: ` + msg;
+}
 function erroOpenAI(status: number, msg: string, codigo: string | undefined, modelo: string) {
-  if (status === 401) return erro(500, "A chave OPENAI_API_KEY configurada no Supabase é inválida.");
-  if (codigo === "insufficient_quota" || /quota|billing|credit/i.test(msg)) return erro(402, "A conta da OpenAI está sem créditos. Avise o administrador.");
-  if (status === 404 || codigo === "model_not_found") return erro(500, `Modelo de IA não encontrado (${modelo}). Ajuste o segredo MODELO_OPENAI no Supabase.`);
-  if (status === 429) return erro(503, "Muitas solicitações no momento. Tente novamente em instantes.");
-  if (status >= 500) return erro(503, "O serviço de inteligência está ocupado. Tente de novo em um minuto.");
-  return erro(502, "O serviço de inteligência recusou a análise: " + msg);
+  const st = status === 401 || status === 404 || codigo === "model_not_found" ? 500 : codigo === "insufficient_quota" || /quota|billing|credit/i.test(msg) ? 402 : status === 429 || status >= 500 ? 503 : 502;
+  return erro(st, msgOpenAI(status, msg, codigo, modelo));
 }
