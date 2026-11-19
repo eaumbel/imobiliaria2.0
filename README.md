@@ -125,4 +125,4 @@ A análise do dia é feita pela função `diario-ia`, que funciona com **OpenAI*
 
 **Atualizar a função:** publicar o site não atualiza a função. Quando `supabase/functions/diario-ia/index.ts` mudar, abra Edge Functions → `diario-ia` → **Code**, cole o arquivo novo e clique em **Deploy**.
 
-O prompt do mentor (com versão), o limite de análises por corretor a cada 24h, o mantra da equipe (valores, deveres, virtudes) e as palavras-chave ficam em **Diário de bordo → Configurações** (só o Master).
+O prompt do mentor (com versão), o limite de análises por corretor a cada 24h, os **pilares inegociáveis da operação**, o mantra da equipe (valores, deveres, virtudes) e as palavras-chave ficam em **Diário de bordo → Configurações** (só o Master). O prompt, os pilares, a base de conhecimento (Ponto de Reflexão, Manual de Persuasão do FBI, Cialdini, Chris Voss) e os critérios da nota vêm do Diário Águia (projeto no Lovable), que foi incorporado ao Gestão 2.0.

@@ -2231,11 +2231,29 @@ const DIARIO_PADRAO = {
   palavras: [{termo: 'vendi', acao: 'venda'}, {termo: 'fechei negócio', acao: 'venda'}, {termo: 'assinou contrato', acao: 'venda'},
     {termo: 'visitei', acao: 'visita'}, {termo: 'mostrei o imóvel', acao: 'visita'}, {termo: 'agendei', acao: 'agenda'}, {termo: 'marquei visita', acao: 'agenda'}],
   instrucoes: '',
-  prompt: "Você é um mentor comercial sênior, especialista em gestão de desempenho, comportamento profissional, negociação, persuasão ética, angariação de imóveis e venda de imóveis prontos.\n\nSua função é analisar os relatos diários dos corretores com rigor, sinceridade, objetividade e compromisso com a evolução profissional.\n\nVocê deve atuar como um mentor que respeita a pessoa, mas não protege comportamentos improdutivos de críticas necessárias.\n\nNão elogie por educação. Não critique por estilo. Fundamente suas conclusões em fatos relatados ou dados autorizados do CRM.\n\nSepare fatos, interpretações e recomendações. Não invente acontecimentos, números, intenções, emoções, resultados ou oportunidades.\n\nConsidere os princípios de reflexão pessoal, escuta ativa, construção de confiança, persuasão ética, diagnóstico, negociação tática, disciplina comercial e os pilares inegociáveis da operação.\n\nAvalie o processo, não apenas o resultado final. Um dia sem venda pode ter sido produtivo. Um dia com venda pode conter falhas que precisam ser corrigidas.",
+  prompt: "Você é um mentor comercial sênior, especialista em gestão de desempenho, comportamento profissional, negociação, persuasão ética, angariação de imóveis e venda de imóveis prontos.\n\nSua função é analisar os relatos diários dos corretores com rigor, sinceridade, objetividade e compromisso com a evolução profissional.\n\nVocê deve atuar como um mentor que respeita a pessoa, mas não protege comportamentos improdutivos de críticas necessárias.\n\nNão elogie por educação. Não critique por estilo. Fundamente suas conclusões em fatos relatados ou dados autorizados do CRM.\n\nSepare fatos, interpretações e recomendações. Não invente acontecimentos, números, intenções, emoções, resultados ou oportunidades.\n\nConsidere os princípios de reflexão pessoal, escuta ativa, construção de confiança, persuasão ética, diagnóstico, negociação tática, disciplina comercial e os pilares inegociáveis da operação.\n\nAvalie o processo, não apenas o resultado final. Um dia sem venda pode ter sido produtivo. Um dia com venda pode conter falhas que precisam ser corrigidas.\n\nSeja específico. Substitua frases vagas como 'melhore seu atendimento' por instruções práticas, exemplos de perguntas, ações e prazos.\n\nQuando identificar uma falha, explique o que aconteceu, por que importa e o que fazer diferente.\n\nQuando não houver informação suficiente, diga explicitamente que não é possível concluir. Não penalize o silêncio do relato como prova de inatividade.\n\nNão utilize técnicas de manipulação, urgência falsa, escassez inventada, pressão indevida ou quebra de confiança.\n\nRespeite a confidencialidade dos clientes. Evite reproduzir dados pessoais desnecessários no resultado.\n\nFinalize sempre com um plano de ação realista para o próximo dia, um desafio comportamental e uma pergunta de reflexão.\n\nA sua missão é ajudar o profissional a desenvolver consciência, disciplina, competência comercial e resultados sustentáveis.",
+  pilares: [
+    "Disciplina comercial: Executar as atividades essenciais, mesmo quando não houver motivação ou resultado imediato.",
+    "Atividade gera oportunidade: Contatos com proprietários, reuniões de angariação, avaliações, autorizações e visitas devem ser acompanhados.",
+    "Diagnóstico antes da proposta: Compreender a situação, as necessidades, as motivações e as expectativas antes de apresentar uma solução.",
+    "Escuta ativa: Compreender antes de argumentar.",
+    "Confiança antes da autorização: O imóvel é o produto, mas a confiança do proprietário é a primeira venda.",
+    "Representação profissional transparente: Explicar o plano de comercialização, as etapas, o acompanhamento e as condições contratuais.",
+    "Preço fundamentado: Trabalhar com avaliação coerente com o mercado e explicar as consequências de preços incompatíveis com a realidade.",
+    "Qualidade da carteira: Avaliar documentação, preço, clareza da representação, potencial comercial e condições de divulgação.",
+    "Acompanhamento consistente: Registrar contatos, cumprir combinados e manter o cliente informado.",
+    "Orientação a resultados: Analisar o que foi executado, o que avançou, o que ficou pendente e quais ações podem gerar resultados futuros.",
+    "Aprendizado contínuo: Transformar erros em ajustes práticos para o próximo dia.",
+    "Ética e reputação: Não prometer o que não pode cumprir, não ocultar informações relevantes e não manipular clientes.",
+  ],
   versao: 1,
   limite: 3
 };
-const cfgDiario = () => { const c = S.config.get('diario') || {}; return {...DIARIO_PADRAO, ...Object.fromEntries(Object.entries(c).filter(([k]) => k in DIARIO_PADRAO))}; };
+// Prompt padrão anterior: quem nunca editou o prompt passa a ver (e usar) o novo, trazido do Diário Águia
+const PROMPT_ANTERIOR = "Você é um mentor comercial sênior, especialista em gestão de desempenho, comportamento profissional, negociação, persuasão ética, angariação de imóveis e venda de imóveis prontos.\n\nSua função é analisar os relatos diários dos corretores com rigor, sinceridade, objetividade e compromisso com a evolução profissional.\n\nVocê deve atuar como um mentor que respeita a pessoa, mas não protege comportamentos improdutivos de críticas necessárias.\n\nNão elogie por educação. Não critique por estilo. Fundamente suas conclusões em fatos relatados ou dados autorizados do CRM.\n\nSepare fatos, interpretações e recomendações. Não invente acontecimentos, números, intenções, emoções, resultados ou oportunidades.\n\nConsidere os princípios de reflexão pessoal, escuta ativa, construção de confiança, persuasão ética, diagnóstico, negociação tática, disciplina comercial e os pilares inegociáveis da operação.\n\nAvalie o processo, não apenas o resultado final. Um dia sem venda pode ter sido produtivo. Um dia com venda pode conter falhas que precisam ser corrigidas.";
+const cfgDiario = () => { const c = S.config.get('diario') || {}; const r = {...DIARIO_PADRAO, ...Object.fromEntries(Object.entries(c).filter(([k]) => k in DIARIO_PADRAO))};
+  if (!String(r.prompt || '').trim() || String(r.prompt).trim() === PROMPT_ANTERIOR.trim()) r.prompt = DIARIO_PADRAO.prompt;
+  if (!Array.isArray(r.pilares) || !r.pilares.length) r.pilares = DIARIO_PADRAO.pilares; return r; };
 const nota100 = a => a?.nota == null ? null : (a.escala === 100 ? +a.nota : Math.round(+a.nota * 10));
 const notaCor = n => n == null ? 'var(--muted)' : n >= 80 ? 'var(--ok)' : n >= 60 ? 'var(--warn)' : 'var(--bad)';
 const diarioId = (data, cid) => data + '_' + cid;
@@ -2286,7 +2304,7 @@ function analiseCompletaHTML(a) {
       <details><summary>Oportunidades perdidas</summary><div class="acc-b">${li(a.oportunidades_perdidas)}</div></details>
       <details><summary>Avaliação pelos pilares</summary><div class="acc-b">${(a.pilares || []).length ? a.pilares.map(p => { const st = SIT[p.situacao] || SIT.sem_evidencia;
         return `<div class="row" style="gap:10px;align-items:flex-start;flex-wrap:nowrap"><span class="pill ${st[1]}" style="flex:none">${st[0]}</span><div><b>${esc(p.item)}</b><div class="small muted">${esc(p.avaliacao)}</div></div></div>`; }).join('') : '<div class="small muted">Sem avaliação.</div>'}</div></details>
-      <details><summary>Técnicas comerciais</summary><div class="acc-b">${(a.tecnicas || []).length ? a.tecnicas.map(t => `<div><b>${esc(t.tecnica)}</b><div class="small muted">${esc(t.como_aplicar)}</div></div>`).join('') : '<div class="small muted">Sem sugestões.</div>'}</div></details>
+      <details><summary>Técnicas comerciais</summary><div class="acc-b">${(a.tecnicas || []).length ? a.tecnicas.map(t => `<div><b>${esc(t.tecnica)}</b>${t.situacao ? `<div class="small"><span class="muted">Situação:</span> ${esc(t.situacao)}</div>` : ''}<div class="small muted">${esc(t.como_aplicar)}</div>${t.exemplo_frase ? `<div class="small" style="margin-top:4px;font-style:italic">“${esc(t.exemplo_frase)}”</div>` : ''}</div>`).join('') : '<div class="small muted">Sem sugestões.</div>'}</div></details>
       <details><summary>Detalhes da nota</summary><div class="acc-b">${(a.nota_detalhes || []).length ? `<table class="t"><tbody>${a.nota_detalhes.map(x => `<tr><td><b>${esc(x.criterio)}</b><div class="small muted">${esc(x.comentario)}</div></td><td class="r num" style="white-space:nowrap;font-weight:800">${+x.pontos || 0}/${+x.maximo || 0}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td>Total</td><td class="r num">${totalPts}/${totalMax}</td></tr></tfoot></table>` : '<div class="small muted">Sem detalhamento.</div>'}</div></details>
       <details><summary>Para melhorar os próximos diários</summary><div class="acc-b">${li(a.melhorar_diario)}</div></details>
@@ -2436,13 +2454,17 @@ function diarioConfigHTML() {
   const ta = (id, l, arr, help) => `<div class="field"><label for="${id}">${l}</label><textarea class="input" id="${id}" style="min-height:130px">${esc(arr.join('\n'))}</textarea><div class="help">${help}</div></div>`;
   return `<form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Prompt do mentor</h2><span class="grow"></span><span class="pill neutral">Versão v${c.versao || 1}</span></div>
       <div class="card-b stack">
-        <div class="help" style="font-size:13px">Diretrizes que a inteligência segue ao analisar cada diário: papel, postura, tom e princípios. O mantra, os critérios da nota e o formato do relatório são aplicados automaticamente.</div>
+        <div class="help" style="font-size:13px">Diretrizes que a inteligência segue ao analisar cada diário: papel, postura, tom e princípios. O mantra, os pilares, a base de conhecimento (FBI, Cialdini, Chris Voss, Ponto de Reflexão), os critérios da nota e o formato do relatório são aplicados automaticamente.</div>
         <textarea class="input" id="dc-prompt" style="min-height:320px;font-size:14px;line-height:1.6">${esc(c.prompt)}</textarea>
         <div class="row" style="align-items:flex-end">
           <div class="field"><label for="dc-lim">Análises por corretor a cada 24h</label><input class="input num" id="dc-lim" type="number" min="1" max="50" value="${+c.limite || 3}" style="width:140px"></div>
           <span class="grow"></span><button type="button" class="btn" data-act="dc-prompt-padrao">Restaurar prompt sugerido</button>
         </div>
       </div></form>
+    <form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Pilares inegociáveis da operação</h2></div><div class="card-b stack">
+      <div class="help" style="font-size:13px">A inteligência avalia cada pilar em todo diário (atendido, parcial, não atendido ou sem evidência). Um pilar por linha, no formato <b>Nome: descrição</b>. Até 20.</div>
+      <textarea class="input" id="dc-pil" style="min-height:260px;font-size:14px;line-height:1.55">${esc(c.pilares.join('\n'))}</textarea>
+    </div></form>
     <div class="banner">${ic('info')}<span>Este é o <b>mantra da equipe</b>: a inteligência usa estes valores, deveres e virtudes como régua para avaliar cada dia. Um item por linha.</span></div>
     <form class="card" data-guard onsubmit="return false"><div class="card-h"><h2>Mantra da equipe</h2></div><div class="card-b grid-3" style="align-items:start">
       ${ta('dc-val', 'Valores', c.valores, 'Princípios que guiam o trabalho.')}
@@ -2466,7 +2488,9 @@ function diarioConfigMount() {
     const ant = cfgDiario(), prompt = $('#dc-prompt').value.trim().slice(0, 12000) || DIARIO_PADRAO.prompt;
     const limite = Math.max(1, Math.min(50, parseInt(val('dc-lim'), 10) || 3));
     const versao = (+ant.versao || 1) + (prompt !== ant.prompt ? 1 : 0);
-    const ok = await save('config', 'diario', {valores: linhas('dc-val'), deveres: linhas('dc-dev'), virtudes: linhas('dc-vir'), palavras, instrucoes: val('dc-ins').slice(0, 1500), prompt, versao, limite});
+    const pilares = val('dc-pil').split('\n').map(x => x.trim()).filter(Boolean).slice(0, 20);
+    if (!pilares.length) { $('#dc-pil').classList.add('err'); return toast('Informe pelo menos um pilar.', 'warn'); }
+    const ok = await save('config', 'diario', {valores: linhas('dc-val'), deveres: linhas('dc-dev'), virtudes: linhas('dc-vir'), pilares, palavras, instrucoes: val('dc-ins').slice(0, 1500), prompt, versao, limite});
     if (ok) { state.dirty = false; toast('Configurações do Diário de bordo salvas.'); }
   };
 }
@@ -4273,7 +4297,7 @@ const ACTIONS = {
   'dc-add': () => { const box = $('#dc-kws'); box.insertAdjacentHTML('beforeend', kwRow({termo: '', acao: 'venda'}, box.children.length)); box.lastElementChild.querySelector('input').focus(); state.dirty = true; },
   'dc-prompt-padrao': () => { $('#dc-prompt').value = DIARIO_PADRAO.prompt; state.dirty = true; toast('Prompt sugerido restaurado. Clique em Salvar configurações para aplicar.'); },
   'dc-rm': el => { el.closest('[data-kw]').remove(); state.dirty = true; },
-  'dc-padrao': () => { if (!isMaster()) return denied(); confirmBox('Voltar o mantra e as palavras-chave para as sugestões iniciais?', 'Restaurar', async () => { if (await save('config', 'diario', DIARIO_PADRAO)) { state.dirty = false; render(); toast('Sugestões restauradas.'); } }); },
+  'dc-padrao': () => { if (!isMaster()) return denied(); confirmBox('Voltar o mantra, os pilares, as palavras-chave e o prompt para as sugestões iniciais?', 'Restaurar', async () => { if (await save('config', 'diario', DIARIO_PADRAO)) { state.dirty = false; render(); toast('Sugestões restauradas.'); } }); },
   'tr-file': async el => {
     const w = window.open('', '_blank');
     const {data, error} = await sb.storage.from('treinamentos').createSignedUrl(el.dataset.path, 600);
