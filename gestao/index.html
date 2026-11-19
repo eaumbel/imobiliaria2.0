@@ -486,6 +486,8 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .suffix .input{padding-right:34px}
 .suffix span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700;font-size:13px}
 .vd-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.rel-periodo{align-items:flex-end}.rel-periodo > .muted{align-self:center}
+select.input.rel-per{width:170px;flex:none}
 .rel-data{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}.rel-data .input{width:170px}
 .ang-filtros{align-items:flex-end;flex-wrap:wrap;gap:12px}.ang-filtros .field{margin:0;min-width:170px}
 .ang-exc{gap:22px}.ang-exc .check{font-weight:700}
@@ -592,6 +594,7 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
   .grid-3{grid-template-columns:1fr 1fr}
 }
 @media (max-width: 620px){
+  select.input.rel-per{width:100%}
   .rel-intervalo{width:100%;flex-wrap:nowrap}.rel-data{flex:1 1 0;min-width:0}.rel-data .input{width:100%;min-width:0}
   .ang-stats{grid-template-columns:repeat(2,1fr)}
   .ang-filtros .field{min-width:0;flex:1 1 140px}
@@ -2681,6 +2684,13 @@ function relShift(n) {
   if (r.periodo === 'dia') d.setDate(d.getDate() + n); else if (r.periodo === 'semana') d.setDate(d.getDate() + 7 * n); else d.setMonth(d.getMonth() + n, 1);
   r.ref = isoD(d);
 }
+const RELPERIODOS = [['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês'], ['intervalo', 'Personalizado']];
+// Troca o tipo de período; ao ir para "Personalizado", começa pelo período que estava na tela
+function relSetPeriodo(v) {
+  const r = state.rel;
+  if (v === 'intervalo' && r.periodo !== 'intervalo') { const [a, b] = relRange(); r.de = a; r.ate = b; }
+  r.periodo = v;
+}
 const relUsers = () => !can('equipe') ? [ME] : state.rel.usuario === 'all' ? vendedores() : [corretor(state.rel.usuario)].filter(Boolean);
 const relGeral = () => can('equipe') && state.rel.usuario === 'all';
 const stTxt = s => s === 'veio' ? 'Veio' : s === 'nao' ? 'Não veio' : 'Sem registro';
@@ -2932,9 +2942,9 @@ VIEWS.relatorios = {
           <optgroup label="Visitas"><option value="visita" ${r.agTipo === 'visita' ? 'selected' : ''}>Visitas (todos os tipos)</option>
           ${agTiposVisita().map(t => `<option value="visita:${esc(t)}" ${r.agTipo === 'visita:' + t ? 'selected' : ''}>Visita · ${esc(t)}</option>`).join('')}</optgroup>
         </select></div>` : ''}
-        <label>Período</label>
-        <div class="row" style="gap:10px">
-          <div class="seg" role="group" aria-label="Período">${[['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês'], ['intervalo', 'Data inicial e final']].map(([k, l]) => `<button data-act="rel-per" data-v="${k}" aria-pressed="${r.periodo === k}">${l}</button>`).join('')}</div>
+        <label for="rel-per">Período</label>
+        <div class="row rel-periodo" style="gap:10px">
+          <select class="input rel-per" id="rel-per" aria-label="Período">${RELPERIODOS.map(([k, l]) => `<option value="${k}" ${r.periodo === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
           ${r.periodo === 'intervalo' ? `<div class="row rel-intervalo" style="gap:10px">
             <label class="rel-data">Data inicial<input class="input" type="date" id="rel-de" value="${esc(r.de)}" max="${esc(r.ate)}"></label>
             <label class="rel-data">Data final<input class="input" type="date" id="rel-ate" value="${esc(r.ate)}" min="${esc(r.de)}"></label></div>`
@@ -2957,6 +2967,7 @@ VIEWS.relatorios = {
   mount() {
     const u = $('#rel-user'); if (u) u.onchange = () => { state.rel.usuario = u.value; render(); };
     const at = $('#rel-agtipo'); if (at) at.onchange = () => { state.rel.agTipo = at.value; render(); };
+    const per = $('#rel-per'); if (per) per.onchange = () => { relSetPeriodo(per.value); render(); };
     const ref = $('#rel-ref'); if (ref) ref.onchange = e => { if (e.target.value) { state.rel.ref = e.target.value; render(); } };
     const de = $('#rel-de'), ate = $('#rel-ate');
     if (de) de.onchange = () => { const v = de.value; if (!v) { de.value = state.rel.de; return; }
@@ -4216,9 +4227,7 @@ const ACTIONS = {
   'vd-next': () => { state.vendas.mes = addMonths(state.vendas.mes, 1); render(); },
   'vi-venda': el => { const v = S.visitas.get(el.dataset.id); if (v) vendaForm(vendaDeVisita(v)); },
   'rel-tipo': el => { state.rel.tipo = el.dataset.v; render(); },
-  'rel-per': el => { const r = state.rel;
-    if (el.dataset.v === 'intervalo' && r.periodo !== 'intervalo') { const [a, b] = relRange(); r.de = a; r.ate = b; }
-    r.periodo = el.dataset.v; render(); },
+  'rel-per': el => { relSetPeriodo(el.dataset.v); render(); },
   'rel-prev': () => { relShift(-1); render(); },
   'rel-next': () => { relShift(1); render(); },
   'rel-pdf': el => relExport('pdf', el),
