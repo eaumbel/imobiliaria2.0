@@ -2311,8 +2311,12 @@ async function analisarDia(btn) {
   toast(jaLancou ? 'Relatório atualizado. Os lançamentos da primeira análise foram mantidos.' : acoes.length ? `Relatório pronto e ${acoes.filter(a => a.ok).length} registro(s) lançado(s).` : 'Relatório pronto.');
 }
 async function criarRegistros(regs, did, dataDia) {
+  // Grava os lançamentos ao mesmo tempo (antes era um de cada vez); a ordem do relatório é mantida
+  return (await Promise.all(regs.slice(0, 10).map(r => criarRegistro(r, did, dataDia)))).flat();
+}
+async function criarRegistro(r, did, dataDia) {
   const out = [];
-  for (const r of regs.slice(0, 10)) {
+  {
     const data = /^\d{4}-\d{2}-\d{2}$/.test(r.data || '') ? r.data : dataDia;
     const hora = /^\d{2}:\d{2}$/.test(r.hora || '') ? r.hora : '';
     if (r.tipo === 'venda' && +r.valor > 0) {
