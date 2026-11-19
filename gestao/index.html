@@ -2396,7 +2396,7 @@ async function analisarDia(btn) {
   delete rec.analiseErro;
   await save('diario', id, rec);
   restaura(); state.dirty = false; render();
-  const tempo = ` (${seg()} s)`;
+  const tempo = ` (${seg()} s${out.meta?.reserva ? ', pela OpenAI: o Gemini não respondeu' : ''})`;
   toast(jaLancou ? 'Relatório atualizado' + tempo + '. Os lançamentos da primeira análise foram mantidos.' : acoes.length ? `Relatório pronto${tempo} e ${acoes.filter(a => a.ok).length} registro(s) lançado(s).` : 'Relatório pronto' + tempo + '.');
 }
 async function criarRegistros(regs, did, dataDia) {
@@ -2487,7 +2487,7 @@ function diarioConfigHTML() {
     <div class="row" style="justify-content:flex-end"><button class="btn" data-act="dc-padrao">Restaurar sugestões</button><button class="btn primary" id="dc-save">Salvar configurações</button></div>`;
 }
 // Teste da inteligência: mostra o que a função publicada no Supabase está usando e o resultado de uma chamada curta
-const IA_VERSAO_ESPERADA = '2026-11-19.4';
+const IA_VERSAO_ESPERADA = '2026-11-19.5';
 async function testarIA(btn) {
   const box = $('#dc-ia-res'); if (!box) return;
   btn.disabled = true; box.innerHTML = '<div class="small muted">Testando…</div>';
@@ -2497,14 +2497,18 @@ async function testarIA(btn) {
     const r = await fnCall('diario-ia', {diagnostico: true});
     const nomes = {openai: 'OpenAI', gemini: 'Google Gemini', claude: 'Claude (Anthropic)'};
     const velha = r.versao !== IA_VERSAO_ESPERADA;
+    // função nova: um teste por inteligência, na ordem em que são usadas (principal e reservas)
+    const testes = Array.isArray(r.testes) && r.testes.length ? r.testes : [{provedor: r.provedor, modelo: r.modelo, ...(r.teste || {})}];
+    const papel = i => i === 0 ? 'Principal' : testes.length > 2 ? `Reserva ${i}` : 'Reserva';
+    const resultado = t => t.ok ? `<span class="pill ok">OK</span> em ${(t.ms / 1000).toFixed(1)} s` : `<span class="pill bad">Falhou</span> <span class="small">${esc(t.msg || '')}</span>`;
     box.innerHTML = `${velha ? `<div class="ang-dup" role="alert" style="margin-bottom:12px">${ic('info')}<div><b>A função publicada não é a mais recente</b><div>Versão no Supabase: ${esc(r.versao || '—')}; esperada: ${IA_VERSAO_ESPERADA}. Atualize a função <b>diario-ia</b> (Edge Functions → diario-ia → Code → colar o arquivo novo → Deploy).</div></div></div>` : ''}
       <table class="t"><tbody>
-        ${linha('Resultado do teste', r.teste?.ok ? `<span class="pill ok">OK</span> em ${(r.teste.ms / 1000).toFixed(1)} s` : `<span class="pill bad">Falhou</span> ${esc(r.teste?.msg || '')}`)}
-        ${linha('Inteligência em uso', esc(nomes[r.provedor] || r.provedor))}
-        ${linha('Modelo', esc(r.modelo || '—'))}${r.esforco ? linha('Raciocínio', esc(r.esforco)) : ''}
+        ${testes.map((t, i) => linha(`${papel(i)}: ${esc(nomes[t.provedor] || t.provedor)} <span class="small">(${esc(t.modelo || '—')})</span>`, resultado(t))).join('')}
+        ${testes.length < 2 ? linha('Reserva', '<span class="pill neutral">nenhuma</span> <span class="small muted">cadastre a chave de outra IA para a análise seguir nela quando a principal não responder</span>') : ''}
+        ${r.esforco ? linha('Raciocínio da OpenAI', esc(r.esforco)) : ''}
         ${linha('Chave OpenAI (OPENAI_API_KEY)', sim(r.chaves?.openai))}${linha('Chave Gemini (GEMINI_API_KEY)', sim(r.chaves?.gemini))}${linha('Chave Claude (ANTHROPIC_API_KEY)', sim(r.chaves?.claude))}
         ${linha('Versão da função', esc(r.versao || '—'))}
-      </tbody></table>${r.teste?.ok ? '' : `<div class="small muted" style="margin-top:8px">${esc(r.teste?.msg || '')}</div>`}`;
+      </tbody></table>`;
   } catch (e) {
     const msg = String(e.message || e);
     // a função antiga não conhece o teste e responde pedindo o relato

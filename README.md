@@ -110,7 +110,9 @@ O corretor pode **gerar um novo link** (o anterior deixa de valer) ou **cancelar
 
 ## Diário de bordo (inteligência artificial)
 
-A análise do dia é feita pela função `diario-ia`, que funciona com **OpenAI** (pago por uso, igual ao Diário feito no Lovable), **Google Gemini** (plano gratuito) ou **Claude** (Anthropic, pago por uso). Basta cadastrar o segredo de um deles. Se houver mais de um, a ordem é OpenAI, Gemini e Claude; o segredo `PROVEDOR_IA` (`openai`, `gemini` ou `claude`) escolhe.
+A análise do dia é feita pela função `diario-ia`, que funciona com **OpenAI** (pago por uso, igual ao Diário feito no Lovable), **Google Gemini** (plano gratuito) ou **Claude** (Anthropic, pago por uso). Basta cadastrar o segredo de um deles.
+
+**Principal e reserva:** com mais de uma chave cadastrada, o **Gemini é a principal** e as outras ficam de **reserva**: se o Gemini não responder (demora, sobrecarga, limite de uso, erro ou resposta cortada), a análise segue automaticamente na OpenAI (e depois no Claude). O Gemini tem metade do tempo (~55 s) e a reserva usa o restante; com reserva, o Gemini sobrecarregado é tentado só uma vez a mais antes de passar adiante. O corretor vê no aviso quando a reserva foi usada, e o **Teste da inteligência** (Diário de bordo → Configurações) testa cada uma numa linha. O segredo `PROVEDOR_IA` (`gemini`, `openai` ou `claude`) muda qual vem primeiro.
 
 **OpenAI:** crie a chave em https://platform.openai.com/api-keys e cadastre no Supabase (Edge Functions → **Secrets**) com o nome `OPENAI_API_KEY`. A conta precisa ter créditos. O formato do relatório é garantido pela própria OpenAI e a resposta chega aos poucos (streaming). Opcionais:
 - `MODELO_OPENAI`: o modelo (padrão `gpt-6-astra`, o mesmo do projeto no Lovable). Se aparecer "Modelo de IA não encontrado", cadastre aqui o nome do modelo como aparece na sua conta da OpenAI.
