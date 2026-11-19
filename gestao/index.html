@@ -313,6 +313,15 @@ table.t.vis td{white-space:nowrap}
 .modal-b{padding:18px 22px}
 .modal-f{display:flex;gap:10px;justify-content:flex-end;padding:0 22px 20px;flex-wrap:wrap}
 .modal-f .left{margin-right:auto}
+#carregando{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(8,15,20,.45);animation:carregando-in .15s ease}
+#carregando[hidden]{display:none}
+.carregando-box{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:200px;padding:26px 34px;border-radius:16px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-lg, 0 20px 60px rgba(0,0,0,.3))}
+.carregando-box b{font-size:16px;font-weight:800}
+.carregando-giro{width:38px;height:38px;border-radius:50%;border:4px solid var(--surface-2);border-top-color:var(--accent);animation:carregando-gira .8s linear infinite}
+.carregando-fechar{border:0;background:none;color:var(--muted);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer}
+@keyframes carregando-gira{to{transform:rotate(360deg)}}
+@keyframes carregando-in{from{opacity:0}}
+@media (prefers-reduced-motion: reduce){.carregando-giro{animation-duration:2.4s}#carregando{animation:none}}
 #toasts{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:60}
 .toast{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:11px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);max-width:360px;border-left:4px solid var(--ok)}
 .toast.bad{border-left-color:var(--bad)}
@@ -769,9 +778,52 @@ const authStorage = {
   setItem: (k, v) => { try { (lembrar() ? localStorage : sessionStorage).setItem(k, v); } catch (e) {} },
   removeItem: k => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} }
 };
+/* ---------- Tela "Carregando..." ----------
+   Aparece quando uma operação passa de ~1 s e some quando todas terminam (fica pelo menos 0,4 s para não piscar).
+   Conta várias operações ao mesmo tempo. Se algo travar, depois de 20 s aparece "Fechar". */
+const CARGA = {n: 0, timer: 0, fecharT: 0, desde: 0, el: null, ATRASO: 1000, MINIMO: 400};
+function cargaEl() {
+  if (!CARGA.el) {
+    CARGA.el = document.createElement('div'); CARGA.el.id = 'carregando'; CARGA.el.hidden = true;
+    CARGA.el.setAttribute('role', 'status'); CARGA.el.setAttribute('aria-live', 'polite');
+    CARGA.el.innerHTML = '<div class="carregando-box"><span class="carregando-giro" aria-hidden="true"></span><b>Carregando...</b><button type="button" class="carregando-fechar" hidden>Fechar</button></div>';
+    CARGA.el.querySelector('.carregando-fechar').onclick = () => cargaEsconder(true);
+    document.body.appendChild(CARGA.el);
+  }
+  return CARGA.el;
+}
+function cargaMostrar() {
+  const el = cargaEl(); el.hidden = false; el.querySelector('.carregando-fechar').hidden = true; CARGA.desde = Date.now();
+  clearTimeout(CARGA.fecharT); CARGA.fecharT = setTimeout(() => { if (!el.hidden) el.querySelector('.carregando-fechar').hidden = false; }, 20000);
+}
+function cargaEsconder(forcar) {
+  if (!forcar && CARGA.n > 0) return;
+  clearTimeout(CARGA.fecharT); if (CARGA.el) CARGA.el.hidden = true;
+}
+function cargaInicio() { if (CARGA.n++ === 0) { clearTimeout(CARGA.timer); CARGA.timer = setTimeout(cargaMostrar, CARGA.ATRASO); } }
+function cargaFim() {
+  CARGA.n = Math.max(0, CARGA.n - 1); if (CARGA.n) return;
+  clearTimeout(CARGA.timer);
+  if (CARGA.el && !CARGA.el.hidden) setTimeout(() => cargaEsconder(false), Math.max(0, CARGA.MINIMO - (Date.now() - CARGA.desde)));
+}
+async function comCarregando(fn) { cargaInicio(); try { return await fn(); } finally { cargaFim(); } }
+// Conversa com o Supabase: entra no "Carregando..." tudo que grava ou processa (salvar, excluir, funções,
+// assinaturas, envio/baixa de arquivos, login). Fica de fora o que roda sozinho em segundo plano: leituras
+// das tabelas (atualização em tempo real) e renovação da sessão; a carga inicial é marcada à parte.
+function cargaSilenciosa(url, metodo) {
+  const u = String(url);
+  if (/\/rest\/v1\//.test(u) && metodo === 'GET') return true;
+  if (/\/auth\/v1\/token\?grant_type=refresh_token/.test(u) || (/\/auth\/v1\/user/.test(u) && metodo === 'GET')) return true;
+  return false;
+}
+const fetchComCarga = (url, opts = {}) => {
+  const metodo = String(opts.method || (url && url.method) || 'GET').toUpperCase();
+  if (cargaSilenciosa(url && url.url ? url.url : url, metodo)) return fetch(url, opts);
+  return comCarregando(() => fetch(url, opts));
+};
 const CONFIG_OK = !!(CFG.supabaseUrl && CFG.supabaseAnonKey && !/COLE_AQUI/.test(CFG.supabaseAnonKey));
 let sb = null;
-try { if (CONFIG_OK) sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {auth: {storage: authStorage, persistSession: true, autoRefreshToken: true}}); } catch (e) { sb = null; }
+try { if (CONFIG_OK) sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {auth: {storage: authStorage, persistSession: true, autoRefreshToken: true}, global: {fetch: fetchComCarga}}); } catch (e) { sb = null; }
 
 function setSync(mode) {
   MODE = mode;
@@ -828,7 +880,7 @@ async function fnCall(nome, payload = {}) {
   const {data: {session}} = await sb.auth.getSession();
   let res;
   try {
-    res = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/functions/v1/' + nome, {method: 'POST',
+    res = await fetchComCarga(CFG.supabaseUrl.replace(/\/$/, '') + '/functions/v1/' + nome, {method: 'POST',
       headers: {'Content-Type': 'application/json', apikey: CFG.supabaseAnonKey, Authorization: 'Bearer ' + (session?.access_token || CFG.supabaseAnonKey)},
       body: JSON.stringify(payload)});
   } catch (e) { throw new Error('Não foi possível falar com o servidor. Verifique a internet.'); }
@@ -934,7 +986,7 @@ async function initAuth() {
 }
 async function entrarComSessao(userId, saudar) {
   ENTRANDO = true; setSync('loading'); loginKind = ''; render();
-  await loadAll();
+  await comCarregando(loadAll);
   ENTRANDO = false;
   const u = S.corretores.get(userId);
   if (!u || u.ativo === false) {
@@ -2070,7 +2122,7 @@ function angCsv() {
 }
 async function angPdf(btn) {
   const {as, head, rows} = angTabela(); if (!as.length) return toast('Não há angariações no filtro atual.', 'warn');
-  if (!pdfPronto()) { if (btn) btn.disabled = true; try { await loadPdfLib(); } catch (e) { if (btn) btn.disabled = false; return toast('Não foi possível carregar o gerador de PDF. Verifique a internet e tente de novo.', 'bad'); } if (btn) btn.disabled = false; }
+  if (!pdfPronto()) { if (btn) btn.disabled = true; try { await comCarregando(loadPdfLib); } catch (e) { if (btn) btn.disabled = false; return toast('Não foi possível carregar o gerador de PDF. Verifique a internet e tente de novo.', 'bad'); } if (btn) btn.disabled = false; }
   const f = state.ang, r = angResumo(as), geral = angVeTodas() && (!f.angariador || f.angariador === 'all');
   const quem = !angVeTodas() ? ME.nome : [!f.angariador || f.angariador === 'all' ? 'Todos os angariadores' : 'Angariador: ' + (corretor(f.angariador)?.nome || '—'),
     ...(!f.corretor || f.corretor === 'all' ? [] : ['cadastradas por ' + (corretor(f.corretor)?.nome || '—')])].join(' · ');
@@ -2893,7 +2945,7 @@ const pdfPronto = () => !!(window.jspdf && window.jspdf.jsPDF && window.jspdf.js
 async function relExport(kind, btn) {
   if (!pdfPronto()) {
     if (btn) btn.disabled = true;
-    try { await loadPdfLib(); toast('Gerador de PDF pronto. Toque no botão de novo.'); }
+    try { await comCarregando(loadPdfLib); toast('Gerador de PDF pronto. Toque no botão de novo.'); }
     catch (e) { toast('Não foi possível carregar o gerador de PDF. Verifique a internet e tente de novo.', 'bad'); }
     finally { if (btn) btn.disabled = false; }
     return;
@@ -3257,7 +3309,7 @@ async function montarDossiePdf(md, reg, ident, assinaturaPng, cor, opts = {}) {
 
 /* ---------- Páginas do PDF como imagem (visualizar e imprimir em qualquer aparelho) ---------- */
 async function paginasPdf(blob, escala) {
-  await loadPdfJs();
+  await comCarregando(loadPdfJs);
   const doc = await pdfjs().getDocument({data: new Uint8Array(await blob.arrayBuffer())}).promise, out = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const pg = await doc.getPage(i), vp = pg.getViewport({scale: escala}), cv = document.createElement('canvas');
@@ -3676,7 +3728,7 @@ function assinaturaModal(onSave, opts = {}) {
 async function ctAssinar(png, ident) {
   const chave = state.ct.modelo, md = MODELOS[chave], v = {...state.ct.v};
   state.ct.etapa = 'gerando'; render();
-  try { await Promise.all([loadPdfLibForm(), modeloBytes(md)]); }
+  try { await comCarregando(() => Promise.all([loadPdfLibForm(), modeloBytes(md)])); }
   catch (e) { console.error(e); state.ct.etapa = ''; render(); return toast('Não foi possível carregar o modelo do contrato. Verifique a internet e tente de novo.', 'bad'); }
   const id = uid();
   const {data: row, error} = await sb.from('contratos').insert({id, data: {modelo: chave, modeloNome: md.nome, cliente: (v.proprietario_a || '').trim(), cpf: v.cpf_cnpj || '', imovel: v.endereco || '', campos: v,
@@ -3984,7 +4036,7 @@ async function ppAssinar(png, ident) {
   const r0 = p.id ? S.propostas.get(p.id) : null;
   if (!r0?.proponenteAss && !(await ppSalvar(true))) return toast('Não foi possível salvar a proposta antes de assinar. Verifique a internet.', 'bad');
   p.etapa = 'gerando'; p.travada = true; render();
-  try { await Promise.all([loadPdfLibForm(), modeloBytes(PROPOSTA)]); }
+  try { await comCarregando(() => Promise.all([loadPdfLibForm(), modeloBytes(PROPOSTA)])); }
   catch (e) { p.etapa = ''; p.travada = false; render(); return toast('Não foi possível carregar o modelo. Verifique a internet e tente de novo.', 'bad'); }
   const {data: c1, error} = await sb.rpc('proposta_carimbar_proponente', {p_id: p.id, p_geo: ident.geo, p_identidade: {documento: true, semVerso: !!ident.semVerso, selfieComDocumento: true, aceite: ACEITE_PROPOSTA}});
   if (error || !c1) { p.etapa = ''; p.travada = false; render(); return writeErr(error); }
@@ -4161,7 +4213,7 @@ async function pubAssinar(png, ident) {
   const espera = msg => pubTela(`<section class="card"><div class="card-b"><div class="empty"><b>${msg}</b>Não feche esta página.</div></div></section>`);
   espera('Registrando a assinatura…');
   try {
-    await loadPdfLibForm();
+    await comCarregando(loadPdfLibForm);
     const {data: c, error} = await sb.rpc('proposta_publica_carimbar', {p_token: P.token, p_acao: P.acao, p_geo: ident.geo,
       p_identidade: {documento: true, semVerso: !!ident.semVerso, selfieComDocumento: true, aceite: ACEITE_PROPOSTA}, p_pessoa: P.pessoa, p_contra: P.contra});
     if (error || !c) throw error || new Error('carimbo');
