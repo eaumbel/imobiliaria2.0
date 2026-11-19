@@ -237,7 +237,7 @@ ${texto}
       }
     } catch (e) {
       clearTimeout(timer);
-      if ((e as Error)?.name === "AbortError") return erro(504, `A inteligência demorou mais de ${Math.round(limiteMs / 1000)} s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para baixar o esforço (segredo ESFORCO_IA = minimal) ou trocar o modelo (MODELO_OPENAI).`);
+      if ((e as Error)?.name === "AbortError") return erro(504, `A inteligência (OpenAI · ${modelo}, raciocínio ${comRaciocinio ? esforco : "sem"}) demorou mais de ${Math.round(limiteMs / 1000)} s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para baixar o esforço (segredo ESFORCO_IA = minimal) ou trocar o modelo (MODELO_OPENAI).`);
       return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
     }
     clearTimeout(timer);
@@ -292,7 +292,7 @@ ${texto}
         break;
       }
     } catch (e) {
-      if ((e as Error)?.name === "AbortError") return erro(504, `A inteligência demorou mais de ${limiteMs / 1000} s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para trocar o modelo (segredo MODELO_IA).`);
+      if ((e as Error)?.name === "AbortError") return erro(504, `A inteligência (Gemini · ${modelo}) demorou mais de ${limiteMs / 1000} s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para trocar o modelo (segredo MODELO_IA).`);
       return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
     }
     if (!g) return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
@@ -303,7 +303,7 @@ ${texto}
       if (g.status === 404) return erro(500, "Modelo de IA não encontrado. Ajuste o segredo MODELO_IA no Supabase.");
       if (g.status === 429) return erro(503, "Limite gratuito de análises atingido por agora. Tente de novo em alguns minutos.");
       if (g.status >= 500) return erro(503, "O serviço de inteligência está ocupado. Tente de novo em um minuto.");
-      return erro(502, "O serviço de inteligência recusou a análise: " + msg);
+      return erro(502, `O serviço de inteligência (Gemini · ${modelo}) recusou a análise: ` + msg);
     }
     const txt = (gj?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? "").join("").trim();
     let a: any;
@@ -333,7 +333,7 @@ ${texto}
     });
   } catch (e) {
     clearTimeout(tC);
-    if ((e as Error)?.name === "AbortError") return erro(504, "A inteligência demorou mais de 110 s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para trocar o modelo (segredo MODELO_IA).");
+    if ((e as Error)?.name === "AbortError") return erro(504, "A inteligência (Claude) demorou mais de 110 s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para trocar o modelo (segredo MODELO_IA).");
     return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
   }
   const j = await r.json().catch(() => ({}));
