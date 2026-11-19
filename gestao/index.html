@@ -1059,7 +1059,7 @@ const state = {
   diario: {tab: 'meu', data: today(), dia: today(), cor: 'all'},
   vendas: {mes: monthKey(today()), corretor: 'all', busca: ''},
   ang: {de: monthKey(today()) + '-01', ate: '', corretor: 'all', angariador: 'all'},
-  rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today(), de: monthKey(today()) + '-01', ate: today()},
+  rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today(), de: monthKey(today()) + '-01', ate: today(), agTipo: 'all'},
   ct: {modelo: null, v: {}, doc: null, assinatura: '', ident: null, etapa: '', busca: ''},
   dirty: false, pending: false
 };
@@ -2743,11 +2743,16 @@ function relMetas(m, users, geral) {
     m.secoes.push({titulo: 'Visitas por status', head: ['Status', 'Quantidade'], right: [1], body: Object.keys(ST).map(st => [st, vs.filter(v => v.status === st).length]), foot: ['Total', vs.length]});
   }
 }
+// Filtro "Tipo" do relatório de Agenda: compromissos, visitas (todas) ou visitas de um tipo (Venda, Locação…)
+const agTiposVisita = () => [...new Set([...TIPOS, ...list('visitas').map(v => v.tipo).filter(Boolean)])];
+const agTipoLabel = v => v === 'compromisso' ? 'Compromissos' : v === 'visita' ? 'Visitas' : v.startsWith('visita:') ? 'Visita · ' + v.slice(7) : 'Todos os tipos';
 function relAgenda(m, users, geral) {
-  const ids = new Set(users.map(u => u.id)), rows = [];
-  list('agenda').filter(e => e.data >= m.a && e.data <= m.b && (geral ? true : (!e.corretorId || ids.has(e.corretorId))))
+  const ids = new Set(users.map(u => u.id)), rows = [], ft = state.rel.agTipo || 'all';
+  const querComp = ft === 'all' || ft === 'compromisso', querVis = v => ft === 'all' || ft === 'visita' || ft === 'visita:' + (v.tipo || '');
+  if (ft !== 'all') m.subtitulo += ' · Tipo: ' + agTipoLabel(ft);
+  if (querComp) list('agenda').filter(e => e.data >= m.a && e.data <= m.b && (geral ? true : (!e.corretorId || ids.has(e.corretorId))))
     .forEach(e => rows.push({k: e.data + (e.inicio || ''), c: [fmtD(e.data), (e.inicio || '—') + (e.fim ? '–' + e.fim : ''), 'Compromisso', e.titulo || '—', e.local || '—', ...(geral ? [corretor(e.corretorId)?.nome || 'Equipe'] : []), '—']}));
-  const vs = list('visitas').filter(v => v.data >= m.a && v.data <= m.b && (geral ? true : ids.has(v.corretorId)));
+  const vs = list('visitas').filter(v => v.data >= m.a && v.data <= m.b && (geral ? true : ids.has(v.corretorId)) && querVis(v));
   vs.forEach(v => rows.push({k: v.data + (v.hora || ''), c: [fmtD(v.data), v.hora || '—', 'Visita · ' + (v.tipo || ''), v.cliente || '—', v.imovel || '—', ...(geral ? [corretor(v.corretorId)?.nome || '—'] : []), v.status || '—']}));
   rows.sort((x, y) => x.k.localeCompare(y.k));
   const nAg = rows.length - vs.length;
@@ -2881,7 +2886,8 @@ async function relExport(kind, btn) {
   }
   const janela = kind === 'print' ? window.open('', '_blank') : null;
   const m = relModel(), doc = buildPdf(m);
-  const name = `relatorio-${slugify(RELTIPOS[m.tipo])}-${slugify(m.quem)}-${m.a}${m.a !== m.b ? '_a_' + m.b : ''}.pdf`;
+  const ft = m.tipo === 'agenda' && state.rel.agTipo && state.rel.agTipo !== 'all' ? '-' + slugify(agTipoLabel(state.rel.agTipo)) : '';
+  const name = `relatorio-${slugify(RELTIPOS[m.tipo])}${ft}-${slugify(m.quem)}-${m.a}${m.a !== m.b ? '_a_' + m.b : ''}.pdf`;
   const blob = doc.output('blob');
   if (kind === 'airdrop') {
     const file = new File([blob], name, {type: 'application/pdf'});
@@ -2919,6 +2925,13 @@ VIEWS.relatorios = {
         <div class="seg" role="group" aria-label="Tipo de relatório">${Object.entries(RELTIPOS).map(([k, l]) => `<button data-act="rel-tipo" data-v="${k}" aria-pressed="${r.tipo === k}">${l}</button>`).join('')}</div>
         <label for="rel-user">Usuário</label>
         <div>${can('equipe') ? `<select class="input" id="rel-user" style="max-width:320px"><option value="all">Visão geral · toda a equipe</option>${users.map(u => `<option value="${u.id}" ${r.usuario === u.id ? 'selected' : ''}>${esc(u.nome)}</option>`).join('')}</select>` : `<span class="lock-note">${ic('lock')}${esc(ME.nome)}</span>`}</div>
+        ${r.tipo === 'agenda' ? `<label for="rel-agtipo">Tipo</label>
+        <div><select class="input" id="rel-agtipo" style="max-width:320px">
+          <option value="all" ${(r.agTipo || 'all') === 'all' ? 'selected' : ''}>Todos os tipos</option>
+          <option value="compromisso" ${r.agTipo === 'compromisso' ? 'selected' : ''}>Compromissos</option>
+          <optgroup label="Visitas"><option value="visita" ${r.agTipo === 'visita' ? 'selected' : ''}>Visitas (todos os tipos)</option>
+          ${agTiposVisita().map(t => `<option value="visita:${esc(t)}" ${r.agTipo === 'visita:' + t ? 'selected' : ''}>Visita · ${esc(t)}</option>`).join('')}</optgroup>
+        </select></div>` : ''}
         <label>Período</label>
         <div class="row" style="gap:10px">
           <div class="seg" role="group" aria-label="Período">${[['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês'], ['intervalo', 'Data inicial e final']].map(([k, l]) => `<button data-act="rel-per" data-v="${k}" aria-pressed="${r.periodo === k}">${l}</button>`).join('')}</div>
@@ -2943,6 +2956,7 @@ VIEWS.relatorios = {
   },
   mount() {
     const u = $('#rel-user'); if (u) u.onchange = () => { state.rel.usuario = u.value; render(); };
+    const at = $('#rel-agtipo'); if (at) at.onchange = () => { state.rel.agTipo = at.value; render(); };
     const ref = $('#rel-ref'); if (ref) ref.onchange = e => { if (e.target.value) { state.rel.ref = e.target.value; render(); } };
     const de = $('#rel-de'), ate = $('#rel-ate');
     if (de) de.onchange = () => { const v = de.value; if (!v) { de.value = state.rel.de; return; }
