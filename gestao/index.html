@@ -486,6 +486,7 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
 .suffix .input{padding-right:34px}
 .suffix span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700;font-size:13px}
 .vd-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.rel-data{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}.rel-data .input{width:170px}
 .ang-filtros{align-items:flex-end;flex-wrap:wrap;gap:12px}.ang-filtros .field{margin:0;min-width:170px}
 .ang-exc{gap:22px}.ang-exc .check{font-weight:700}
 .ang-dup{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--bad-soft);color:var(--ink);border:1px solid var(--bad);font-size:14px;line-height:1.45}.ang-dup svg{width:20px;height:20px;flex:none;color:var(--bad);margin-top:1px}.ang-dup b{font-weight:800}.ang-dup .small{color:var(--muted);margin-top:4px}
@@ -591,6 +592,7 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
   .grid-3{grid-template-columns:1fr 1fr}
 }
 @media (max-width: 620px){
+  .rel-intervalo{width:100%;flex-wrap:nowrap}.rel-data{flex:1 1 0;min-width:0}.rel-data .input{width:100%;min-width:0}
   .ang-stats{grid-template-columns:repeat(2,1fr)}
   .ang-filtros .field{min-width:0;flex:1 1 140px}
   .goal{grid-template-columns:1fr;justify-items:center;text-align:center}
@@ -600,7 +602,9 @@ table.t tfoot td{font-weight:800;background:var(--gold-soft);border-top:1px soli
   .bar-row{grid-template-columns:1fr 70px;gap:8px}
   .bar-row .bar-track{grid-column:1 / -1;grid-row:2}
   .grid-2,.grid-3{grid-template-columns:1fr}
-  .rel-filters{grid-template-columns:1fr;gap:8px}
+  .rel-filters{grid-template-columns:minmax(0,1fr);gap:8px}
+  .rel-filters > div{width:100%;min-width:0}
+  .rel-filters .seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.rel-filters .seg::-webkit-scrollbar{display:none}
   .di-grid,.di-top,.rc-top{grid-template-columns:1fr}
   .mb-s{grid-template-columns:1fr 1fr}
   .kw-row{grid-template-columns:1fr 150px 36px}
@@ -1055,7 +1059,7 @@ const state = {
   diario: {tab: 'meu', data: today(), dia: today(), cor: 'all'},
   vendas: {mes: monthKey(today()), corretor: 'all', busca: ''},
   ang: {de: monthKey(today()) + '-01', ate: '', corretor: 'all', angariador: 'all'},
-  rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today()},
+  rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today(), de: monthKey(today()) + '-01', ate: today()},
   ct: {modelo: null, v: {}, doc: null, assinatura: '', ident: null, etapa: '', busca: ''},
   dirty: false, pending: false
 };
@@ -2658,12 +2662,16 @@ const fromMin = m => (m = Math.round(m), String(Math.floor(m / 60)).padStart(2, 
 function daysBetween(a, b) { const out = []; for (let d = dateObj(a); isoD(d) <= b; d.setDate(d.getDate() + 1)) out.push(isoD(d)); return out; }
 function relRange() {
   const {periodo, ref} = state.rel, d = dateObj(ref);
+  if (periodo === 'intervalo') { const a = state.rel.de || ref, b = state.rel.ate || a; return a <= b ? [a, b] : [b, a]; }
   if (periodo === 'dia') return [ref, ref];
   if (periodo === 'semana') { const s = new Date(d); s.setDate(d.getDate() - (d.getDay() + 6) % 7); const e = new Date(s); e.setDate(s.getDate() + 6); return [isoD(s), isoD(e)]; }
   return [isoD(new Date(d.getFullYear(), d.getMonth(), 1)), isoD(new Date(d.getFullYear(), d.getMonth() + 1, 0))];
 }
+const brData = iso => dateObj(iso).toLocaleDateString('pt-BR');
+const mesesEntre = (a, b) => { const out = []; for (let k = monthKey(a); k <= monthKey(b); k = addMonths(k, 1)) out.push(k); return out; };
 function rangeLabel(a, b) {
   const p = state.rel.periodo;
+  if (p === 'intervalo') return a === b ? brData(a) : 'De ' + brData(a) + ' a ' + brData(b);
   if (p === 'dia') return dayLong(a) + ' de ' + a.slice(0, 4);
   if (p === 'semana') return 'Semana de ' + dateObj(a).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}) + ' a ' + dateObj(b).toLocaleDateString('pt-BR');
   return cap(monthLong(monthKey(a)));
@@ -2708,24 +2716,26 @@ function relPonto(m, users, geral) {
   }
 }
 function relMetas(m, users, geral) {
-  const mk = monthKey(state.rel.ref), ini = mk + '-01', fimMes = isoD(new Date(+mk.slice(0, 4), +mk.slice(5), 0));
-  const ateAcum = m.b < fimMes ? m.b : fimMes, mensal = state.rel.periodo === 'mes';
+  // Meta é mensal. No intervalo de datas, soma as metas de todos os meses que o intervalo cobre.
+  const intervalo = state.rel.periodo === 'intervalo', ms = intervalo ? mesesEntre(m.a, m.b) : [monthKey(state.rel.ref)];
+  const mk = ms[0], ult = ms[ms.length - 1], ini = mk + '-01', fimMes = isoD(new Date(+ult.slice(0, 4), +ult.slice(5), 0));
+  const ateAcum = m.b < fimMes ? m.b : fimMes, mensal = state.rel.periodo === 'mes', varios = ms.length > 1;
   const fech = negociosEntre;
   const vis = (id, a, b) => list('visitas').filter(v => v.data >= a && v.data <= b && (id === 'all' || v.corretorId === id));
   const soma = vs => vs.reduce((t, v) => t + (+v.valor || 0), 0);
-  const linha = id => { const meta = metaOf([mk], id), per = soma(fech(id, m.a, m.b)), acum = soma(fech(id, ini, ateAcum));
+  const linha = id => { const meta = metaOf(ms, id), per = soma(fech(id, m.a, m.b)), acum = soma(fech(id, ini, ateAcum));
     return {meta, per, acum, at: meta ? acum / meta : null, neg: fech(id, m.a, m.b).length, vr: vis(id, m.a, m.b).filter(v => REALIZADAS.includes(v.status)).length}; };
-  const ml = 'Meta de ' + monthLong(mk);
+  const ml = 'Meta de ' + (varios ? monthLong(mk) + ' a ' + monthLong(ult) : monthLong(mk)), atg = varios ? 'Atingido nos meses' : 'Atingido no mês';
   if (geral) {
     const rows = users.map(u => ({u, ...linha(u.id)})), eq = linha('all');
-    m.resumo = [['Meta da equipe', compact(eq.meta)], [mensal ? 'Realizado no mês' : 'Realizado no período', compact(eq.per)], ['Atingido no mês', pct(eq.at)], ['Negócios', eq.neg]];
-    const head = ['Corretor', ml, mensal ? 'Realizado' : 'No período', ...(mensal ? [] : ['Acumulado no mês']), 'Atingido', 'Negócios', 'Visitas realizadas'];
+    m.resumo = [['Meta da equipe', compact(eq.meta)], [mensal ? 'Realizado no mês' : 'Realizado no período', compact(eq.per)], [atg, pct(eq.at)], ['Negócios', eq.neg]];
+    const head = ['Corretor', ml, mensal ? 'Realizado' : 'No período', ...(mensal ? [] : [varios ? 'Acumulado nos meses' : 'Acumulado no mês']), 'Atingido', 'Negócios', 'Visitas realizadas'];
     const cells = r => [brl(r.meta), brl(r.per), ...(mensal ? [] : [brl(r.acum)]), pct(r.at), r.neg, r.vr];
     m.secoes.push({titulo: 'Meta × realizado por corretor', head, right: head.map((_, i) => i).slice(1),
       body: rows.sort((x, y) => y.acum - x.acum).map(r => [r.u.nome, ...cells(r)]), foot: ['Equipe', ...cells(eq)]});
   } else if (users[0]) {
     const u = users[0], r = linha(u.id);
-    m.resumo = [[ml, compact(r.meta)], [mensal ? 'Realizado no mês' : 'Realizado no período', compact(r.per)], ['Atingido no mês', pct(r.at)], ['Negócios', r.neg]];
+    m.resumo = [[ml, compact(r.meta)], [mensal ? 'Realizado no mês' : 'Realizado no período', compact(r.per)], [atg, pct(r.at)], ['Negócios', r.neg]];
     m.secoes.push({titulo: 'Negócios fechados no período', head: ['Data', 'Cliente', 'Imóvel', 'Tipo', 'Valor'], right: [4],
       body: fech(u.id, m.a, m.b).sort((x, y) => x.data.localeCompare(y.data)).map(v => [fmtD(v.data), v.cliente || '—', v.imovel || '—', v.tipo || '—', brl(v.valor)]),
       foot: r.neg ? ['Total', '', '', '', brl(r.per)] : null});
@@ -2911,10 +2921,13 @@ VIEWS.relatorios = {
         <div>${can('equipe') ? `<select class="input" id="rel-user" style="max-width:320px"><option value="all">Visão geral · toda a equipe</option>${users.map(u => `<option value="${u.id}" ${r.usuario === u.id ? 'selected' : ''}>${esc(u.nome)}</option>`).join('')}</select>` : `<span class="lock-note">${ic('lock')}${esc(ME.nome)}</span>`}</div>
         <label>Período</label>
         <div class="row" style="gap:10px">
-          <div class="seg" role="group" aria-label="Período">${[['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês']].map(([k, l]) => `<button data-act="rel-per" data-v="${k}" aria-pressed="${r.periodo === k}">${l}</button>`).join('')}</div>
-          <div class="row" style="gap:6px"><button class="btn icon" data-act="rel-prev" aria-label="Período anterior">${ic('left')}</button>
+          <div class="seg" role="group" aria-label="Período">${[['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês'], ['intervalo', 'Data inicial e final']].map(([k, l]) => `<button data-act="rel-per" data-v="${k}" aria-pressed="${r.periodo === k}">${l}</button>`).join('')}</div>
+          ${r.periodo === 'intervalo' ? `<div class="row rel-intervalo" style="gap:10px">
+            <label class="rel-data">Data inicial<input class="input" type="date" id="rel-de" value="${esc(r.de)}" max="${esc(r.ate)}"></label>
+            <label class="rel-data">Data final<input class="input" type="date" id="rel-ate" value="${esc(r.ate)}" min="${esc(r.de)}"></label></div>`
+          : `<div class="row" style="gap:6px"><button class="btn icon" data-act="rel-prev" aria-label="Período anterior">${ic('left')}</button>
             <input class="input" type="date" id="rel-ref" value="${r.ref}" style="width:170px" aria-label="Data de referência">
-            <button class="btn icon" data-act="rel-next" aria-label="Próximo período">${ic('right')}</button></div>
+            <button class="btn icon" data-act="rel-next" aria-label="Próximo período">${ic('right')}</button></div>`}
           <span class="muted small"><b style="color:var(--ink)">${esc(m.periodoLabel)}</b></span>
         </div>
       </div>
@@ -2930,7 +2943,14 @@ VIEWS.relatorios = {
   },
   mount() {
     const u = $('#rel-user'); if (u) u.onchange = () => { state.rel.usuario = u.value; render(); };
-    $('#rel-ref').onchange = e => { if (e.target.value) { state.rel.ref = e.target.value; render(); } };
+    const ref = $('#rel-ref'); if (ref) ref.onchange = e => { if (e.target.value) { state.rel.ref = e.target.value; render(); } };
+    const de = $('#rel-de'), ate = $('#rel-ate');
+    if (de) de.onchange = () => { const v = de.value; if (!v) { de.value = state.rel.de; return; }
+      if (v > state.rel.ate) { toast('A data inicial não pode ser depois da data final.', 'warn'); de.value = state.rel.de; return; }
+      state.rel.de = v; render(); };
+    if (ate) ate.onchange = () => { const v = ate.value; if (!v) { ate.value = state.rel.ate; return; }
+      if (v < state.rel.de) { toast('A data final não pode ser antes da data inicial.', 'warn'); ate.value = state.rel.ate; return; }
+      state.rel.ate = v; render(); };
     loadPdfLib().catch(() => {});
   }
 };
@@ -4182,7 +4202,9 @@ const ACTIONS = {
   'vd-next': () => { state.vendas.mes = addMonths(state.vendas.mes, 1); render(); },
   'vi-venda': el => { const v = S.visitas.get(el.dataset.id); if (v) vendaForm(vendaDeVisita(v)); },
   'rel-tipo': el => { state.rel.tipo = el.dataset.v; render(); },
-  'rel-per': el => { state.rel.periodo = el.dataset.v; render(); },
+  'rel-per': el => { const r = state.rel;
+    if (el.dataset.v === 'intervalo' && r.periodo !== 'intervalo') { const [a, b] = relRange(); r.de = a; r.ate = b; }
+    r.periodo = el.dataset.v; render(); },
   'rel-prev': () => { relShift(-1); render(); },
   'rel-next': () => { relShift(1); render(); },
   'rel-pdf': el => relExport('pdf', el),
