@@ -5,9 +5,12 @@
 // plano de ação, desafio, pergunta de reflexão, fatos/lacunas, oportunidades,
 // pilares, técnicas, detalhes da nota e registros a lançar.
 // Provedor de IA (cadastre UM destes segredos no Supabase):
+//   OPENAI_API_KEY     → OpenAI (pago por uso; formato garantido e resposta em streaming, como no Lovable)
 //   GEMINI_API_KEY     → Google Gemini (tem plano gratuito, sem cartão)
 //   ANTHROPIC_API_KEY  → Claude, da Anthropic (pago por uso)
-// Opcional: MODELO_IA para trocar o modelo do provedor escolhido.
+// Se houver mais de um, a ordem é OpenAI, Gemini, Claude; o segredo PROVEDOR_IA (openai | gemini | claude) escolhe.
+// Opcionais: MODELO_OPENAI (padrão gpt-6-astra) e ESFORCO_IA (minimal | low | medium | high; padrão low) para a
+// OpenAI; MODELO_IA para Gemini/Claude.
 // Publicar com "Verify JWT" DESLIGADO (a função confere a sessão).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
@@ -90,7 +93,11 @@ Deno.serve(async (req) => {
 
   const chaveGemini = Deno.env.get("GEMINI_API_KEY");
   const chaveClaude = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!chaveGemini && !chaveClaude) return erro(500, "A inteligência ainda não foi configurada: cadastre o segredo GEMINI_API_KEY (gratuito) em Edge Functions → Secrets no Supabase.");
+  const chaveOpenAI = Deno.env.get("OPENAI_API_KEY");
+  if (!chaveGemini && !chaveClaude && !chaveOpenAI) return erro(500, "A inteligência ainda não foi configurada: cadastre o segredo OPENAI_API_KEY ou GEMINI_API_KEY (gratuito) em Edge Functions → Secrets no Supabase.");
+  const pref = (Deno.env.get("PROVEDOR_IA") ?? "").trim().toLowerCase();
+  const provedor = pref === "openai" && chaveOpenAI ? "openai" : pref === "gemini" && chaveGemini ? "gemini" : pref === "claude" && chaveClaude ? "claude"
+    : chaveOpenAI ? "openai" : chaveGemini ? "gemini" : "claude";
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -182,8 +189,70 @@ Relato do corretor:
 ${texto}
 """`;
 
+  // ---------- OpenAI (como no Diário do Lovable) ----------
+  // Formato do relatório garantido pela própria OpenAI (json_schema estrito) e resposta recebida aos poucos
+  // (streaming). O raciocínio fica em esforço "low" (mais rápido); ESFORCO_IA ajusta.
+  if (provedor === "openai") {
+    const modelo = Deno.env.get("MODELO_OPENAI") ?? "gpt-6-astra";
+    const esforco = ["minimal", "low", "medium", "high"].includes(Deno.env.get("ESFORCO_IA") ?? "") ? Deno.env.get("ESFORCO_IA")! : "low";
+    const limiteMs = Number(Deno.env.get("LIMITE_IA_MS")) || 110_000;
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), limiteMs);
+    const chamar = (comRaciocinio: boolean) => fetch("https://api.openai.com/v1/responses", {
+      method: "POST", signal: ctl.signal,
+      headers: { "content-type": "application/json", authorization: `Bearer ${chaveOpenAI}` },
+      body: JSON.stringify({
+        model: modelo, instructions: sistema, input: usuario, stream: true, store: false, max_output_tokens: 16000,
+        text: { format: { type: "json_schema", name: "relatorio_diario", strict: true, schema: esquemaEstrito(ESQUEMA) } },
+        ...(comRaciocinio ? { reasoning: { effort: esforco } } : {}),
+      }),
+    });
+    let o: Response, comRaciocinio = true, txt = "", fim: any = null, falha = "";
+    try {
+      o = await chamar(true);
+      if (!o.ok) {
+        const ej = await o.json().catch(() => ({}));
+        const msg = ej?.error?.message ?? "";
+        // modelo sem raciocínio configurável: repete sem a opção
+        if (o.status === 400 && /reasoning/i.test(msg)) { comRaciocinio = false; o = await chamar(false); }
+        else { clearTimeout(timer); return erroOpenAI(o.status, msg, ej?.error?.code, modelo); }
+        if (!o.ok) { const e2 = await o.json().catch(() => ({})); clearTimeout(timer); return erroOpenAI(o.status, e2?.error?.message ?? "", e2?.error?.code, modelo); }
+      }
+      // Lê os eventos do streaming: junta os pedaços do texto e guarda o evento final
+      const leitor = o.body!.pipeThrough(new TextDecoderStream()).getReader();
+      let buf = "";
+      for (;;) {
+        const { value, done } = await leitor.read();
+        if (done) break;
+        buf += value;
+        let i;
+        while ((i = buf.indexOf("\n\n")) >= 0) {
+          const bloco = buf.slice(0, i); buf = buf.slice(i + 2);
+          const dados = bloco.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("");
+          if (!dados || dados === "[DONE]") continue;
+          let ev: any; try { ev = JSON.parse(dados); } catch { continue; }
+          if (ev.type === "response.output_text.delta") txt += ev.delta ?? "";
+          else if (ev.type === "response.completed" || ev.type === "response.incomplete") fim = ev.response;
+          else if (ev.type === "response.failed" || ev.type === "error") falha = ev.response?.error?.message ?? ev.message ?? ev.error?.message ?? "falha";
+        }
+      }
+    } catch (e) {
+      clearTimeout(timer);
+      if ((e as Error)?.name === "AbortError") return erro(504, `A inteligência demorou mais de ${Math.round(limiteMs / 1000)} s e a análise foi interrompida. Tente de novo; se continuar, peça ao administrador para baixar o esforço (segredo ESFORCO_IA = minimal) ou trocar o modelo (MODELO_OPENAI).`);
+      return erro(502, "Não foi possível falar com o serviço de inteligência. Tente de novo em instantes.");
+    }
+    clearTimeout(timer);
+    if (falha) return erro(502, "O serviço de inteligência recusou a análise: " + falha);
+    if (fim?.status === "incomplete") return erro(502, `A análise saiu cortada (${fim?.incomplete_details?.reason === "max_output_tokens" ? "limite de tamanho" : fim?.incomplete_details?.reason ?? "incompleta"} no modelo ${modelo}). Tente de novo.`);
+    const recusa = (fim?.output ?? []).flatMap((x: any) => x?.content ?? []).find((c: any) => c?.type === "refusal");
+    if (recusa) return erro(502, "A inteligência se recusou a analisar este relato: " + (recusa.refusal ?? ""));
+    let a: any;
+    try { a = JSON.parse(txt); } catch { return erro(502, "A inteligência não devolveu uma análise válida. Tente de novo."); }
+    await admin.from("uso_ia").insert({ usuario: ud.user.id });
+    return resp(200, { ...normalizar(a), meta: { provedor: "openai", modelo, raciocinio: comRaciocinio ? esforco : "sem", ms: Date.now() - inicio } });
+  }
+
   // ---------- Google Gemini ----------
-  if (chaveGemini) {
+  if (provedor === "gemini") {
     const formato = `\n\nResponda SOMENTE com um objeto JSON válido (sem texto fora dele) que siga exatamente este esquema JSON:\n${JSON.stringify(ESQUEMA)}`;
     // O modelo "pensa" antes de responder (raciocínio interno), o que é a maior parte da espera. Para preencher
     // um relatório com estrutura fixa isso não é necessário. Cada geração do Gemini aceita uma forma diferente
@@ -313,4 +382,34 @@ function normalizar(a: any) {
     },
     registros: arr(a.registros).filter((r: any) => r && ["venda", "visita", "agenda"].includes(r.tipo)),
   };
+}
+
+// Esquema no formato "estrito" exigido pela OpenAI: todo objeto lista todas as propriedades em "required" e não
+// aceita propriedades extras; o que era opcional passa a aceitar null. Remove limites que o modo estrito não usa.
+function esquemaEstrito(no: any, opcional = false): any {
+  if (!no || typeof no !== "object") return no;
+  const out: any = {};
+  for (const [k, v] of Object.entries(no)) if (!["minimum", "maximum", "maxItems", "minItems"].includes(k)) out[k] = v;
+  if (out.type === "object" && out.properties) {
+    const req = new Set<string>(Array.isArray(no.required) ? no.required : []);
+    out.properties = Object.fromEntries(Object.entries(no.properties).map(([k, v]) => [k, esquemaEstrito(v, !req.has(k))]));
+    out.required = Object.keys(out.properties);
+    out.additionalProperties = false;
+  }
+  if (out.type === "array" && out.items) out.items = esquemaEstrito(out.items);
+  if (opcional) {
+    const t = Array.isArray(out.type) ? out.type : [out.type];
+    if (!t.includes("null")) out.type = [...t, "null"];
+    if (Array.isArray(out.enum) && !out.enum.includes(null)) out.enum = [...out.enum, null];
+  }
+  return out;
+}
+
+function erroOpenAI(status: number, msg: string, codigo: string | undefined, modelo: string) {
+  if (status === 401) return erro(500, "A chave OPENAI_API_KEY configurada no Supabase é inválida.");
+  if (codigo === "insufficient_quota" || /quota|billing|credit/i.test(msg)) return erro(402, "A conta da OpenAI está sem créditos. Avise o administrador.");
+  if (status === 404 || codigo === "model_not_found") return erro(500, `Modelo de IA não encontrado (${modelo}). Ajuste o segredo MODELO_OPENAI no Supabase.`);
+  if (status === 429) return erro(503, "Muitas solicitações no momento. Tente novamente em instantes.");
+  if (status >= 500) return erro(503, "O serviço de inteligência está ocupado. Tente de novo em um minuto.");
+  return erro(502, "O serviço de inteligência recusou a análise: " + msg);
 }

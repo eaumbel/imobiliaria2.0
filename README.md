@@ -110,7 +110,11 @@ O corretor pode **gerar um novo link** (o anterior deixa de valer) ou **cancelar
 
 ## Diário de bordo (inteligência artificial)
 
-A análise do dia é feita pela função `diario-ia`, que funciona com **Google Gemini** (plano gratuito) ou com **Claude** (Anthropic, pago por uso). Basta cadastrar um dos dois segredos; se os dois existirem, usa o Gemini.
+A análise do dia é feita pela função `diario-ia`, que funciona com **OpenAI** (pago por uso, igual ao Diário feito no Lovable), **Google Gemini** (plano gratuito) ou **Claude** (Anthropic, pago por uso). Basta cadastrar o segredo de um deles. Se houver mais de um, a ordem é OpenAI, Gemini e Claude; o segredo `PROVEDOR_IA` (`openai`, `gemini` ou `claude`) escolhe.
+
+**OpenAI:** crie a chave em https://platform.openai.com/api-keys e cadastre no Supabase (Edge Functions → **Secrets**) com o nome `OPENAI_API_KEY`. A conta precisa ter créditos. O formato do relatório é garantido pela própria OpenAI e a resposta chega aos poucos (streaming). Opcionais:
+- `MODELO_OPENAI`: o modelo (padrão `gpt-6-astra`, o mesmo do projeto no Lovable). Se aparecer "Modelo de IA não encontrado", cadastre aqui o nome do modelo como aparece na sua conta da OpenAI.
+- `ESFORCO_IA`: quanto o modelo "pensa" antes de responder: `minimal` (mais rápido), `low` (padrão), `medium` (como no Lovable) ou `high`.
 
 1. **Banco:** rode no SQL Editor os arquivos `supabase/migrations/20261111220000_diario_de_bordo.sql` e `supabase/migrations/20261112010000_uso_ia.sql`.
 2. **Função:** Edge Functions → Deploy a new function → Via Editor → nome `diario-ia` → cole `supabase/functions/diario-ia/index.ts` → Deploy. Em **Settings**, desligue **Verify JWT**.
