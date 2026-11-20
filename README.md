@@ -151,3 +151,27 @@ O sistema abre no **Tema CRM**:
 **Voltar ao layout anterior (ponto de backup `TEMA_CRM`):**
 - **Na hora, sem publicar nada:** o Master entra em **Configurações → Aparência → Clássico (versão anterior)**. Vale para todos.
 - **No código:** o branch `TEMA_CRM` no GitHub guarda a versão anterior ao tema (não apague). No Claude Code, o comando `/TEMA_CRM` (arquivo `.claude/commands/TEMA_CRM.md`) faz a volta passo a passo.
+
+## E-mail (gateway SMTP e templates)
+
+Em **Configurações → E-mail** (só o Master):
+- **Servidor de e-mail (SMTP):**
+  - padrão Gmail: `smtp.gmail.com`, porta **465**, SSL/TLS;
+  - login, senha, nome e e-mail do remetente e "responder para";
+  - botões **Testar conexão** e **Enviar teste**;
+  - chave **Envio de e-mails ligado**.
+- **Templates de e-mail:**
+  - cada template tem nome, **chave** (o nome que a rotina usa), assunto e mensagem (texto simples ou HTML);
+  - variáveis `{{nome}}`, `{{email}}`, `{{empresa}}`, `{{corretor}}`, `{{link}}`, `{{data}}`, `{{hora}}` ou qualquer outra enviada pela rotina;
+  - pré-visualização ao lado e envio de teste antes de salvar.
+- **Últimos envios:** registro de cada e-mail (ok ou motivo da falha).
+
+**Gmail:** a conta precisa da verificação em duas etapas e de uma **senha de app** (myaccount.google.com/apppasswords). A senha normal não funciona. O Gmail aceita cerca de 500 e-mails por dia; o sistema para em 450 (segredo opcional `EMAIL_LIMITE_DIA`). O Supabase bloqueia as portas 25 e 587, então use a 465.
+
+**Segurança:** a senha fica só no banco e só a função `enviar-email` a lê. Nem a tela do Master recebe a senha de volta.
+
+**Publicar:**
+1. Supabase → SQL Editor: rodar `supabase/migrations/20261121100000_email.sql`.
+2. Supabase → Edge Functions → **Deploy a new function** → nome `enviar-email` → colar `supabase/functions/enviar-email/index.ts` → Deploy, com **Verify JWT desligado** (a função confere quem chama).
+
+**Rotinas automáticas:** chamam `POST /functions/v1/enviar-email` com `Authorization: Bearer <service_role>` e o corpo `{"acao": "enviar", "para": "...", "template": "chave", "dados": {...}}`.
