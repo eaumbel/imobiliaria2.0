@@ -697,6 +697,9 @@ select.input.rel-per{width:170px;flex:none}
 @media print{.com-wrap{display:none!important}}
 /* ---------- Configurações do Kanban ---------- */
 .kc-tab{display:inline-flex;align-items:center;gap:6px}.kc-tab svg{width:15px;height:15px}
+.sms-cel{background:var(--surface-2);border:1px solid var(--line);border-radius:18px;padding:18px 14px;min-height:150px}
+.sms-bolha{background:#e9e9eb;color:#111;border-radius:18px 18px 18px 4px;padding:10px 14px;font-size:14.5px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;max-width:88%;font-family:-apple-system,system-ui,sans-serif}
+.sms-conta{font-size:13px;color:var(--muted)}.sms-caro{color:var(--warn)}
 .em-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .em-acoes{gap:10px}.em-acoes .btn svg{width:16px;height:16px}
 .em-msg{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;font-size:13.5px;border:1px solid}
@@ -889,6 +892,7 @@ select.input.rel-per{width:170px;flex:none}
   .tr-ic{display:none}
   .ct-grid,.ct-ass{grid-template-columns:1fr}
   .ap-ops{grid-template-columns:1fr}
+  .tabs-top > .seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.tabs-top > .seg::-webkit-scrollbar{display:none}.tabs-top > .seg .kc-tab{padding:6px 10px}
   .em-grid,.em-ed{grid-template-columns:1fr}
   .em-acoes .row{flex-wrap:wrap!important}
   .id-grid{grid-template-columns:1fr}
@@ -1189,7 +1193,7 @@ async function loadAll() {
     canal.subscribe();
   }
 }
-function clearData() { COLS.forEach(c => S[c] = new Map()); CORR_READY = false; NOTIF_INICIO = true; state.email = {ok: false, gw: null, tpls: [], envios: []}; state.kanCfg = null; state.kanCfgSujo = false; KAN_ABERTO = null; if (canal) { sb.removeChannel(canal); canal = null; } }
+function clearData() { COLS.forEach(c => S[c] = new Map()); CORR_READY = false; NOTIF_INICIO = true; state.email = {ok: false, gw: null, tpls: [], envios: []}; state.sms = {ok: false, gw: null, tpls: [], envios: []}; state.kanCfg = null; state.kanCfgSujo = false; KAN_ABERTO = null; if (canal) { sb.removeChannel(canal); canal = null; } }
 const api = (acao, payload = {}) => fnCall('admin-usuarios', {acao, ...payload});
 async function fnCall(nome, payload = {}) {
   const {data: {session}} = await sb.auth.getSession();
@@ -1440,6 +1444,7 @@ const state = {
   kan: {busca: '', pessoa: 'all', prio: 'all', etq: 'all', arquivados: false},
   kanCfg: null, kanCfgSujo: false, cfgTab: 'aparencia',
   email: {ok: false, gw: null, tpls: [], envios: []},
+  sms: {ok: false, gw: null, tpls: [], envios: []},
   rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today(), de: monthKey(today()) + '-01', ate: today(), agTipo: 'all'},
   ct: {modelo: null, v: {}, doc: null, assinatura: '', ident: null, etapa: '', busca: ''},
   dirty: false, pending: false
@@ -1464,7 +1469,7 @@ const NAV = [
   {id: 'contratos', grp: 'Operação', label: 'Modelos de Contrato', icon: 'sign', sub: 'Contratos preenchidos e assinados na tela'},
   {id: 'metas', grp: 'Operação', label: 'Metas', icon: 'target', sub: 'Meta da equipe e individual por mês'},
   {id: 'usuarios', grp: 'Operação', label: 'Usuários', icon: 'users', sub: 'Cadastro da equipe e tipos de acesso'},
-  {id: 'configuracoes', grp: 'Operação', label: 'Configurações', icon: 'gear', sub: 'Aparência do sistema, Kanban e e-mail'},
+  {id: 'configuracoes', grp: 'Operação', label: 'Configurações', icon: 'gear', sub: 'Aparência do sistema, Kanban, e-mail e SMS'},
   {id: 'meusdados', grp: 'Minha conta', label: 'Meus dados', icon: 'user', sub: 'Seu cadastro: nome, contato, CRECI e senha'}
 ];
 function navFade() { const n = $('#nav'); if (n) n.classList.toggle('tem-mais', n.scrollTop + n.clientHeight < n.scrollHeight - 4); }
@@ -3120,7 +3125,185 @@ function emailTplForm(t = {}, duplicar) {
     }});
 }
 
-const cfgAbas = () => `<div class="seg" role="group" aria-label="Configurações">${[['aparencia', 'paleta', 'Aparência'], ['kanban', 'kanban', 'Kanban'], ['email', 'mail', 'E-mail']].map(([v, i, l]) => `<button class="kc-tab" data-act="cfg-tab" data-v="${v}" aria-pressed="${state.cfgTab === v}">${ic(i)}${l}</button>`).join('')}</div>`;
+/* =========================================================
+   Configurações → SMS (Twilio): conta, templates e envios — só o Master
+   O Auth Token fica só no servidor: a tela nunca o recebe de volta.
+   ========================================================= */
+let SMS_OK = true;
+const SMS_VARS = ['nome', 'empresa', 'corretor', 'data', 'hora', 'link'];
+const SMS_STATUS = {queued: ['Na fila', 'info'], accepted: ['Aceito', 'info'], scheduled: ['Agendado', 'info'], sending: ['Enviando', 'info'], sent: ['Enviado', 'ok'],
+  delivered: ['Entregue', 'ok'], undelivered: ['Não entregue', 'bad'], failed: ['Falhou', 'bad'], erro: ['Falhou', 'bad'], canceled: ['Cancelado', 'neutral']};
+const SMS_MODELOS = {
+  lembrete: {nome: 'Lembrete de visita', chave: 'lembrete-visita', texto: 'Olá, {{nome}}! Lembrete da visita ao imóvel {{imovel}} em {{data_visita}} às {{hora_visita}}. Qualquer dúvida, fale com {{corretor}}. {{empresa}}'},
+  boasvindas: {nome: 'Boas-vindas', chave: 'boas-vindas-sms', texto: 'Olá, {{nome}}! Aqui é {{corretor}}, da {{empresa}}. Vou acompanhar o seu atendimento. Salve este número!'},
+  confirmacao: {nome: 'Confirmação de proposta', chave: 'proposta-recebida', texto: '{{empresa}}: recebemos a sua proposta para o imóvel {{imovel}}. Em breve {{corretor}} entra em contato.'}
+};
+// mesmas regras da função enviar-sms
+const smsSemAcento = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/[–—]/g, '-').replace(/…/g, '...');
+function smsMontar(texto, dados, tirar) {
+  const d = new Date(), vars = {empresa: state.email.gw?.remetente_nome || 'Imobiliária 2.0', data: d.toLocaleDateString('pt-BR', {timeZone: TZ}), hora: d.toLocaleTimeString('pt-BR', {timeZone: TZ, hour: '2-digit', minute: '2-digit'}), ...dados};
+  const t = texto.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_, k) => vars[k] == null ? '' : String(vars[k])).replace(/[ \t]+\n/g, '\n').trim();
+  return tirar ? smsSemAcento(t) : t;
+}
+const SMS_GSM = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà^{}\\[~]|€";
+function smsSegmentos(t) {
+  const gsm = [...t].every(c => SMS_GSM.includes(c)), n = gsm ? [...t].reduce((a, c) => a + ('^{}\\[~]|€'.includes(c) ? 2 : 1), 0) : [...t].length;
+  return {gsm, n, partes: !n ? 0 : gsm ? (n <= 160 ? 1 : Math.ceil(n / 153)) : (n <= 70 ? 1 : Math.ceil(n / 67)), limite: gsm ? (n <= 160 ? 160 : 153) : (n <= 70 ? 70 : 67)};
+}
+const smsVarsDe = t => [...new Set((t || '').match(/\{\{\s*([\w.-]+)\s*\}\}/g)?.map(x => x.replace(/[{}\s]/g, '')) || [])];
+function smsAmostra(t) {
+  const b = {nome: 'Maria', corretor: (ME?.nome || 'Corretor').split(' ')[0], link: 'imobiliaria20.eaumbel.com.br', imovel: 'Apto Gleba Palhano', data_visita: brD(today()), hora_visita: '15:00'};
+  smsVarsDe(t).forEach(v => { if (!(v in b) && !['empresa', 'data', 'hora'].includes(v)) b[v] = `[${v}]`; });
+  return b;
+}
+async function smsCarregar() {
+  const E = state.sms; if (E.carregando) return; E.carregando = true;
+  try {
+    const [g, t, e, eg] = await Promise.all([
+      sb.from('sms_gateway').select('id,account_sid,tem_token,remetente,ativo,atualizado_em'),
+      sb.from('sms_templates').select('id,data'),
+      sb.from('sms_envios').select('*').order('criado_em', {ascending: false}).limit(30),
+      state.email.gw ? Promise.resolve(null) : sb.from('email_gateway').select('remetente_nome')]);
+    SMS_OK = !g.error && !t.error;
+    E.gw = (g.data || [])[0] || null; E.tpls = (t.data || []).map(r => ({...r.data, id: r.id})).sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+    E.envios = e.data || []; E.ok = true;
+    if (eg && !eg.error && eg.data?.[0]) state.email.gw = {...(state.email.gw || {}), remetente_nome: eg.data[0].remetente_nome};
+  } catch (er) { SMS_OK = false; E.ok = true; }
+  E.carregando = false; if (state.view === 'configuracoes' && state.cfgTab === 'sms') render();
+}
+function smsHTML() {
+  const E = state.sms, abas = `<div class="tabs-top">${cfgAbas()}</div>`;
+  if (!E.ok) return abas + `<div class="card"><div class="empty">Carregando…</div></div>`;
+  if (!SMS_OK) return abas + `<div class="banner">${ic('info')}<span>O banco ainda não tem a estrutura de SMS. Rode no Supabase (SQL Editor) o arquivo <b>supabase/migrations/20261122100000_sms.sql</b> e publique a função <b>enviar-sms</b>.</span></div>`;
+  const g = E.gw || {account_sid: '', remetente: '', ativo: true, tem_token: false};
+  const status = !E.gw || !g.tem_token ? '<span class="pill neutral">Não configurado</span>' : g.ativo ? '<span class="pill ok">Envio ligado</span>' : '<span class="pill warn">Envio desligado</span>';
+  const origem = {tela: 'Tela', teste: 'Teste', rotina: 'Rotina automática'};
+  return abas + `
+    <div class="card"><div class="card-h"><h2>Conta do Twilio</h2>${status}<span class="hint">Usada para disparar os SMS das rotinas automáticas.</span></div>
+      <div class="card-b stack">
+        <div class="em-grid">
+          <div class="field"><label for="sm-sid">Account SID *</label><input class="input" id="sm-sid" value="${esc(g.account_sid)}" placeholder="AC…" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label for="sm-tok">Auth Token ${g.tem_token ? '' : '*'}</label><div class="pw"><input class="input" id="sm-tok" type="password" autocomplete="new-password" spellcheck="false" placeholder="${g.tem_token ? '•••••••• (já cadastrado)' : '32 caracteres'}"><button type="button" data-pw="sm-tok">Mostrar</button></div>
+            ${g.tem_token ? `<div class="help">Deixe em branco para manter. O token fica só no servidor. <button type="button" class="link-btn" data-act="sm-tirar-token">Remover token</button></div>` : ''}</div>
+          <div class="field"><label for="sm-rem">Remetente *</label><input class="input" id="sm-rem" value="${esc(g.remetente)}" placeholder="+15551234567 ou MG…" autocomplete="off" spellcheck="false"><div class="help">Número do Twilio com + e código do país, ou um Messaging Service SID (MG…).</div></div>
+        </div>
+        <label class="check"><input type="checkbox" id="sm-ativo" ${g.ativo ? 'checked' : ''}>Envio de SMS ligado (desligado, só os testes funcionam)</label>
+        <div class="row em-acoes"><button class="btn primary" data-act="sm-salvar">Salvar conta</button><button class="btn" data-act="sm-testar" ${g.tem_token ? '' : 'disabled'}>${ic('swap')}Testar conta</button>
+          <span class="grow"></span><div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input" id="sm-teste-para" inputmode="tel" style="max-width:220px" value="${esc(ME?.telefone || '')}" placeholder="(43) 99999-0000" aria-label="Enviar teste para"><button class="btn" data-act="sm-teste" ${g.tem_token ? '' : 'disabled'}>${ic('phone')}Enviar teste</button></div></div>
+        <div id="sm-res"></div>
+        <details class="em-ajuda" ${g.tem_token ? '' : 'open'}><summary>Como configurar o Twilio</summary><ol>
+          <li>Crie a conta em <a href="https://www.twilio.com/try-twilio" target="_blank" rel="noopener">twilio.com</a>. No <b>Console</b>, em <b>Account Info</b>, copie o <b>Account SID</b> (começa com AC) e o <b>Auth Token</b>.</li>
+          <li>Em <b>Phone Numbers → Buy a number</b>, compre um número com <b>SMS</b> e cole aqui como remetente (ex.: +15551234567).</li>
+          <li>Em <b>Messaging → Settings → Geo permissions</b>, libere o <b>Brasil</b>.</li>
+          <li>Conta de teste (trial) só envia para números verificados em <b>Verified Caller IDs</b> e coloca um aviso do Twilio na mensagem. Para uso real, ative a conta (Upgrade).</li>
+          <li>Os números do Brasil podem ser digitados como (43) 99999-0000. O sistema converte para +5543999990000.</li>
+          <li>Custo: cada SMS tem até 160 caracteres sem acento ou 70 com acento. Acima disso, ele vira várias partes cobradas separadamente. Por isso os templates removem os acentos por padrão.</li></ol></details>
+      </div></div>
+    <div class="card"><div class="card-h"><h2>Templates de SMS</h2><span class="hint">As mensagens que as rotinas vão disparar. A <b>chave</b> é o nome que a rotina usa.</span><span class="grow"></span><button class="btn primary" data-act="sm-tpl-novo">${ic('plus')}Template</button></div>
+      <div class="card-b tbl-wrap">${E.tpls.length ? `<table class="t"><thead><tr><th>Nome</th><th>Chave</th><th>Mensagem</th><th>Situação</th><th></th></tr></thead><tbody>
+        ${E.tpls.map(t => { const sg = smsSegmentos(smsMontar(t.texto, smsAmostra(t.texto), t.semAcentos !== false)); return `<tr><td><b>${esc(t.nome)}</b></td><td><code>${esc(t.chave)}</code></td><td class="small">${esc(t.texto.length > 90 ? t.texto.slice(0, 90) + '…' : t.texto)}<div class="muted">≈ ${sg.n} caracteres · ${sg.partes} SMS</div></td>
+          <td>${t.ativo === false ? '<span class="pill neutral">Desativado</span>' : '<span class="pill ok">Ativo</span>'}</td>
+          <td><div class="row" style="gap:4px;flex-wrap:nowrap;justify-content:flex-end"><button class="btn sm icon" data-act="sm-tpl-editar" data-id="${t.id}" aria-label="Editar template">${ic('edit')}</button><button class="btn sm icon" data-act="sm-tpl-dup" data-id="${t.id}" aria-label="Duplicar template">${ic('copy')}</button><button class="btn sm icon danger" data-act="sm-tpl-del" data-id="${t.id}" aria-label="Excluir template">${ic('trash')}</button></div></td></tr>`; }).join('')}
+      </tbody></table>` : `<div class="empty"><b>Nenhum template ainda</b>Use “+ Template” para criar a primeira mensagem (dá para começar de um modelo pronto).</div>`}</div></div>
+    <div class="card"><div class="card-h"><h2>Últimos envios</h2><span class="hint">Os 30 mais recentes.</span><span class="grow"></span><button class="btn sm" data-act="sm-status">${ic('atualizar')}Atualizar status</button></div>
+      <div class="card-b tbl-wrap">${E.envios.length ? `<table class="t"><thead><tr><th>Quando</th><th>Para</th><th>Mensagem</th><th>Template</th><th>Origem</th><th>Status</th></tr></thead><tbody>
+        ${E.envios.map(v => { const [l, k] = SMS_STATUS[v.status] || [v.status, 'neutral']; return `<tr><td class="num small">${new Date(v.criado_em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'})}</td><td class="small num">${esc(v.para)}</td>
+          <td class="small">${esc(v.texto.length > 70 ? v.texto.slice(0, 70) + '…' : v.texto)}${v.segmentos > 1 ? `<div class="muted">${v.segmentos} partes</div>` : ''}</td><td>${v.template ? `<code>${esc(v.template)}</code>` : '—'}</td><td class="small">${origem[v.origem] || esc(v.origem)}</td>
+          <td><span class="pill ${k}">${l}</span>${v.erro ? `<div class="small muted em-erro">${esc(v.erro)}</div>` : ''}</td></tr>`; }).join('')}
+      </tbody></table>` : '<div class="empty">Nenhum SMS enviado ainda.</div>'}</div></div>
+    <details class="card em-dev"><summary class="card-h"><h2>Para as rotinas automáticas</h2><span class="hint">Como uma rotina programada dispara um SMS.</span></summary><div class="card-b small">
+      <p>A rotina chama a função <code>enviar-sms</code> com a chave <b>service_role</b> do Supabase (nunca use essa chave no navegador):</p>
+      <pre class="em-pre">POST ${esc((CFG.supabaseUrl || 'https://SEU-PROJETO.supabase.co').replace(/\/$/, ''))}/functions/v1/enviar-sms
+Authorization: Bearer &lt;service_role&gt;
+{"acao": "enviar", "para": "(43) 99999-0000", "template": "lembrete-visita",
+ "dados": {"nome": "Maria", "imovel": "Apto Centro", "data_visita": "21/11", "hora_visita": "15:00"}}</pre>
+      <p>Cada envio aparece em “Últimos envios” com a origem <b>Rotina automática</b>. Use “Atualizar status” para saber se foi entregue.</p></div></details>`;
+}
+function smsMount() {
+  if (!state.sms.ok) { smsCarregar(); return; }
+  const olho = $('[data-pw="sm-tok"]'); if (olho) olho.onclick = () => { const i = $('#sm-tok'); i.type = i.type === 'password' ? 'text' : 'password'; olho.textContent = i.type === 'password' ? 'Mostrar' : 'Esconder'; };
+  const tel = $('#sm-teste-para'); if (tel) tel.oninput = () => { tel.value = tel.value.replace(/[^\d()+\s-]/g, ''); };
+}
+function smsMsg(ok, html) { const b = $('#sm-res'); if (b) b.innerHTML = `<div class="em-msg ${ok ? 'ok' : 'bad'}" role="status">${ic(ok ? 'check' : 'info')}<div>${html}</div></div>`; }
+const smsErroFn = e => { const m = String(e.message || e); return /código 404|Requested function was not found/i.test(m) ? '<b>A função enviar-sms ainda não foi publicada no Supabase.</b> Veja o passo a passo no README (Edge Functions → Deploy a new function → enviar-sms).' : esc(m); };
+async function smsSalvar(extra = {}) {
+  if (!isMaster()) return denied();
+  if (!requireFields(['sm-sid', 'sm-rem'])) return false;
+  const tok = $('#sm-tok').value.trim();
+  if (!state.sms.gw?.tem_token && !tok && !extra.remover_token) { $('#sm-tok').classList.add('err'); $('#sm-tok').focus(); toast('Informe o Auth Token do Twilio.', 'warn'); return false; }
+  const p = {account_sid: val('sm-sid'), auth_token: tok, remetente: val('sm-rem'), ativo: $('#sm-ativo').checked, ...extra};
+  const {data, error} = await sb.rpc('sms_gateway_salvar', {p});
+  if (error) { kanErro(error); return false; }
+  state.sms.gw = {...(state.sms.gw || {}), ...(data || {}), tem_token: data ? data.tem_token : (state.sms.gw?.tem_token || !!tok)};
+  delete state.sms.gw.auth_token; render(); return true;
+}
+async function smsTestar(btn) {
+  btn.disabled = true; smsMsg(true, 'Consultando a conta no Twilio…');
+  try { const r = await fnCall('enviar-sms', {acao: 'testar'}); smsMsg(r.ok, r.ok ? `<b>Conta OK</b>${r.conta ? ` (${esc(r.conta)})` : ''} em ${(r.ms / 1000).toFixed(1)} s.${r.tipo === 'Trial' ? ' <b>Atenção:</b> conta de teste (trial): só envia para números verificados no Twilio.' : ''}` : `<b>Não conectou.</b> ${esc(r.msg)}`); }
+  catch (e) { smsMsg(false, smsErroFn(e)); }
+  btn.disabled = false;
+}
+async function smsEnviarTeste(btn, extra) {
+  const para = extra ? extra.para : val('sm-teste-para');
+  if (String(para || '').replace(/\D/g, '').length < 10) { toast('Informe o celular para o teste com DDD, ex.: (43) 99999-0000.', 'warn'); return; }
+  btn.disabled = true;
+  try {
+    const t = extra?.t || {texto: 'Teste de SMS do Gestão 2.0 em {{data}} às {{hora}}. Se você recebeu, o envio está funcionando.', semAcentos: true};
+    const r = await fnCall('enviar-sms', {acao: 'enviar', para, texto: t.texto, semAcentos: t.semAcentos !== false, dados: smsAmostra(t.texto), teste: true});
+    toast(`SMS de teste enviado para ${para}.`);
+    if (!extra) smsMsg(true, `<b>SMS de teste enviado</b> para ${esc(para)} (${r.partes || 1} parte${(r.partes || 1) > 1 ? 's' : ''}). Use “Atualizar status” em alguns segundos para ver se foi entregue.`);
+    state.sms.ok = false; smsCarregar();
+  } catch (e) { if (extra) toast(String(e.message || e), 'bad'); else smsMsg(false, smsErroFn(e)); }
+  btn.disabled = false;
+}
+function smsTplForm(t = {}, duplicar) {
+  if (!isMaster()) return denied();
+  const novo = !t.id || duplicar;
+  t = {semAcentos: true, ativo: true, ...t};
+  if (duplicar) t = {...t, id: undefined, nome: t.nome + ' (cópia)', chave: (t.chave + '-copia').slice(0, 60)};
+  let chaveManual = !novo || !!duplicar;
+  openModal({title: novo ? 'Novo template de SMS' : 'Editar template de SMS', wide: true,
+    body: `<div class="em-ed">
+      <form class="stack" onsubmit="return false" autocomplete="off">
+        ${novo && !duplicar ? `<div class="field"><label for="st-modelo">Começar de um modelo</label><select class="input" id="st-modelo"><option value="">Em branco</option>${Object.entries(SMS_MODELOS).map(([k, m]) => `<option value="${k}">${esc(m.nome)}</option>`).join('')}</select></div>` : ''}
+        <div class="grid-2"><div class="field"><label for="st-nome">Nome *</label><input class="input" id="st-nome" maxlength="120" value="${esc(t.nome)}" placeholder="Ex.: Lembrete de visita"></div>
+          <div class="field"><label for="st-chave">Chave (usada pelas rotinas) *</label><input class="input" id="st-chave" maxlength="60" value="${esc(t.chave)}" placeholder="lembrete-visita"></div></div>
+        <div class="field"><label for="st-texto">Mensagem *</label><textarea class="input em-corpo" id="st-texto" maxlength="1000" style="min-height:150px">${esc(t.texto)}</textarea>
+          <div class="em-chips"><span class="small muted">Inserir:</span>${SMS_VARS.map(v => `<button type="button" class="em-chip" data-act="st-var" data-v="${v}">{{${v}}}</button>`).join('')}</div>
+          <div class="help">Variáveis entre {{ }} são preenchidas na hora do envio (qualquer nome; a rotina envia o valor). Mensagens curtas saem mais baratas.</div></div>
+        <label class="check"><input type="checkbox" id="st-acento" ${t.semAcentos !== false ? 'checked' : ''}>Remover acentos ao enviar (160 caracteres por SMS em vez de 70)</label>
+        <label class="check"><input type="checkbox" id="st-ativo" ${t.ativo !== false ? 'checked' : ''}>Template ativo (as rotinas podem usar)</label>
+      </form>
+      <div class="em-prev"><div class="small muted">Como chega no celular (dados de exemplo)</div>
+        <div class="sms-cel"><div class="sms-bolha" id="st-prev"></div></div>
+        <div class="sms-conta" id="st-conta"></div>
+        <div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input sm" id="st-teste-para" inputmode="tel" value="${esc(ME?.telefone || '')}" placeholder="(43) 99999-0000" aria-label="Enviar teste para"><button type="button" class="btn sm" data-act="st-teste">${ic('phone')}Enviar teste</button></div></div>
+    </div>`,
+    foot: `<button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="st-salvar">${novo ? 'Criar template' : 'Salvar'}</button>`,
+    onMount: m => {
+      const atual = () => ({nome: val('st-nome'), chave: val('st-chave').toLowerCase(), texto: $('#st-texto', m).value.trim(), semAcentos: $('#st-acento', m).checked, ativo: $('#st-ativo', m).checked});
+      const prev = () => { const x = atual(), txt = smsMontar(x.texto, smsAmostra(x.texto), x.semAcentos), sg = smsSegmentos(txt);
+        $('#st-prev', m).textContent = txt || 'A mensagem aparece aqui.';
+        $('#st-conta', m).innerHTML = `<b>${sg.n}</b> caracteres · <b class="${sg.partes > 1 ? 'sms-caro' : ''}">${sg.partes || 0} SMS</b>${!sg.gsm && sg.n ? ' · <span class="sms-caro">com acentos ou símbolos especiais: 70 caracteres por SMS</span>' : ''}`; };
+      m._prev = prev; m._atual = atual;
+      m.addEventListener('input', e => { if (e.target.id === 'st-chave') chaveManual = true; if (e.target.id === 'st-nome' && !chaveManual) $('#st-chave', m).value = slug(e.target.value); prev(); });
+      m.addEventListener('change', prev);
+      const mod = $('#st-modelo', m); if (mod) mod.onchange = () => { const x = SMS_MODELOS[mod.value]; if (!x) return; $('#st-nome', m).value = x.nome; $('#st-chave', m).value = x.chave; $('#st-texto', m).value = x.texto; chaveManual = false; prev(); };
+      prev();
+      $('#st-salvar', m).onclick = async () => {
+        if (!requireFields(['st-nome', 'st-chave', 'st-texto'])) return;
+        const x = atual(); if (!/^[a-z0-9][a-z0-9_-]{1,59}$/.test(x.chave)) { $('#st-chave', m).classList.add('err'); return toast('A chave deve ter de 2 a 60 letras minúsculas, números, - ou _ (ex.: lembrete-visita).', 'warn'); }
+        if (state.sms.tpls.some(o => o.chave === x.chave && o.id !== (novo ? null : t.id))) { $('#st-chave', m).classList.add('err'); return toast(`Já existe um template com a chave "${x.chave}".`, 'warn'); }
+        const id = novo ? uid() : t.id, btn = $('#st-salvar', m); btn.disabled = true;
+        const {error} = await sb.from('sms_templates').upsert({id, data: x}); btn.disabled = false;
+        if (error) return kanErro(error);
+        const i = state.sms.tpls.findIndex(o => o.id === id); if (i >= 0) state.sms.tpls[i] = {...x, id}; else state.sms.tpls.push({...x, id});
+        closeModal(); render(); toast(novo ? 'Template criado.' : 'Template salvo.');
+      };
+    }});
+}
+
+const cfgAbas = () => `<div class="seg" role="group" aria-label="Configurações">${[['aparencia', 'paleta', 'Aparência'], ['kanban', 'kanban', 'Kanban'], ['email', 'mail', 'E-mail'], ['sms', 'phone', 'SMS']].map(([v, i, l]) => `<button class="kc-tab" data-act="cfg-tab" data-v="${v}" aria-pressed="${state.cfgTab === v}">${ic(i)}${l}</button>`).join('')}</div>`;
 function aparenciaHTML() {
   const lay = layoutAtual();
   const op = (v, t, d) => `<button class="ap-op ${lay === v ? 'on' : ''}" data-act="ap-layout" data-v="${v}" aria-pressed="${lay === v}">
@@ -3136,8 +3319,8 @@ function aparenciaHTML() {
       </div></div>`;
 }
 VIEWS.configuracoes = {
-  html() { return state.cfgTab === 'kanban' ? kanCfgView.html() : state.cfgTab === 'email' ? emailHTML() : aparenciaHTML(); },
-  mount() { if (state.cfgTab === 'kanban') kanCfgView.mount(); if (state.cfgTab === 'email') emailMount(); }
+  html() { return state.cfgTab === 'kanban' ? kanCfgView.html() : state.cfgTab === 'email' ? emailHTML() : state.cfgTab === 'sms' ? smsHTML() : aparenciaHTML(); },
+  mount() { if (state.cfgTab === 'kanban') kanCfgView.mount(); if (state.cfgTab === 'email') emailMount(); if (state.cfgTab === 'sms') smsMount(); }
 };
 async function kanCfgSalvar() {
   if (!isMaster()) return denied();
@@ -5559,6 +5742,23 @@ const ACTIONS = {
   'cfg-tab': el => { state.cfgTab = el.dataset.v; render(); },
   'ap-layout': async el => { if (!isMaster()) return denied(); const lay = el.dataset.v; if (layoutAtual() === lay) return;
     if (await save('config', 'aparencia', {layout: lay})) { aplicarLayout(lay); render(); toast(lay === 'crm' ? 'Tema CRM ativado para todos os usuários.' : 'Layout clássico restaurado para todos os usuários.'); } },
+  // sms
+  'sm-salvar': async () => { if (await smsSalvar()) toast('Conta do Twilio salva.'); },
+  'sm-tirar-token': () => confirmBox('Remover o Auth Token guardado? O envio de SMS para até você cadastrar outro.', 'Remover', async () => { if (await smsSalvar({remover_token: true, auth_token: ''})) toast('Token removido.'); }),
+  'sm-testar': el => smsTestar(el),
+  'sm-teste': el => smsEnviarTeste(el),
+  'sm-status': async el => { el.disabled = true; try { const r = await fnCall('enviar-sms', {acao: 'status'}); toast(r.atualizados ? `${r.atualizados} status atualizado(s).` : 'Nenhum status pendente para atualizar.'); } catch (e) { toast(String(e.message || e), 'bad'); }
+    el.disabled = false; state.sms.ok = false; render(); },
+  'sm-tpl-novo': () => smsTplForm(),
+  'sm-tpl-editar': el => { const t = state.sms.tpls.find(x => x.id === el.dataset.id); if (t) smsTplForm(t); },
+  'sm-tpl-dup': el => { const t = state.sms.tpls.find(x => x.id === el.dataset.id); if (t) smsTplForm(t, true); },
+  'sm-tpl-del': el => { const t = state.sms.tpls.find(x => x.id === el.dataset.id); if (!t) return;
+    confirmBox(`Excluir o template <b>${esc(t.nome)}</b> (chave <code>${esc(t.chave)}</code>)? As rotinas que usam essa chave deixam de enviar.`, 'Excluir', async () => {
+      const {error} = await sb.from('sms_templates').delete().eq('id', t.id); if (error) return kanErro(error);
+      state.sms.tpls = state.sms.tpls.filter(x => x.id !== t.id); render(); toast('Template excluído.'); }); },
+  'st-var': el => { const ta = $('#st-texto'), v = `{{${el.dataset.v}}}`, a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
+    ta.value = ta.value.slice(0, a) + v + ta.value.slice(b); ta.focus(); ta.setSelectionRange(a + v.length, a + v.length); const m = $('#modal-root .modal'); m?._prev && m._prev(); },
+  'st-teste': el => { const m = $('#modal-root .modal'); if (!m?._atual) return; const x = m._atual(); if (!x.texto) return toast('Escreva a mensagem.', 'warn'); smsEnviarTeste(el, {t: x, para: val('st-teste-para')}); },
   // e-mail
   'em-salvar': async () => { if (await emailSalvar()) toast('Servidor de e-mail salvo.'); },
   'em-tirar-senha': () => confirmBox('Remover a senha guardada? O envio de e-mails para até você cadastrar outra.', 'Remover', async () => { if (await emailSalvar({remover_senha: true, senha: ''})) toast('Senha removida.'); }),

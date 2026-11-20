@@ -196,3 +196,32 @@ Em **Configurações → E-mail** (só o Master):
 2. Supabase → Edge Functions → **Deploy a new function** → nome `enviar-email` → colar `supabase/functions/enviar-email/index.ts` → Deploy, com **Verify JWT desligado** (a função confere quem chama).
 
 **Rotinas automáticas:** chamam `POST /functions/v1/enviar-email` com `Authorization: Bearer <service_role>` e o corpo `{"acao": "enviar", "para": "...", "template": "chave", "dados": {...}}`.
+
+## SMS (Twilio)
+
+Em **Configurações → SMS** (só o Master):
+- **Conta do Twilio:**
+  - Account SID, Auth Token e remetente (número do Twilio com `+` e código do país, ou um Messaging Service SID `MG…`);
+  - chave **Envio de SMS ligado**;
+  - botões **Testar conta** e **Enviar teste**.
+- **Templates de SMS:**
+  - cada template tem nome, **chave** (o nome que a rotina usa) e texto com variáveis `{{nome}}`, `{{empresa}}`, `{{corretor}}`, `{{data}}`, `{{hora}}`, `{{link}}` ou qualquer outra que a rotina enviar;
+  - opção **remover acentos** (ligada por padrão): sem acento cabem 160 caracteres por SMS, com acento só 70;
+  - contador de caracteres e de SMS, e pré-visualização "no celular".
+- **Últimos envios:** status do Twilio (na fila, enviado, entregue, não entregue) e motivo das falhas. O botão **Atualizar status** consulta o Twilio.
+
+**No Twilio:**
+- Account SID e Auth Token ficam em Console → Account Info.
+- Compre um número com SMS.
+- Libere o Brasil em Messaging → Settings → Geo permissions.
+- Conta trial só envia para números verificados.
+
+Os números do Brasil podem ser digitados como `(43) 99999-0000`; o sistema converte para `+5543999990000`. O limite é de 200 SMS por dia (segredo opcional `SMS_LIMITE_DIA`).
+
+**Segurança:** o Auth Token fica só no banco e só a função `enviar-sms` o lê.
+
+**Publicar:**
+1. Supabase → SQL Editor: rodar `supabase/migrations/20261122100000_sms.sql`.
+2. Supabase → Edge Functions → **Deploy a new function** → nome `enviar-sms` → colar `supabase/functions/enviar-sms/index.ts` → Deploy, com **Verify JWT desligado**.
+
+**Rotinas automáticas:** chamam `POST /functions/v1/enviar-sms` com `Authorization: Bearer <service_role>` e o corpo `{"acao": "enviar", "para": "(43) 99999-0000", "template": "chave", "dados": {...}}`.
