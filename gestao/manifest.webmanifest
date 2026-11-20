@@ -1,0 +1,14 @@
+{
+  "name": "Imobiliária 2.0 Gestão Comercial",
+  "short_name": "Gestão 2.0",
+  "start_url": "/gestao/",
+  "scope": "/gestao/",
+  "display": "standalone",
+  "background_color": "#141619",
+  "theme_color": "#141619",
+  "lang": "pt-BR",
+  "icons": [
+    {"src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}
