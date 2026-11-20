@@ -128,3 +128,14 @@ A análise do dia é feita pela função `diario-ia`, que funciona com **OpenAI*
 **Atualizar a função:** publicar o site não atualiza a função. Quando `supabase/functions/diario-ia/index.ts` mudar, abra Edge Functions → `diario-ia` → **Code**, cole o arquivo novo e clique em **Deploy**.
 
 O prompt do mentor (com versão), o limite de análises por corretor a cada 24h, os **pilares inegociáveis da operação**, o mantra da equipe (valores, deveres, virtudes) e as palavras-chave ficam em **Diário de bordo → Configurações** (só o Master). O prompt, os pilares, a base de conhecimento (Ponto de Reflexão, Manual de Persuasão do FBI, Cialdini, Chris Voss) e os critérios da nota vêm do Diário Águia (projeto no Lovable), que foi incorporado ao Gestão 2.0.
+
+## Kanban e notificações
+
+Menu **Kanban** (grupo Gestão): quadro de cards em etapas (colunas). Cada card tem título, descrição, etapa, prioridade, prazo, responsável, participantes, etiquetas, checklist, comentários e histórico. Os cards mudam de etapa arrastando (no computador) ou pelo campo **Etapa** dentro do card (no celular). Cards concluídos podem ser **arquivados** (somem do quadro e ficam em "Arquivados").
+
+- **Quem vê:** cada pessoa vê os cards em que está envolvida (criou, é responsável ou participante). Master e Coordenador veem todos (permissão "Ver e organizar todos os cards do Kanban", ajustável em Usuários).
+- **Notificações (sininho no alto, à direita):** quem está no card é avisado quando é colocado como responsável, incluído ou retirado, quando o card muda de etapa, recebe comentário, tem o prazo alterado ou é excluído. Os avisos chegam em tempo real; o sininho também lista os prazos vencidos, de hoje e próximos. Opcional: "Avisar também pelo navegador" (aviso do sistema com a aba em segundo plano).
+- **Configurações (menu novo, só Master):** etapas (nome, cor, ordem, limite de cards, etapa final e exigências para entrar: responsável, prazo, descrição ou checklist concluído), **passo a passo** (Livre, Passo a passo — uma etapa por vez, com opção de voltar — ou Personalizado, escolhendo os caminhos permitidos), etiquetas e quais notificações são enviadas.
+- O passo a passo, os limites e as exigências são conferidos também no banco; as notificações são criadas pelo próprio banco (ninguém consegue forjar).
+
+**Banco:** rode no Supabase (SQL Editor) `supabase/migrations/20261120100000_kanban.sql`.
