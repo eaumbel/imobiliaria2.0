@@ -150,4 +150,4 @@ O sistema abre no **Tema CRM**:
 
 **Voltar ao layout anterior (ponto de backup `TEMA_CRM`):**
 - **Na hora, sem publicar nada:** o Master entra em **Configurações → Aparência → Clássico (versão anterior)**. Vale para todos.
-- **No código:** o tag git `TEMA_CRM` guarda a versão anterior ao tema. No Claude Code, o comando `/TEMA_CRM` (arquivo `.claude/commands/TEMA_CRM.md`) faz a volta passo a passo.
+- **No código:** o branch `TEMA_CRM` no GitHub guarda a versão anterior ao tema (não apague). No Claude Code, o comando `/TEMA_CRM` (arquivo `.claude/commands/TEMA_CRM.md`) faz a volta passo a passo.
