@@ -697,6 +697,24 @@ select.input.rel-per{width:170px;flex:none}
 @media print{.com-wrap{display:none!important}}
 /* ---------- Configurações do Kanban ---------- */
 .kc-tab{display:inline-flex;align-items:center;gap:6px}.kc-tab svg{width:15px;height:15px}
+.em-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.em-acoes{gap:10px}.em-acoes .btn svg{width:16px;height:16px}
+.em-msg{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;font-size:13.5px;border:1px solid}
+.em-msg svg{width:18px;height:18px;flex:none;margin-top:1px}.em-msg.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}.em-msg.ok svg{color:var(--ok)}
+.em-msg.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 45%,transparent)}.em-msg.bad svg{color:var(--bad)}
+.em-ajuda{font-size:13.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}.em-ajuda summary{cursor:pointer;font-weight:700}.em-ajuda ol{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.link-btn{background:none;border:0;padding:0;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline}
+.em-erro{max-width:260px;margin-top:3px;line-height:1.3}
+.em-dev summary{list-style:none;cursor:pointer;padding-bottom:16px}.em-dev summary::-webkit-details-marker{display:none}.em-dev[open] summary{padding-bottom:0}
+.em-pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;overflow-x:auto;font-size:12.5px;white-space:pre}
+.em-ed{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.em-corpo{min-height:240px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+.em-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.em-chip{border:1px solid var(--line-strong);background:var(--surface-2);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);font-family:ui-monospace,Menlo,Consolas,monospace}
+.em-chip:hover{border-color:var(--accent);color:var(--accent)}
+.em-prev{display:flex;flex-direction:column;gap:8px;min-width:0}
+.em-prev-assunto{font-weight:700;font-size:14px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.em-prev iframe{width:100%;height:440px;border:1px solid var(--line);border-radius:12px;background:#f5f2ec}
 .ap-ops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .ap-op{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px;border:1px solid var(--line-strong);border-radius:14px;background:var(--surface);cursor:pointer;color:var(--ink);font:inherit}
 .ap-op:hover{border-color:var(--muted)}.ap-op.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -871,6 +889,8 @@ select.input.rel-per{width:170px;flex:none}
   .tr-ic{display:none}
   .ct-grid,.ct-ass{grid-template-columns:1fr}
   .ap-ops{grid-template-columns:1fr}
+  .em-grid,.em-ed{grid-template-columns:1fr}
+  .em-acoes .row{flex-wrap:wrap!important}
   .id-grid{grid-template-columns:1fr}
   .ass-passos span{display:none}
   .ass-passos button{justify-content:center}
@@ -1169,7 +1189,7 @@ async function loadAll() {
     canal.subscribe();
   }
 }
-function clearData() { COLS.forEach(c => S[c] = new Map()); CORR_READY = false; NOTIF_INICIO = true; state.kanCfg = null; state.kanCfgSujo = false; KAN_ABERTO = null; if (canal) { sb.removeChannel(canal); canal = null; } }
+function clearData() { COLS.forEach(c => S[c] = new Map()); CORR_READY = false; NOTIF_INICIO = true; state.email = {ok: false, gw: null, tpls: [], envios: []}; state.kanCfg = null; state.kanCfgSujo = false; KAN_ABERTO = null; if (canal) { sb.removeChannel(canal); canal = null; } }
 const api = (acao, payload = {}) => fnCall('admin-usuarios', {acao, ...payload});
 async function fnCall(nome, payload = {}) {
   const {data: {session}} = await sb.auth.getSession();
@@ -1419,6 +1439,7 @@ const state = {
   ang: {de: monthKey(today()) + '-01', ate: '', corretor: 'all', angariador: 'all'},
   kan: {busca: '', pessoa: 'all', prio: 'all', etq: 'all', arquivados: false},
   kanCfg: null, kanCfgSujo: false, cfgTab: 'aparencia',
+  email: {ok: false, gw: null, tpls: [], envios: []},
   rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today(), de: monthKey(today()) + '-01', ate: today(), agTipo: 'all'},
   ct: {modelo: null, v: {}, doc: null, assinatura: '', ident: null, etapa: '', busca: ''},
   dirty: false, pending: false
@@ -1443,7 +1464,7 @@ const NAV = [
   {id: 'contratos', grp: 'Operação', label: 'Modelos de Contrato', icon: 'sign', sub: 'Contratos preenchidos e assinados na tela'},
   {id: 'metas', grp: 'Operação', label: 'Metas', icon: 'target', sub: 'Meta da equipe e individual por mês'},
   {id: 'usuarios', grp: 'Operação', label: 'Usuários', icon: 'users', sub: 'Cadastro da equipe e tipos de acesso'},
-  {id: 'configuracoes', grp: 'Operação', label: 'Configurações', icon: 'gear', sub: 'Aparência do sistema e ajustes do Kanban'},
+  {id: 'configuracoes', grp: 'Operação', label: 'Configurações', icon: 'gear', sub: 'Aparência do sistema, Kanban e e-mail'},
   {id: 'meusdados', grp: 'Minha conta', label: 'Meus dados', icon: 'user', sub: 'Seu cadastro: nome, contato, CRECI e senha'}
 ];
 function navFade() { const n = $('#nav'); if (n) n.classList.toggle('tem-mais', n.scrollTop + n.clientHeight < n.scrollHeight - 4); }
@@ -2901,7 +2922,205 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') crmMenuFecha
 [['crm-tela', 'tela'], ['crm-atualizar', 'atualizar'], ['crm-menu', 'menu']].forEach(([a, i]) => { const b = $(`[data-act="${a}"]`); if (b) b.innerHTML = ic(i); });
 document.addEventListener('fullscreenchange', () => { const b = $('[data-act="crm-tela"]'); if (b) { const on = !!document.fullscreenElement; b.innerHTML = ic(on ? 'telaSair' : 'tela'); b.setAttribute('aria-label', on ? 'Sair da tela cheia' : 'Tela cheia'); b.title = b.getAttribute('aria-label'); } });
 
-const cfgAbas = () => `<div class="seg" role="group" aria-label="Configurações">${[['aparencia', 'paleta', 'Aparência'], ['kanban', 'kanban', 'Kanban']].map(([v, i, l]) => `<button class="kc-tab" data-act="cfg-tab" data-v="${v}" aria-pressed="${state.cfgTab === v}">${ic(i)}${l}</button>`).join('')}</div>`;
+/* =========================================================
+   Configurações → E-mail (servidor SMTP, templates e envios) — só o Master
+   A senha fica só no servidor: a tela nunca a recebe de volta.
+   ========================================================= */
+let EMAIL_OK = true;
+const EMAIL_PROV = {gmail: {nome: 'Gmail / Google Workspace', host: 'smtp.gmail.com', porta: 465, seguranca: 'ssl'}, outro: {nome: 'Outro servidor', host: '', porta: 465, seguranca: 'ssl'}};
+const EMAIL_SEG = {ssl: 'SSL/TLS (porta 465, recomendado)', starttls: 'STARTTLS (porta 587)', nenhuma: 'Sem criptografia (não recomendado)'};
+const EMAIL_VARS = ['nome', 'email', 'empresa', 'corretor', 'link', 'data', 'hora'];
+const EMAIL_MODELOS = {
+  boasvindas: {nome: 'Boas-vindas ao cliente', chave: 'boas-vindas', assunto: 'Olá, {{nome}}! Que bom ter você com a {{empresa}}',
+    corpo: 'Olá, **{{nome}}**!\n\nObrigado pelo contato. Eu sou {{corretor}} e vou acompanhar o seu atendimento.\n\nSempre que precisar, é só responder este e-mail.\n\n[[Falar com a equipe|{{link}}]]\n\nAbraço,\n{{corretor}}\n{{empresa}}'},
+  visita: {nome: 'Lembrete de visita', chave: 'lembrete-visita', assunto: 'Lembrete: visita {{data_visita}} às {{hora_visita}}',
+    corpo: 'Olá, **{{nome}}**!\n\nPassando para lembrar da nossa visita:\n\n**Imóvel:** {{imovel}}\n**Endereço:** {{endereco}}\n**Quando:** {{data_visita}} às {{hora_visita}}\n\nSe precisar remarcar, responda este e-mail.\n\n{{corretor}} · {{empresa}}'},
+  aviso: {nome: 'Aviso geral', chave: 'aviso-geral', assunto: '{{titulo}}', corpo: 'Olá, {{nome}}!\n\n{{mensagem}}\n\n{{empresa}}'}
+};
+// Mesma montagem da função enviar-email (para a pré-visualização ficar igual ao e-mail enviado)
+const emUrlOk = u => /^(https?:\/\/|mailto:)/i.test(u.replace(/&amp;/g, '&'));
+const emVars = (dados, empresa) => { const d = new Date(); return {empresa, data: d.toLocaleDateString('pt-BR', {timeZone: TZ}), hora: d.toLocaleTimeString('pt-BR', {timeZone: TZ, hour: '2-digit', minute: '2-digit'}), ...dados}; };
+const emTrocar = (txt, vars, e) => txt.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_, k) => { const v = vars[k]; const s = v == null ? '' : String(v); return e ? esc(s) : s; });
+function emTextoHtml(corpo, vars) {
+  let h = emTrocar(esc(corpo), vars, true);
+  h = h.replace(/\[\[([^|\]\n]+)\|([^\]\s]+)\]\]/g, (m, t, u) => emUrlOk(u) ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0"><tr><td style="background:#b5121b;border-radius:8px"><a href="${u}" style="display:inline-block;padding:12px 22px;color:#ffffff;text-decoration:none;font-weight:bold">${t.trim()}</a></td></tr></table>` : m);
+  h = h.replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, (m, t, u) => emUrlOk(u) ? `<a href="${u}" style="color:#b5121b">${t}</a>` : m);
+  h = h.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+  return h.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p => p.startsWith('<table') ? p : `<p style="margin:0 0 14px">${p.replace(/\n/g, '<br>')}</p>`).join('\n');
+}
+const emMoldura = (c, empresa) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"></head><body style="margin:0;padding:0;background:#f5f2ec;font-family:Arial,Helvetica,sans-serif;color:#1d1b18">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ec;padding:24px 12px"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e7e1d8;border-radius:12px;overflow:hidden">
+<tr><td style="background:#1f1f1f;padding:18px 28px;color:#ffffff;font-size:18px;font-weight:bold">${esc(empresa)}</td></tr>
+<tr><td style="height:4px;line-height:4px;font-size:0;background:#b5121b">&nbsp;</td></tr>
+<tr><td style="padding:28px;font-size:15px;line-height:1.6">${c}</td></tr>
+<tr><td style="padding:14px 28px;background:#f8f5f0;color:#6b665f;font-size:12px">Mensagem enviada por ${esc(empresa)}.</td></tr>
+</table></td></tr></table></body></html>`;
+function emMontar(t, dados, empresa) {
+  const vars = emVars(dados, empresa), c = t.formato === 'html' ? emTrocar(t.corpo, vars, true) : emTextoHtml(t.corpo, vars);
+  return {assunto: emTrocar(t.assunto, vars, false).replace(/[\r\n]+/g, ' ').trim(), html: t.moldura === false ? c : emMoldura(c, empresa)};
+}
+const emVarsDe = t => [...new Set(((t.assunto || '') + ' ' + (t.corpo || '')).match(/\{\{\s*([\w.-]+)\s*\}\}/g)?.map(x => x.replace(/[{}\s]/g, '')) || [])];
+function emAmostra(t, para) {
+  const base = {nome: 'Maria Silva', email: para || 'cliente@exemplo.com', corretor: ME?.nome || 'Corretor', link: 'https://imobiliaria20.eaumbel.com.br',
+    imovel: 'Apartamento 3 quartos · Gleba Palhano', endereco: 'Rua Exemplo, 100 · Centro', data_visita: brD(today()), hora_visita: '15:00', titulo: 'Aviso importante', mensagem: 'Esta é uma mensagem de exemplo.'};
+  emVarsDe(t).forEach(v => { if (!(v in base) && !['empresa', 'data', 'hora'].includes(v)) base[v] = `[${v}]`; });
+  return base;
+}
+const emEmpresa = () => state.email.gw?.remetente_nome || 'Imobiliária 2.0';
+async function emailCarregar() {
+  const E = state.email; if (E.carregando) return; E.carregando = true;
+  try {
+    const [g, t, e] = await Promise.all([
+      sb.from('email_gateway').select('id,provedor,host,porta,seguranca,usuario,tem_senha,remetente_nome,remetente_email,responder_para,ativo,atualizado_em'),
+      sb.from('email_templates').select('id,data'),
+      sb.from('email_envios').select('*').order('criado_em', {ascending: false}).limit(20)]);
+    EMAIL_OK = !g.error && !t.error;
+    E.gw = (g.data || [])[0] || null; E.tpls = (t.data || []).map(r => ({...r.data, id: r.id})).sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+    E.envios = e.data || []; E.ok = true;
+  } catch (er) { EMAIL_OK = false; }
+  E.carregando = false; if (state.view === 'configuracoes' && state.cfgTab === 'email') render();
+}
+function emailHTML() {
+  const E = state.email, abas = `<div class="tabs-top">${cfgAbas()}</div>`;
+  if (!E.ok) return abas + `<div class="card"><div class="empty">Carregando…</div></div>`;
+  if (!EMAIL_OK) return abas + `<div class="banner">${ic('info')}<span>O banco ainda não tem a estrutura de e-mail. Rode no Supabase (SQL Editor) o arquivo <b>supabase/migrations/20261121100000_email.sql</b> e publique a função <b>enviar-email</b>.</span></div>`;
+  const g = E.gw || {provedor: 'gmail', ...EMAIL_PROV.gmail, usuario: '', remetente_nome: 'Imobiliária 2.0', remetente_email: '', responder_para: '', ativo: true, tem_senha: false};
+  const status = !E.gw || !g.tem_senha ? '<span class="pill neutral">Não configurado</span>' : g.ativo ? '<span class="pill ok">Envio ligado</span>' : '<span class="pill warn">Envio desligado</span>';
+  const origem = {tela: 'Tela', teste: 'Teste', rotina: 'Rotina automática'};
+  return abas + `
+    <div class="card"><div class="card-h"><h2>Servidor de e-mail (SMTP)</h2>${status}<span class="hint">Usado para disparar os e-mails das rotinas automáticas.</span></div>
+      <div class="card-b stack">
+        <div class="em-grid">
+          <div class="field"><label for="em-prov">Provedor</label><select class="input" id="em-prov">${Object.entries(EMAIL_PROV).map(([k, p]) => `<option value="${k}" ${g.provedor === k ? 'selected' : ''}>${p.nome}</option>`).join('')}</select></div>
+          <div class="field"><label for="em-host">Servidor SMTP *</label><input class="input" id="em-host" value="${esc(g.host)}" placeholder="smtp.gmail.com" autocomplete="off"></div>
+          <div class="field"><label for="em-porta">Porta *</label><input class="input num" id="em-porta" type="number" min="1" max="65535" value="${esc(g.porta)}"></div>
+          <div class="field"><label for="em-seg">Segurança</label><select class="input" id="em-seg">${Object.entries(EMAIL_SEG).map(([k, l]) => `<option value="${k}" ${g.seguranca === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+          <div class="field"><label for="em-user">Login (e-mail) *</label><input class="input" id="em-user" type="email" value="${esc(g.usuario)}" placeholder="contato@suaempresa.com.br" autocomplete="off"></div>
+          <div class="field"><label for="em-senha">Senha${g.provedor === 'gmail' ? ' de app' : ''} ${g.tem_senha ? '' : '*'}</label><div class="pw"><input class="input" id="em-senha" type="password" autocomplete="new-password" placeholder="${g.tem_senha ? '•••••••• (já cadastrada)' : 'Senha de app do Gmail (16 letras)'}"><button type="button" data-pw="em-senha">Mostrar</button></div>
+            ${g.tem_senha ? `<div class="help">Deixe em branco para manter. A senha fica guardada só no servidor e não é exibida. <button type="button" class="link-btn" data-act="em-tirar-senha">Remover senha</button></div>` : ''}</div>
+          <div class="field"><label for="em-nome">Nome do remetente</label><input class="input" id="em-nome" maxlength="120" value="${esc(g.remetente_nome)}" placeholder="Imobiliária 2.0"></div>
+          <div class="field"><label for="em-rem">E-mail do remetente</label><input class="input" id="em-rem" type="email" value="${esc(g.remetente_email)}" placeholder="igual ao login"><div class="help">No Gmail, use o próprio login (ou um alias já verificado na conta).</div></div>
+          <div class="field"><label for="em-resp">Responder para (opcional)</label><input class="input" id="em-resp" type="email" value="${esc(g.responder_para)}" placeholder="quem recebe as respostas"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="em-ativo" ${g.ativo ? 'checked' : ''}>Envio de e-mails ligado (desligado, só os testes funcionam)</label>
+        <div class="row em-acoes"><button class="btn primary" data-act="em-salvar">Salvar servidor</button><button class="btn" data-act="em-testar" ${g.tem_senha ? '' : 'disabled'}>${ic('swap')}Testar conexão</button>
+          <span class="grow"></span><div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input" id="em-teste-para" type="email" style="max-width:260px" value="${esc(ME?.email || g.usuario || '')}" placeholder="e-mail para o teste" aria-label="Enviar teste para"><button class="btn" data-act="em-teste" ${g.tem_senha ? '' : 'disabled'}>${ic('mail')}Enviar teste</button></div></div>
+        <div id="em-res"></div>
+        <details class="em-ajuda" ${g.tem_senha ? '' : 'open'}><summary>Como configurar o Gmail (senha de app)</summary><ol>
+          <li>Na conta Google que vai enviar, ligue a <b>Verificação em duas etapas</b> (myaccount.google.com → Segurança).</li>
+          <li>Abra <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>, crie uma senha de app (ex.: “Imobiliária 2.0”) e copie as 16 letras.</li>
+          <li>Aqui: Provedor <b>Gmail</b>, servidor <b>smtp.gmail.com</b>, porta <b>465</b>, SSL/TLS, login = o e-mail da conta, senha = a senha de app. Salve e clique em <b>Testar conexão</b>.</li>
+          <li>O Gmail envia até cerca de 500 e-mails por dia; o sistema para em 450 para não bloquear a conta.</li>
+          <li>Use a porta 465: o Supabase bloqueia as portas 25 e 587.</li></ol></details>
+      </div></div>
+    <div class="card"><div class="card-h"><h2>Templates de e-mail</h2><span class="hint">As mensagens que as rotinas vão disparar. A <b>chave</b> é o nome que a rotina usa.</span><span class="grow"></span><button class="btn primary" data-act="em-tpl-novo">${ic('plus')}Template</button></div>
+      <div class="card-b tbl-wrap">${E.tpls.length ? `<table class="t"><thead><tr><th>Nome</th><th>Chave</th><th>Assunto</th><th>Situação</th><th></th></tr></thead><tbody>
+        ${E.tpls.map(t => `<tr><td><b>${esc(t.nome)}</b></td><td><code>${esc(t.chave)}</code></td><td class="small">${esc(t.assunto)}</td><td>${t.ativo === false ? '<span class="pill neutral">Desativado</span>' : '<span class="pill ok">Ativo</span>'}</td>
+          <td><div class="row" style="gap:4px;flex-wrap:nowrap;justify-content:flex-end"><button class="btn sm icon" data-act="em-tpl-editar" data-id="${t.id}" aria-label="Editar template">${ic('edit')}</button><button class="btn sm icon" data-act="em-tpl-dup" data-id="${t.id}" aria-label="Duplicar template">${ic('copy')}</button><button class="btn sm icon danger" data-act="em-tpl-del" data-id="${t.id}" aria-label="Excluir template">${ic('trash')}</button></div></td></tr>`).join('')}
+      </tbody></table>` : `<div class="empty"><b>Nenhum template ainda</b>Use “+ Template” para criar a primeira mensagem (dá para começar de um modelo pronto).</div>`}</div></div>
+    <div class="card"><div class="card-h"><h2>Últimos envios</h2><span class="hint">Os 20 mais recentes.</span><span class="grow"></span><button class="btn sm" data-act="em-recarregar">${ic('atualizar')}Atualizar</button></div>
+      <div class="card-b tbl-wrap">${E.envios.length ? `<table class="t"><thead><tr><th>Quando</th><th>Para</th><th>Assunto</th><th>Template</th><th>Origem</th><th>Resultado</th></tr></thead><tbody>
+        ${E.envios.map(v => `<tr><td class="num small">${new Date(v.criado_em).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'})}</td><td class="small">${esc(v.para)}</td><td class="small">${esc(v.assunto)}</td><td>${v.template ? `<code>${esc(v.template)}</code>` : '—'}</td><td class="small">${origem[v.origem] || esc(v.origem)}</td>
+          <td>${v.status === 'ok' ? '<span class="pill ok">Enviado</span>' : `<span class="pill bad" title="${esc(v.erro)}">Falhou</span><div class="small muted em-erro">${esc(v.erro)}</div>`}</td></tr>`).join('')}
+      </tbody></table>` : '<div class="empty">Nenhum e-mail enviado ainda.</div>'}</div></div>
+    <details class="card em-dev"><summary class="card-h"><h2>Para as rotinas automáticas</h2><span class="hint">Como uma rotina programada dispara um template.</span></summary><div class="card-b small">
+      <p>A rotina chama a função <code>enviar-email</code> com a chave <b>service_role</b> do Supabase (nunca use essa chave no navegador):</p>
+      <pre class="em-pre">POST ${esc((CFG.supabaseUrl || 'https://SEU-PROJETO.supabase.co').replace(/\/$/, ''))}/functions/v1/enviar-email
+Authorization: Bearer &lt;service_role&gt;
+{"acao": "enviar", "para": "cliente@exemplo.com", "template": "boas-vindas",
+ "dados": {"nome": "Maria", "corretor": "Ana", "link": "https://..."}}</pre>
+      <p>Cada envio aparece em “Últimos envios” com a origem <b>Rotina automática</b>.</p></div></details>`;
+}
+function emailMount() {
+  const E = state.email; if (!E.ok) { emailCarregar(); return; }
+  const prov = $('#em-prov'); if (!prov) return;
+  const olho = $('[data-pw="em-senha"]'); if (olho) olho.onclick = () => { const i = $('#em-senha'); i.type = i.type === 'password' ? 'text' : 'password'; olho.textContent = i.type === 'password' ? 'Mostrar' : 'Esconder'; };
+  prov.onchange = () => { const p = EMAIL_PROV[prov.value]; if (prov.value !== 'outro') { $('#em-host').value = p.host; $('#em-porta').value = p.porta; $('#em-seg').value = p.seguranca; } };
+  $('#em-seg').onchange = e => { const v = e.target.value, po = $('#em-porta'); if (v === 'ssl' && +po.value === 587) po.value = 465; if (v === 'starttls' && +po.value === 465) po.value = 587; };
+}
+function emailMsg(ok, html) { const b = $('#em-res'); if (b) b.innerHTML = `<div class="em-msg ${ok ? 'ok' : 'bad'}" role="status">${ic(ok ? 'check' : 'info')}<div>${html}</div></div>`; }
+async function emailSalvar(extra = {}) {
+  if (!isMaster()) return denied();
+  if (!requireFields(['em-host', 'em-porta', 'em-user'])) return false;
+  const senha = $('#em-senha').value;
+  if (!state.email.gw?.tem_senha && !senha && !extra.remover_senha) { $('#em-senha').classList.add('err'); $('#em-senha').focus(); toast('Informe a senha (no Gmail, a senha de app).', 'warn'); return false; }
+  const p = {provedor: val('em-prov'), host: val('em-host'), porta: +val('em-porta'), seguranca: val('em-seg'), usuario: val('em-user'), senha: senha.replace(/\s+/g, val('em-prov') === 'gmail' ? '' : ' ').trim(),
+    remetente_nome: val('em-nome'), remetente_email: val('em-rem'), responder_para: val('em-resp'), ativo: $('#em-ativo').checked, ...extra};
+  const {data, error} = await sb.rpc('email_gateway_salvar', {p});
+  if (error) { kanErro(error); return false; }
+  state.email.gw = {...(state.email.gw || {}), ...(data || p), tem_senha: data ? data.tem_senha : (state.email.gw?.tem_senha || !!p.senha)};
+  delete state.email.gw.senha; render(); return true;
+}
+async function emailTestar(btn) {
+  btn.disabled = true; emailMsg(true, 'Conectando ao servidor…');
+  try { const r = await fnCall('enviar-email', {acao: 'testar'}); emailMsg(r.ok, r.ok ? `<b>Conexão OK</b> com ${esc(r.servidor)} em ${(r.ms / 1000).toFixed(1)} s. Login e senha aceitos.` : `<b>Não conectou.</b> ${esc(r.msg)}`); }
+  catch (e) { emailMsg(false, emailErroFn(e)); }
+  btn.disabled = false;
+}
+const emailErroFn = e => { const m = String(e.message || e); return /recusou a operação \(código 404\)|Requested function was not found/i.test(m) ? '<b>A função enviar-email ainda não foi publicada no Supabase.</b> Veja o passo a passo no README (Edge Functions → Deploy a new function → enviar-email).' : esc(m); };
+async function emailEnviarTeste(btn, extra) {
+  const para = extra ? extra.para : val('em-teste-para');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(para || '')) { toast('Informe um e-mail válido para o teste.', 'warn'); return; }
+  btn.disabled = true;
+  try {
+    const t = extra?.t || {assunto: 'Teste do servidor de e-mail · {{empresa}}', corpo: 'Olá!\n\nEste é um e-mail de **teste** enviado pelo Gestão 2.0 em {{data}} às {{hora}}.\n\nSe você recebeu, o servidor de e-mail está funcionando.', formato: 'texto'};
+    await fnCall('enviar-email', {acao: 'enviar', para, assunto: t.assunto, corpo: t.corpo, formato: t.formato, moldura: t.moldura, dados: emAmostra(t, para), teste: true});
+    toast(`E-mail de teste enviado para ${para}. Confira a caixa de entrada (e o spam).`);
+    if (!extra) emailMsg(true, `<b>E-mail de teste enviado</b> para ${esc(para)}.`);
+    emailCarregar();
+  } catch (e) { if (extra) toast(String(e.message || e), 'bad'); else emailMsg(false, emailErroFn(e)); }
+  btn.disabled = false;
+}
+const slug = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+function emailTplForm(t = {}, duplicar) {
+  if (!isMaster()) return denied();
+  const novo = !t.id || duplicar;
+  t = {formato: 'texto', moldura: true, ativo: true, ...t};
+  if (duplicar) t = {...t, id: undefined, nome: t.nome + ' (cópia)', chave: (t.chave + '-copia').slice(0, 60)};
+  let chaveManual = !novo || !!duplicar;
+  openModal({title: novo ? 'Novo template de e-mail' : 'Editar template', wide: true,
+    body: `<div class="em-ed">
+      <form class="stack" id="em-tpl" onsubmit="return false" autocomplete="off">
+        ${novo && !duplicar ? `<div class="field"><label for="et-modelo">Começar de um modelo</label><select class="input" id="et-modelo"><option value="">Em branco</option>${Object.entries(EMAIL_MODELOS).map(([k, m]) => `<option value="${k}">${esc(m.nome)}</option>`).join('')}</select></div>` : ''}
+        <div class="grid-2"><div class="field"><label for="et-nome">Nome *</label><input class="input" id="et-nome" maxlength="120" value="${esc(t.nome)}" placeholder="Ex.: Boas-vindas ao cliente"></div>
+          <div class="field"><label for="et-chave">Chave (usada pelas rotinas) *</label><input class="input" id="et-chave" maxlength="60" value="${esc(t.chave)}" placeholder="boas-vindas"></div></div>
+        <div class="field"><label for="et-assunto">Assunto *</label><input class="input" id="et-assunto" maxlength="300" value="${esc(t.assunto)}" placeholder="Olá, {{nome}}!"></div>
+        <div class="field"><div class="row" style="justify-content:space-between"><label for="et-corpo">Mensagem *</label>
+          <div class="seg" role="group" aria-label="Formato"><button type="button" data-act="et-fmt" data-v="texto" aria-pressed="${t.formato !== 'html'}">Texto</button><button type="button" data-act="et-fmt" data-v="html" aria-pressed="${t.formato === 'html'}">HTML</button></div></div>
+          <textarea class="input em-corpo" id="et-corpo" spellcheck="true">${esc(t.corpo)}</textarea>
+          <div class="em-chips"><span class="small muted">Inserir:</span>${EMAIL_VARS.map(v => `<button type="button" class="em-chip" data-act="et-var" data-v="${v}">{{${v}}}</button>`).join('')}</div>
+          <div class="help" id="et-dica">${t.formato === 'html' ? 'HTML livre. As variáveis {{...}} são preenchidas e protegidas automaticamente.' : '**negrito** · [texto do link](https://...) · botão: [[Texto do botão|https://...]] · linha em branco = novo parágrafo. Variáveis: {{nome}} etc. (qualquer nome, a rotina envia o valor).'}</div></div>
+        <label class="check"><input type="checkbox" id="et-moldura" ${t.moldura !== false ? 'checked' : ''}>Usar o visual padrão (cabeçalho com o nome da empresa e faixa vermelha)</label>
+        <label class="check"><input type="checkbox" id="et-ativo" ${t.ativo !== false ? 'checked' : ''}>Template ativo (as rotinas podem usar)</label>
+      </form>
+      <div class="em-prev"><div class="small muted">Pré-visualização com dados de exemplo</div><div class="em-prev-assunto" id="et-prev-assunto"></div><iframe id="et-prev" title="Pré-visualização do e-mail" sandbox></iframe>
+        <div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input sm" id="et-teste-para" type="email" value="${esc(state.email.gw?.usuario || ME?.email || '')}" placeholder="e-mail para o teste" aria-label="Enviar teste para"><button type="button" class="btn sm" data-act="et-teste">${ic('mail')}Enviar teste</button></div></div>
+    </div>`,
+    foot: `<button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="et-salvar">${novo ? 'Criar template' : 'Salvar'}</button>`,
+    onMount: m => {
+      const atual = () => ({nome: val('et-nome'), chave: val('et-chave').toLowerCase(), assunto: val('et-assunto'), corpo: $('#et-corpo', m).value, formato: m.querySelector('[data-act="et-fmt"][aria-pressed="true"]').dataset.v,
+        moldura: $('#et-moldura', m).checked, ativo: $('#et-ativo', m).checked});
+      const prev = () => { const x = atual(), r = emMontar(x, emAmostra(x, val('et-teste-para')), emEmpresa()); $('#et-prev-assunto', m).textContent = r.assunto || '(sem assunto)'; $('#et-prev', m).srcdoc = r.html; };
+      m._prev = prev; m._atual = atual;
+      m.addEventListener('input', e => { if (e.target.id === 'et-chave') chaveManual = true; if (e.target.id === 'et-nome' && !chaveManual) $('#et-chave', m).value = slug(e.target.value); prev(); });
+      m.addEventListener('change', prev);
+      const mod = $('#et-modelo', m); if (mod) mod.onchange = () => { const x = EMAIL_MODELOS[mod.value]; if (!x) return; ['nome', 'chave', 'assunto'].forEach(k => $('#et-' + k, m).value = x[k]); $('#et-corpo', m).value = x.corpo; chaveManual = false; prev(); };
+      prev();
+      $('#et-salvar', m).onclick = async () => {
+        if (!requireFields(['et-nome', 'et-chave', 'et-assunto', 'et-corpo'])) return;
+        const x = atual(); if (!/^[a-z0-9][a-z0-9_-]{1,59}$/.test(x.chave)) { $('#et-chave', m).classList.add('err'); return toast('A chave deve ter de 2 a 60 letras minúsculas, números, - ou _ (ex.: boas-vindas).', 'warn'); }
+        if (state.email.tpls.some(o => o.chave === x.chave && o.id !== (novo ? null : t.id))) { $('#et-chave', m).classList.add('err'); return toast(`Já existe um template com a chave "${x.chave}".`, 'warn'); }
+        const id = novo ? uid() : t.id, btn = $('#et-salvar', m); btn.disabled = true;
+        const {error} = await sb.from('email_templates').upsert({id, data: x}); btn.disabled = false;
+        if (error) return kanErro(error);
+        const i = state.email.tpls.findIndex(o => o.id === id); if (i >= 0) state.email.tpls[i] = {...x, id}; else state.email.tpls.push({...x, id});
+        closeModal(); render(); toast(novo ? 'Template criado.' : 'Template salvo.');
+      };
+    }});
+}
+
+const cfgAbas = () => `<div class="seg" role="group" aria-label="Configurações">${[['aparencia', 'paleta', 'Aparência'], ['kanban', 'kanban', 'Kanban'], ['email', 'mail', 'E-mail']].map(([v, i, l]) => `<button class="kc-tab" data-act="cfg-tab" data-v="${v}" aria-pressed="${state.cfgTab === v}">${ic(i)}${l}</button>`).join('')}</div>`;
 function aparenciaHTML() {
   const lay = layoutAtual();
   const op = (v, t, d) => `<button class="ap-op ${lay === v ? 'on' : ''}" data-act="ap-layout" data-v="${v}" aria-pressed="${lay === v}">
@@ -2917,8 +3136,8 @@ function aparenciaHTML() {
       </div></div>`;
 }
 VIEWS.configuracoes = {
-  html() { return state.cfgTab === 'kanban' ? kanCfgView.html() : aparenciaHTML(); },
-  mount() { if (state.cfgTab === 'kanban') kanCfgView.mount(); }
+  html() { return state.cfgTab === 'kanban' ? kanCfgView.html() : state.cfgTab === 'email' ? emailHTML() : aparenciaHTML(); },
+  mount() { if (state.cfgTab === 'kanban') kanCfgView.mount(); if (state.cfgTab === 'email') emailMount(); }
 };
 async function kanCfgSalvar() {
   if (!isMaster()) return denied();
@@ -5340,6 +5559,26 @@ const ACTIONS = {
   'cfg-tab': el => { state.cfgTab = el.dataset.v; render(); },
   'ap-layout': async el => { if (!isMaster()) return denied(); const lay = el.dataset.v; if (layoutAtual() === lay) return;
     if (await save('config', 'aparencia', {layout: lay})) { aplicarLayout(lay); render(); toast(lay === 'crm' ? 'Tema CRM ativado para todos os usuários.' : 'Layout clássico restaurado para todos os usuários.'); } },
+  // e-mail
+  'em-salvar': async () => { if (await emailSalvar()) toast('Servidor de e-mail salvo.'); },
+  'em-tirar-senha': () => confirmBox('Remover a senha guardada? O envio de e-mails para até você cadastrar outra.', 'Remover', async () => { if (await emailSalvar({remover_senha: true, senha: ''})) toast('Senha removida.'); }),
+  'em-testar': el => emailTestar(el),
+  'em-teste': el => emailEnviarTeste(el),
+  'em-recarregar': () => { state.email.ok = false; render(); },
+  'em-tpl-novo': () => emailTplForm(),
+  'em-tpl-editar': el => { const t = state.email.tpls.find(x => x.id === el.dataset.id); if (t) emailTplForm(t); },
+  'em-tpl-dup': el => { const t = state.email.tpls.find(x => x.id === el.dataset.id); if (t) emailTplForm(t, true); },
+  'em-tpl-del': el => { const t = state.email.tpls.find(x => x.id === el.dataset.id); if (!t) return;
+    confirmBox(`Excluir o template <b>${esc(t.nome)}</b> (chave <code>${esc(t.chave)}</code>)? As rotinas que usam essa chave deixam de enviar.`, 'Excluir', async () => {
+      const {error} = await sb.from('email_templates').delete().eq('id', t.id); if (error) return kanErro(error);
+      state.email.tpls = state.email.tpls.filter(x => x.id !== t.id); render(); toast('Template excluído.'); }); },
+  'et-fmt': el => { el.parentNode.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === el)); const html = el.dataset.v === 'html';
+    $('#et-dica').textContent = html ? 'HTML livre. As variáveis {{...}} são preenchidas e protegidas automaticamente.' : '**negrito** · [texto do link](https://...) · botão: [[Texto do botão|https://...]] · linha em branco = novo parágrafo. Variáveis: {{nome}} etc. (qualquer nome, a rotina envia o valor).';
+    const m = $('#modal-root .modal'); m?._prev && m._prev(); },
+  'et-var': el => { const ta = $('#et-corpo'), v = `{{${el.dataset.v}}}`, a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
+    ta.value = ta.value.slice(0, a) + v + ta.value.slice(b); ta.focus(); ta.setSelectionRange(a + v.length, a + v.length); const m = $('#modal-root .modal'); m?._prev && m._prev(); },
+  'et-teste': el => { const m = $('#modal-root .modal'); if (!m?._atual) return; const x = m._atual(); if (!x.assunto || !x.corpo.trim()) return toast('Preencha o assunto e a mensagem.', 'warn');
+    emailEnviarTeste(el, {t: x, para: val('et-teste-para')}); },
   // kanban
   'kan-novo': el => kanForm({}, el.dataset.col),
   'kan-arq': el => { state.kan.arquivados = el.dataset.v === '1'; render(); },
