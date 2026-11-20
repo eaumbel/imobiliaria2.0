@@ -110,7 +110,9 @@ O corretor pode **gerar um novo link** (o anterior deixa de valer) ou **cancelar
 
 ## Diário de bordo (inteligência artificial)
 
-A análise do dia é feita pela função `diario-ia`, que funciona com **OpenAI** (pago por uso, igual ao Diário feito no Lovable), **Google Gemini** (plano gratuito) ou **Claude** (Anthropic, pago por uso). Basta cadastrar o segredo de um deles. Se houver mais de um, a ordem é OpenAI, Gemini e Claude; o segredo `PROVEDOR_IA` (`openai`, `gemini` ou `claude`) escolhe.
+A análise do dia é feita pela função `diario-ia`, que funciona com **OpenAI** (pago por uso, igual ao Diário feito no Lovable), **Google Gemini** (plano gratuito) ou **Claude** (Anthropic, pago por uso). Basta cadastrar o segredo de um deles.
+
+**Principal e reserva:** com mais de uma chave cadastrada, o **Gemini é a principal** e as outras ficam de **reserva**: se o Gemini não responder (demora, sobrecarga, limite de uso, erro ou resposta cortada), a análise segue automaticamente na OpenAI (e depois no Claude). O Gemini tem metade do tempo (~55 s) e a reserva usa o restante; com reserva, o Gemini sobrecarregado é tentado só uma vez a mais antes de passar adiante. O corretor vê no aviso quando a reserva foi usada, e o **Teste da inteligência** (Diário de bordo → Configurações) testa cada uma numa linha. O segredo `PROVEDOR_IA` (`gemini`, `openai` ou `claude`) muda qual vem primeiro.
 
 **OpenAI:** crie a chave em https://platform.openai.com/api-keys e cadastre no Supabase (Edge Functions → **Secrets**) com o nome `OPENAI_API_KEY`. A conta precisa ter créditos. O formato do relatório é garantido pela própria OpenAI e a resposta chega aos poucos (streaming). Opcionais:
 - `MODELO_OPENAI`: o modelo (padrão `gpt-6-astra`, o mesmo do projeto no Lovable). Se aparecer "Modelo de IA não encontrado", cadastre aqui o nome do modelo como aparece na sua conta da OpenAI.
@@ -126,3 +128,14 @@ A análise do dia é feita pela função `diario-ia`, que funciona com **OpenAI*
 **Atualizar a função:** publicar o site não atualiza a função. Quando `supabase/functions/diario-ia/index.ts` mudar, abra Edge Functions → `diario-ia` → **Code**, cole o arquivo novo e clique em **Deploy**.
 
 O prompt do mentor (com versão), o limite de análises por corretor a cada 24h, os **pilares inegociáveis da operação**, o mantra da equipe (valores, deveres, virtudes) e as palavras-chave ficam em **Diário de bordo → Configurações** (só o Master). O prompt, os pilares, a base de conhecimento (Ponto de Reflexão, Manual de Persuasão do FBI, Cialdini, Chris Voss) e os critérios da nota vêm do Diário Águia (projeto no Lovable), que foi incorporado ao Gestão 2.0.
+
+## Kanban e notificações
+
+Menu **Kanban** (grupo Gestão): quadro de cards em etapas (colunas). Cada card tem título, descrição, etapa, prioridade, prazo, responsável, participantes, etiquetas, checklist, comentários e histórico. Os cards mudam de etapa arrastando (no computador) ou pelo campo **Etapa** dentro do card (no celular). Cards concluídos podem ser **arquivados** (somem do quadro e ficam em "Arquivados").
+
+- **Quem vê:** cada pessoa vê os cards em que está envolvida (criou, é responsável ou participante). Master e Coordenador veem todos (permissão "Ver e organizar todos os cards do Kanban", ajustável em Usuários).
+- **Notificações (sininho no alto, à direita):** quem está no card é avisado quando é colocado como responsável, incluído ou retirado, quando o card muda de etapa, recebe comentário, tem o prazo alterado ou é excluído. Os avisos chegam em tempo real; o sininho também lista os prazos vencidos, de hoje e próximos. Opcional: "Avisar também pelo navegador" (aviso do sistema com a aba em segundo plano).
+- **Configurações (menu novo, só Master):** etapas (nome, cor, ordem, limite de cards, etapa final e exigências para entrar: responsável, prazo, descrição ou checklist concluído), **passo a passo** (Livre, Passo a passo — uma etapa por vez, com opção de voltar — ou Personalizado, escolhendo os caminhos permitidos), etiquetas e quais notificações são enviadas.
+- O passo a passo, os limites e as exigências são conferidos também no banco; as notificações são criadas pelo próprio banco (ninguém consegue forjar).
+
+**Banco:** rode no Supabase (SQL Editor) `supabase/migrations/20261120100000_kanban.sql`.

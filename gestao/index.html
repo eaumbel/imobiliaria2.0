@@ -587,6 +587,111 @@ select.input.rel-per{width:170px;flex:none}
 .hist.sel{border-color:var(--accent);background:var(--accent-soft)}
 .kw-row{display:grid;grid-template-columns:1fr 240px 36px;gap:8px;align-items:center}
 
+/* ---------- Kanban ---------- */
+.kb-filtros{align-items:flex-end;gap:12px}.kb-filtros .field{margin:0;min-width:150px}.kb-filtros .kb-busca{min-width:240px;flex:0 1 300px}
+.kb-filtros .seg button{display:inline-flex;align-items:center;gap:6px}.kb-filtros .seg svg{width:15px;height:15px}
+.kb-fluxo{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:-6px}.kb-fluxo svg{width:15px;height:15px;flex:none}
+.kb-board{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;align-items:flex-start;scroll-snap-type:x proximity;min-height:calc(100vh - 290px)}
+.kb-col{flex:1 0 260px;max-width:360px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;max-height:calc(100vh - 230px);scroll-snap-align:start;transition:border-color .15s, background .15s;border-top:3px solid var(--c)}
+.kb-col.alvo{border-color:var(--c);background:color-mix(in srgb,var(--c) 7%,var(--surface-2))}
+.kb-col.bloq{border-color:var(--bad);background:var(--bad-soft)}
+.kb-col-h{display:flex;align-items:center;gap:8px;padding:12px 10px 8px 14px;font-family:var(--font-display);font-size:14px}
+.kb-col-h b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kb-dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+.kb-fim{color:var(--ok);display:inline-flex}.kb-fim svg{width:15px;height:15px}
+.kb-n{font-family:var(--font-body);font-size:12px;font-weight:800;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.kb-n.cheio{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+.kb-exige{display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--muted);padding:0 14px 8px;line-height:1.3}.kb-exige svg{width:12px;height:12px;flex:none}
+.kb-lista{display:flex;flex-direction:column;gap:8px;padding:2px 10px 12px;overflow-y:auto;min-height:60px}
+.kb-vazio{font-size:12.5px;color:var(--muted);text-align:center;padding:18px 8px;border:1px dashed var(--line-strong);border-radius:10px}
+.kb-card{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 12px;display:flex;flex-direction:column;gap:8px;cursor:pointer;box-shadow:0 1px 2px rgba(20,22,25,.05);transition:box-shadow .15s, border-color .15s, transform .15s}
+.kb-card:hover{border-color:var(--line-strong);box-shadow:var(--shadow)}
+.kb-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.kb-card[draggable="true"]{cursor:grab}
+.kb-card.arrastando{opacity:.35;transform:rotate(1deg)}
+.kb-marca{height:4px;border-radius:4px;background:var(--c);margin:-2px 0}
+.kb-tit{font-weight:700;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.kb-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.kb-meta .pill{height:21px;font-size:11px;padding:0 8px}
+.kb-mini{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--muted)}.kb-mini svg{width:13px;height:13px}
+.kb-mini.ok{color:var(--ok)}.kb-mini.warn{color:var(--warn)}.kb-mini.bad{color:var(--bad)}
+.kb-etqs{display:flex;gap:5px;flex-wrap:wrap}
+.kb-etq{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent)}
+.kb-avs{display:flex}.kb-av{width:24px;height:24px;font-size:9.5px;border:2px solid var(--surface);margin-left:-6px}.kb-av:first-child{margin-left:0}
+.kb-av.mais{background:var(--surface-2);color:var(--muted);border-color:var(--line)}
+.kb-form{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px}
+.kb-lado{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:14px;align-self:start}
+.kb-pessoas{display:flex;flex-direction:column;gap:7px;max-height:170px;overflow-y:auto;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.kb-pessoas .check{font-weight:600}.kb-pessoas .desab{opacity:.45}
+.kb-etq-esc{display:flex;flex-wrap:wrap;gap:6px}
+.kb-etq-op{display:inline-flex;cursor:pointer}.kb-etq-op input{position:absolute;opacity:0;pointer-events:none}
+.kb-etq-op span{font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;border:1px solid color-mix(in srgb,var(--c) 45%,transparent);color:var(--c)}
+.kb-etq-op input:checked + span{background:var(--c);color:#fff;border-color:var(--c)}
+.kb-etq-op input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.kb-chk-row{display:grid;grid-template-columns:22px 1fr 32px;gap:6px;align-items:center}
+.kb-chk-row:has(input:checked) .input{text-decoration:line-through;color:var(--muted)}
+.kb-com{display:flex;gap:10px}.kb-com .kb-av{width:30px;height:30px;font-size:11px;margin:0}
+.kb-com-h{display:flex;gap:8px;align-items:center}.kb-com-x{margin-left:auto;height:26px;padding:0 6px}.kb-com-x svg{width:14px;height:14px}
+.kb-com-t{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:2px}
+.kb-det summary{cursor:pointer;font-weight:700;font-size:13.5px}
+.kb-hist{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.kb-pz.bad{color:var(--bad);font-weight:700}.kb-pz.warn{color:var(--warn);font-weight:700}
+/* ---------- Sininho ---------- */
+.bell-wrap{position:relative;flex:none}
+.btn.bell{position:relative;width:42px;height:42px;border-radius:12px}.btn.bell svg{width:20px;height:20px}
+.bell-n{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg)}
+.bell-n[hidden]{display:none}
+.btn.bell.tocou svg{animation:tocar .9s ease}
+@keyframes tocar{0%,100%{transform:rotate(0)}15%{transform:rotate(16deg)}30%{transform:rotate(-14deg)}45%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}75%{transform:rotate(3deg)}}
+.nt-panel{position:absolute;right:0;top:calc(100% + 8px);width:min(400px,calc(100vw - 24px));background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-lg);z-index:60;display:flex;flex-direction:column;max-height:min(560px,calc(100vh - 110px))}
+.nt-h{display:flex;align-items:center;gap:8px;padding:14px 14px 10px 18px;border-bottom:1px solid var(--line)}.nt-h b{font-family:var(--font-display);font-size:15px}
+.nt-h .btn svg{width:14px;height:14px}
+.nt-corpo{overflow-y:auto;padding:6px}
+.nt-sec{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 12px 4px}
+.nt-item{display:flex;align-items:flex-start;border-radius:11px}.nt-item:hover{background:var(--surface-2)}
+.nt-item.nova{background:color-mix(in srgb,var(--info) 7%,transparent)}
+.nt-main{flex:1;min-width:0;display:flex;gap:11px;align-items:flex-start;text-align:left;background:none;border:0;padding:10px 6px 10px 10px;cursor:pointer;color:inherit;font:inherit}
+.nt-ic{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--surface-2);color:var(--muted)}.nt-ic svg{width:16px;height:16px}
+.nt-ic.info{background:var(--info-soft);color:var(--info)}.nt-ic.warn{background:var(--warn-soft);color:var(--warn)}.nt-ic.bad{background:var(--bad-soft);color:var(--bad)}
+.nova .nt-ic{background:var(--info-soft);color:var(--info)}
+.nt-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;font-size:13px;line-height:1.35}
+.nt-txt b{font-size:13.5px;overflow-wrap:anywhere}.nt-txt span{color:var(--ink);opacity:.85;overflow-wrap:anywhere}.nt-txt small{color:var(--muted);font-size:12px}
+.nt-ponto{width:9px;height:9px;border-radius:50%;background:var(--info);flex:none;margin-top:6px}
+.nt-x{margin:8px 6px 0 0;opacity:.55}.nt-item:hover .nt-x,.nt-x:focus-visible{opacity:1}
+.nt-vazio{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;color:var(--muted);font-size:13px;padding:30px 20px}
+.nt-vazio svg{width:28px;height:28px;margin-bottom:6px}.nt-vazio b{color:var(--ink);font-family:var(--font-display)}
+.nt-f{display:flex;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}.nt-f .btn svg{width:14px;height:14px}
+/* ---------- Configurações do Kanban ---------- */
+.kc-tab{display:inline-flex;align-items:center;gap:6px}.kc-tab svg{width:15px;height:15px}
+.kc-col{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;padding:14px;border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;background:var(--surface)}
+.kc-ord{display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:800;color:var(--muted)}.kc-ord .btn{width:30px;height:28px}
+.kc-campos{display:flex;flex-direction:column;gap:10px;min-width:0}
+.kc-l1{display:grid;grid-template-columns:minmax(0,1fr) 150px 150px;gap:10px}
+.kc-l2{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}.kc-l2 .check{font-weight:600}
+.kc-acoes{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:8px}
+.kc-cor{border-left:6px solid var(--c)}
+.kc-fluxos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kc-fluxo{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:1px solid var(--line-strong);border-radius:12px;cursor:pointer;position:relative}
+.kc-fluxo input{position:absolute;top:14px;right:12px}.kc-fluxo span{font-size:13px;color:var(--muted);padding-right:16px}
+.kc-fluxo.on{border-color:var(--accent);background:var(--accent-soft)}
+.kc-matriz th,.kc-matriz td{white-space:nowrap}.kc-matriz .c{text-align:center}
+.kc-matriz input{width:18px;height:18px}
+.kc-previa{display:flex;flex-direction:column;gap:5px;font-size:13px;padding:12px 14px;background:var(--surface-2);border-radius:10px}
+.kc-chip{color:var(--c)}
+.kc-etq{display:grid;grid-template-columns:minmax(0,1fr) 140px 32px;gap:8px;align-items:center}
+.kc-not{align-items:flex-start}.kc-not > span{display:flex;flex-direction:column;gap:1px}.kc-not input{margin-top:3px}
+@media (max-width: 900px){
+  .kb-form{grid-template-columns:1fr}
+  .kb-board{min-height:0}
+  .kc-fluxos{grid-template-columns:1fr}
+}
+@media (max-width: 620px){
+  .kb-filtros .field,.kb-filtros .kb-busca{min-width:0;flex:1 1 140px}
+  .kb-col{flex-basis:84vw;max-height:none}
+  .kc-col{grid-template-columns:1fr}.kc-ord{flex-direction:row;justify-content:flex-start}.kc-acoes{flex-direction:row;align-items:center}
+  .kc-l1{grid-template-columns:1fr 1fr}.kc-l1 .field:first-child{grid-column:1 / -1}
+  .topbar{flex-wrap:wrap}.topbar .grow{flex:1 1 0;min-width:0}#top-actions{order:3;width:100%}#top-actions:empty{display:none}
+}
+
 @media (max-width: 1180px){
   .hero{grid-template-columns:1fr}
   .dash-grid{grid-template-columns:1fr}
@@ -666,6 +771,8 @@ select.input.rel-per{width:170px;flex:none}
       <button class="btn icon menu-btn" data-act="menu" aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <div class="grow"><h1 id="page-title">Painel</h1><div class="sub" id="page-sub"></div></div>
       <div id="top-actions" class="row"></div>
+      <div class="bell-wrap" id="bell-wrap" hidden><button class="btn icon bell" id="bell" data-act="nt-toggle" aria-label="Notificações" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><span class="bell-n" id="bell-n" hidden></span></button>
+        <div class="nt-panel" id="nt-panel" role="dialog" aria-label="Notificações" hidden></div></div>
     </header>
     <main id="view" aria-live="polite"></main>
   </div>
@@ -759,14 +866,21 @@ const ICON = {
   download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 20h16"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   whats: '<path d="M3.5 20.5 5 16a8.5 8.5 0 1 1 3.1 3.1z"/><path d="M9 8.5c-.4 2.6 3.3 6.7 6.5 6.4l.9-1.6-2.1-1.1-.9.9c-1-.5-2-1.5-2.5-2.5l.9-.9-1.1-2.1z"/>',
-  camera: '<path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13.5" r="3.5"/>'
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13.5" r="3.5"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+  kanban: '<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="4" height="13" rx="1.5"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  msg: '<path d="M4 5h16v11H9l-5 4z"/>',
+  archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10h14V9M10 13h4"/>',
+  up: '<path d="m6 15 6-6 6 6"/>',
+  down: '<path d="m6 9 6 6 6-6"/>'
 };
 const ic = (n, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n] || ''}</svg>`;
 
 /* =========================================================
    Camada de dados — Supabase (banco, login e tempo real)
    ========================================================= */
-const COLS = ['corretores', 'metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario', 'contratos', 'propostas', 'angariacoes'];
+const COLS = ['corretores', 'metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario', 'contratos', 'propostas', 'angariacoes', 'kanban', 'notificacoes'];
 const TABELAS = ['metas', 'agenda', 'conhecimento', 'treinamentos', 'ponto', 'visitas', 'vendas', 'config', 'diario'];
 const S = {}; COLS.forEach(c => S[c] = new Map());
 let MODE = 'loading', CORR_READY = false;
@@ -849,6 +963,18 @@ async function loadTable(c) {
     const {data, error} = await sb.from(c).select('id,data');
     ANGARIACOES_OK = !error; S.angariacoes = new Map((data || []).map(r => [r.id, {...(r.data || {}), id: r.id}])); return;
   }
+  if (c === 'kanban') {
+    // Tolerante: se a migração do Kanban ainda não rodou, o resto do sistema continua funcionando.
+    const {data, error} = await sb.from('kanban_cards').select('id,data');
+    KANBAN_OK = !error; S.kanban = new Map((data || []).map(r => [r.id, {...(r.data || {}), id: r.id}])); kanAtualizaAberto(); return;
+  }
+  if (c === 'notificacoes') {
+    const {data, error} = await sb.from('notificacoes').select('*').order('criado_em', {ascending: false}).limit(200);
+    NOTIF_OK = !error; const antes = S.notificacoes;
+    S.notificacoes = new Map((data || []).map(r => [r.id, r]));
+    const novas = NOTIF_INICIO ? [] : (data || []).filter(r => !r.lida && !antes.has(r.id));
+    NOTIF_INICIO = false; renderBell(); if (novas.length) ntChegou(novas); return;
+  }
   if (c === 'contratos') {
     // Tolerante: se a migração de contratos ainda não rodou, o resto do sistema continua funcionando.
     const {data, error} = await sb.from(c).select('id,data');
@@ -872,11 +998,13 @@ async function loadAll() {
   catch (e) { clearTimeout(timer); setSync('stale'); toast('Não foi possível carregar os dados. Verifique a internet e recarregue a página.', 'bad'); }
   if (!canal) {
     canal = sb.channel('mudancas');
-    ['perfis', ...TABELAS, ...(CONTRATOS_OK ? ['contratos'] : []), ...(PROPOSTAS_OK ? ['propostas'] : []), ...(ANGARIACOES_OK ? ['angariacoes'] : [])].forEach(t => canal.on('postgres_changes', {event: '*', schema: 'public', table: t}, () => scheduleReload(t === 'perfis' ? 'corretores' : t)));
+    const chave = {perfis: 'corretores', kanban_cards: 'kanban'};
+    ['perfis', ...TABELAS, ...(CONTRATOS_OK ? ['contratos'] : []), ...(PROPOSTAS_OK ? ['propostas'] : []), ...(ANGARIACOES_OK ? ['angariacoes'] : []), ...(KANBAN_OK ? ['kanban_cards'] : []), ...(NOTIF_OK ? ['notificacoes'] : [])]
+      .forEach(t => canal.on('postgres_changes', {event: '*', schema: 'public', table: t}, () => scheduleReload(chave[t] || t)));
     canal.subscribe();
   }
 }
-function clearData() { COLS.forEach(c => S[c] = new Map()); CORR_READY = false; if (canal) { sb.removeChannel(canal); canal = null; } }
+function clearData() { COLS.forEach(c => S[c] = new Map()); CORR_READY = false; NOTIF_INICIO = true; state.kanCfg = null; state.kanCfgSujo = false; KAN_ABERTO = null; if (canal) { sb.removeChannel(canal); canal = null; } }
 const api = (acao, payload = {}) => fnCall('admin-usuarios', {acao, ...payload});
 async function fnCall(nome, payload = {}) {
   const {data: {session}} = await sb.auth.getSession();
@@ -937,16 +1065,17 @@ const corretor = id => S.corretores.get(id);
    ========================================================= */
 const PERFIS = {master: 'Master · Gestor de Vendas', coordenador: 'Coordenador', corretor: 'Corretor'};
 const PERFIL_CURTO = {master: 'Master', coordenador: 'Coordenador', corretor: 'Corretor'};
-const MENUS_ON = {diario: 1, relatorios: 1, agenda: 1, conhecimento: 1, treinamentos: 1, ponto: 1, vendas: 1, angariacoes: 1, contratos: 1};
+const MENUS_ON = {diario: 1, relatorios: 1, agenda: 1, kanban: 1, conhecimento: 1, treinamentos: 1, ponto: 1, vendas: 1, angariacoes: 1, contratos: 1};
 const PERMS = {
-  master:      {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 1, usuarios: 1, conteudo: 1, operacaoTodos: 1},
-  coordenador: {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 0, usuarios: 0, conteudo: 1, operacaoTodos: 1},
-  corretor:    {...MENUS_ON, equipe: 0, metas: 0, metasEdit: 0, usuarios: 0, conteudo: 0, operacaoTodos: 0}
+  master:      {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 1, usuarios: 1, conteudo: 1, operacaoTodos: 1, kanbanTodos: 1},
+  coordenador: {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 0, usuarios: 0, conteudo: 1, operacaoTodos: 1, kanbanTodos: 1},
+  corretor:    {...MENUS_ON, equipe: 0, metas: 0, metasEdit: 0, usuarios: 0, conteudo: 0, operacaoTodos: 0, kanbanTodos: 0}
 };
 const PERM_DEFS = [
   {k: 'diario', g: 'Menus que aparecem', l: 'Diário de bordo', d: 'Cada um escreve e vê o próprio diário. Ver o da equipe depende de "Ver números de toda a equipe".'},
   {k: 'relatorios', g: 'Menus que aparecem', l: 'Relatórios'},
   {k: 'agenda', g: 'Menus que aparecem', l: 'Agenda'},
+  {k: 'kanban', g: 'Menus que aparecem', l: 'Kanban', d: 'Quadro de tarefas. Cada um vê os cards em que está envolvido (criou, é responsável ou participante).'},
   {k: 'conhecimento', g: 'Menus que aparecem', l: 'Base de conhecimento'},
   {k: 'treinamentos', g: 'Menus que aparecem', l: 'Treinamentos'},
   {k: 'ponto', g: 'Menus que aparecem', l: 'Assiduidade'},
@@ -958,6 +1087,7 @@ const PERM_DEFS = [
   {k: 'equipe', g: 'O que pode fazer', l: 'Ver números de toda a equipe', d: 'Painel e relatórios de todos. Sem isto, vê só os próprios.'},
   {k: 'operacaoTodos', g: 'O que pode fazer', l: 'Lançar e editar registros de todos', d: 'Agenda, visitas, assiduidade e vendas. Sem isto, só os próprios.'},
   {k: 'conteudo', g: 'O que pode fazer', l: 'Criar e editar conteúdo', d: 'Cards da base de conhecimento e treinamentos.'},
+  {k: 'kanbanTodos', g: 'O que pode fazer', l: 'Ver e organizar todos os cards do Kanban', d: 'Sem isto, vê e mexe só nos cards em que está envolvido.'},
   {k: 'metasEdit', g: 'O que pode fazer', l: 'Definir e alterar metas'}
 ];
 let ME = null;
@@ -971,12 +1101,12 @@ const can = p => { if (!ME) return false; const pf = perfilOf(ME); if (pf === 'm
   const ov = ME.permissoes?.[p]; if (ov === true || ov === false) return ov; return perfilPode(pf, p); };
 const participa = c => c.participa != null ? c.participa !== false : perfilOf(c) !== 'master';
 const vendedores = () => corretores(true).filter(participa);
-const VIEW_PERM = {diario: 'diario', metas: 'metas', usuarios: 'usuarios', relatorios: 'relatorios', agenda: 'agenda', conhecimento: 'conhecimento', treinamentos: 'treinamentos', ponto: 'ponto', vendas: 'vendas', angariacoes: 'angariacoes', contratos: 'contratos'};
-const canView = v => v === 'meusdados' ? !!ME && !ME.virtual : (!VIEW_PERM[v] || can(VIEW_PERM[v]));
+const VIEW_PERM = {diario: 'diario', metas: 'metas', usuarios: 'usuarios', relatorios: 'relatorios', agenda: 'agenda', conhecimento: 'conhecimento', treinamentos: 'treinamentos', ponto: 'ponto', vendas: 'vendas', angariacoes: 'angariacoes', contratos: 'contratos', kanban: 'kanban'};
+const canView = v => v === 'meusdados' ? !!ME && !ME.virtual : v === 'configuracoes' ? isMaster() : (!VIEW_PERM[v] || can(VIEW_PERM[v]));
 const isMine = id => !!ME && id === ME.id;
 const canOp = corretorId => can('operacaoTodos') || isMine(corretorId);
 const ACT_PERM = {'ct-abrir': 'contratos', 'ct-assinar': 'contratos', 'pp-assinar': 'contratos', 'pp-editar': 'contratos', 'kb-new': 'conteudo', 'kb-edit': 'conteudo', 'kb-del': 'conteudo', 'tr-new': 'conteudo', 'tr-edit': 'conteudo', 'tr-del': 'conteudo',
-  'pt-ordem': 'operacaoTodos', 'mt-copy': 'metasEdit', 'mt-split': 'metasEdit', 'ang-new': 'angariacoes', 'us-novo': 'usuarios', 'us-lista': 'usuarios', 'us-edit': 'usuarios', 'us-limpar': 'usuarios'};
+  'pt-ordem': 'operacaoTodos', 'mt-copy': 'metasEdit', 'mt-split': 'metasEdit', 'ang-new': 'angariacoes', 'kan-novo': 'kanban', 'us-novo': 'usuarios', 'us-lista': 'usuarios', 'us-edit': 'usuarios', 'us-limpar': 'usuarios'};
 const denied = () => toast('Seu perfil de acesso não permite esta ação.', 'warn');
 const mastersAtivos = (exceptId) => list('corretores').filter(u => u.id !== exceptId && perfilOf(u) === 'master' && u.ativo !== false && u.senhaHash);
 
@@ -1118,6 +1248,8 @@ const state = {
   diario: {tab: 'meu', data: today(), dia: today(), cor: 'all'},
   vendas: {mes: monthKey(today()), corretor: 'all', busca: ''},
   ang: {de: monthKey(today()) + '-01', ate: '', corretor: 'all', angariador: 'all'},
+  kan: {busca: '', pessoa: 'all', prio: 'all', etq: 'all', arquivados: false},
+  kanCfg: null, kanCfgSujo: false,
   rel: {tipo: 'ponto', usuario: 'all', periodo: 'mes', ref: today(), de: monthKey(today()) + '-01', ate: today(), agTipo: 'all'},
   ct: {modelo: null, v: {}, doc: null, assinatura: '', ident: null, etapa: '', busca: ''},
   dirty: false, pending: false
@@ -1133,6 +1265,7 @@ const NAV = [
   {id: 'diario', grp: 'Gestão', label: 'Diário de bordo', icon: 'book', sub: 'O dia de cada corretor, com análise e plano de ação'},
   {id: 'relatorios', grp: 'Gestão', label: 'Relatórios', icon: 'report', sub: 'Relatórios em PDF para imprimir e compartilhar'},
   {id: 'agenda', grp: 'Gestão', label: 'Agenda', icon: 'cal', sub: 'Compromissos da equipe'},
+  {id: 'kanban', grp: 'Gestão', label: 'Kanban', icon: 'kanban', sub: 'Tarefas da equipe em etapas, com responsáveis, prazos e avisos'},
   {id: 'conhecimento', grp: 'Gestão', label: 'Base de conhecimento', icon: 'brain', sub: 'Processos, roteiros e materiais em mapa mental'},
   {id: 'treinamentos', grp: 'Gestão', label: 'Treinamentos', icon: 'grad', sub: 'Materiais e capacitações da equipe'},
   {id: 'ponto', grp: 'Operação', label: 'Assiduidade', icon: 'clock', sub: 'Presença, roleta e visitas do dia'},
@@ -1141,6 +1274,7 @@ const NAV = [
   {id: 'contratos', grp: 'Operação', label: 'Modelos de Contrato', icon: 'sign', sub: 'Contratos preenchidos e assinados na tela'},
   {id: 'metas', grp: 'Operação', label: 'Metas', icon: 'target', sub: 'Meta da equipe e individual por mês'},
   {id: 'usuarios', grp: 'Operação', label: 'Usuários', icon: 'users', sub: 'Cadastro da equipe e tipos de acesso'},
+  {id: 'configuracoes', grp: 'Operação', label: 'Configurações', icon: 'gear', sub: 'Ajustes do sistema: etapas do Kanban, passo a passo, etiquetas e notificações'},
   {id: 'meusdados', grp: 'Minha conta', label: 'Meus dados', icon: 'user', sub: 'Seu cadastro: nome, contato, CRECI e senha'}
 ];
 function navFade() { const n = $('#nav'); if (n) n.classList.toggle('tem-mais', n.scrollTop + n.clientHeight < n.scrollHeight - 4); }
@@ -1166,7 +1300,7 @@ function render() {
   $('#login-root').hidden = true; $('.app').hidden = false;
   if (!canView(state.view)) state.view = 'inicio';
   if (!can('equipe')) state.dash.corretor = ME.id;
-  renderMe();
+  renderMe(); renderBell();
   const v = VIEWS[state.view] || VIEWS.inicio;
   const meta = NAV.find(n => n.id === state.view) || NAV[0];
   renderNav();
@@ -1954,6 +2088,493 @@ function vendaForm(v = {}) {
 }
 
 /* =========================================================
+   VIEW: Kanban (quadro de cards com etapas configuráveis)
+   ========================================================= */
+let KANBAN_OK = true, NOTIF_OK = true, KAN_ABERTO = null;
+const KAN_CORES = {cinza: ['Cinza', '#6f7a85'], azul: ['Azul', '#2d64a8'], verde: ['Verde', '#1b8749'], amarelo: ['Amarelo', '#b06f06'], laranja: ['Laranja', '#c2410c'],
+  vermelho: ['Vermelho', '#b5121b'], roxo: ['Roxo', '#7c3aed'], rosa: ['Rosa', '#be185d']};
+const kanCor = c => (KAN_CORES[c] || KAN_CORES.cinza)[1];
+const KAN_PRIO = {baixa: ['Baixa', 'neutral'], media: ['Média', 'info'], alta: ['Alta', 'warn'], urgente: ['Urgente', 'bad']};
+const KAN_EXIGE = {responsavel: 'Responsável', prazo: 'Prazo', descricao: 'Descrição', checklist: 'Checklist concluído'};
+const KAN_FLUXOS = {
+  livre: ['Livre', 'O card pode ir para qualquer etapa.'],
+  sequencial: ['Passo a passo', 'O card avança uma etapa por vez, na ordem das colunas.'],
+  personalizado: ['Personalizado', 'Você escolhe, para cada etapa, para quais etapas o card pode ir.']
+};
+const KAN_NOTIF = {
+  atribuicao: ['Responsável e participantes', 'Quando alguém é colocado como responsável, incluído ou retirado de um card.'],
+  movimento: ['Mudança de etapa', 'Quando o card muda de coluna, é arquivado ou volta ao quadro.'],
+  comentario: ['Comentários', 'Quando alguém comenta num card.'],
+  prazo: ['Prazo alterado', 'Quando o prazo do card muda.'],
+  exclusao: ['Card excluído', 'Quando um card em que a pessoa está é excluído.']
+};
+const KAN_PADRAO = {
+  colunas: [{id: 'afazer', nome: 'A fazer', cor: 'cinza'}, {id: 'andamento', nome: 'Em andamento', cor: 'azul'}, {id: 'revisao', nome: 'Em revisão', cor: 'amarelo'}, {id: 'concluido', nome: 'Concluído', cor: 'verde', final: true}],
+  fluxo: 'livre', voltar: true, transicoes: {}, gestorLivre: false,
+  etiquetas: [{nome: 'Cliente', cor: 'azul'}, {nome: 'Documentação', cor: 'amarelo'}, {nome: 'Financeiro', cor: 'verde'}, {nome: 'Urgente', cor: 'vermelho'}],
+  notificar: {}, prazoDias: 1
+};
+function kanCfg() {
+  const c = S.config.get('kanban') || {};
+  return {...KAN_PADRAO, ...c, colunas: Array.isArray(c.colunas) && c.colunas.length ? c.colunas : KAN_PADRAO.colunas,
+    etiquetas: Array.isArray(c.etiquetas) ? c.etiquetas : KAN_PADRAO.etiquetas, notificar: c.notificar || {}, transicoes: c.transicoes || {},
+    prazoDias: Number.isFinite(+c.prazoDias) ? +c.prazoDias : 1};
+}
+const kanCol = (cfg, id) => cfg.colunas.find(c => c.id === id);
+const kanColDe = (cfg, k) => kanCol(cfg, k.coluna) || cfg.colunas[0];
+const kanEnvolvido = k => !!ME && (k.criadoPor === ME.id || k.responsavelId === ME.id || (k.participantes || []).includes(ME.id));
+const kanVeTodos = () => can('kanbanTodos');
+const kanVisiveis = () => list('kanban').filter(k => kanVeTodos() || kanEnvolvido(k));
+const kanPode = k => can('kanban') && (kanVeTodos() || kanEnvolvido(k));
+const kanPodeExcluir = k => can('kanbanTodos') || (can('kanban') && !!ME && k.criadoPor === ME.id);
+const kanOrdem = k => typeof k.ordem === 'number' ? k.ordem : (k.criadoTs || 0);
+const kanFinal = (k, cfg = kanCfg()) => !!kanColDe(cfg, k)?.final;
+const diasAte = iso => Math.round((Date.parse(iso + 'T12:00:00') - Date.parse(today() + 'T12:00:00')) / 864e5);
+function kanPrazoInfo(k, cfg = kanCfg()) {
+  if (!k.prazo) return null;
+  const d = diasAte(k.prazo), data = brD(k.prazo).slice(0, 5);
+  if (kanFinal(k, cfg) || k.arquivado) return {cls: '', txt: data, d};
+  if (d < 0) return {cls: 'bad', txt: `Atrasado · ${data}`, d};
+  if (d === 0) return {cls: 'warn', txt: 'Vence hoje', d};
+  if (d === 1) return {cls: 'warn', txt: 'Vence amanhã', d};
+  return {cls: d <= cfg.prazoDias ? 'warn' : '', txt: data, d};
+}
+// Passo a passo (mesma regra do servidor)
+function kanTransicaoOk(cfg, de, para) {
+  if (!de || de === para) return true;
+  if (cfg.gestorLivre && can('kanbanTodos')) return true;
+  const i = cfg.colunas.findIndex(c => c.id === de), j = cfg.colunas.findIndex(c => c.id === para);
+  if (i < 0) return true;
+  if (cfg.fluxo === 'sequencial') return j === i + 1 || (j < i && cfg.voltar !== false);
+  if (cfg.fluxo === 'personalizado') return (cfg.transicoes[de] || []).includes(para);
+  return true;
+}
+// Motivo pelo qual o card não pode entrar na etapa (vazio = pode)
+function kanBloqueio(k, para, cfg = kanCfg(), novo = false) {
+  const c = kanCol(cfg, para); if (!c) return 'Esta etapa não existe mais. Atualize a página.';
+  const de = novo ? '' : k.coluna;
+  if (!novo && de === para && !k.arquivado) return '';
+  if (!novo && de !== para && !kanTransicaoOk(cfg, de, para)) return `Pelo passo a passo configurado, o card não pode ir de "${kanCol(cfg, de)?.nome || de}" para "${c.nome}".`;
+  const lim = +c.limite || 0;
+  if (lim > 0 && list('kanban').filter(x => x.coluna === para && !x.arquivado && x.id !== k.id).length >= lim) return `A coluna "${c.nome}" já está no limite de ${lim} card(s).`;
+  const ex = c.exige || {};
+  if (ex.responsavel && !k.responsavelId) return `Para entrar em "${c.nome}", o card precisa ter um responsável.`;
+  if (ex.prazo && !k.prazo) return `Para entrar em "${c.nome}", o card precisa ter um prazo.`;
+  if (ex.descricao && !String(k.descricao || '').trim()) return `Para entrar em "${c.nome}", o card precisa ter uma descrição.`;
+  if (ex.checklist && (k.checklist || []).some(i => !i.feito)) return `Para entrar em "${c.nome}", todos os itens do checklist precisam estar concluídos.`;
+  return '';
+}
+function kanErro(e) {
+  const m = String(e?.message || '');
+  if (e?.code === '22023' || e?.code === 'P0001') toast(m, 'warn'); else writeErr(e);
+}
+function kanFiltrados() {
+  const f = state.kan, b = f.busca.trim().toLowerCase();
+  return kanVisiveis().filter(k => !!k.arquivado === !!f.arquivados
+    && (!b || [k.titulo, k.descricao, ...(k.etiquetas || [])].some(t => String(t || '').toLowerCase().includes(b)))
+    && (f.pessoa === 'all' || (f.pessoa === 'meus' ? kanEnvolvido(k) : k.responsavelId === f.pessoa || (k.participantes || []).includes(f.pessoa)))
+    && (f.prio === 'all' || k.prioridade === f.prio)
+    && (f.etq === 'all' || (k.etiquetas || []).includes(f.etq)));
+}
+const kanAv = id => { const c = corretor(id); return c ? `<span class="avatar kb-av" title="${esc(c.nome)}" style="background:${avColor(c.id)}">${esc(initials(c.nome))}</span>` : ''; };
+function kanCardHTML(k, cfg) {
+  const p = KAN_PRIO[k.prioridade] || KAN_PRIO.media, pz = kanPrazoInfo(k, cfg), chk = k.checklist || [], feitos = chk.filter(i => i.feito).length, nc = (k.comentarios || []).length;
+  const etqs = (k.etiquetas || []).map(n => `<span class="kb-etq" style="--c:${kanCor(cfg.etiquetas.find(x => x.nome === n)?.cor)}">${esc(n)}</span>`).join('');
+  const pessoas = [k.responsavelId, ...(k.participantes || [])].filter(Boolean);
+  return `<div class="kb-card${kanPode(k) ? '' : ' so-ver'}" role="button" tabindex="0" draggable="${kanPode(k)}" data-kid="${k.id}" aria-label="${esc(k.titulo)}">
+    ${etqs ? `<div class="kb-etqs">${etqs}</div>` : ''}
+    <div class="kb-tit">${esc(k.titulo)}</div>
+    <div class="kb-meta"><span class="pill ${p[1]}">${p[0]}</span>
+      ${pz ? `<span class="kb-mini ${pz.cls}">${ic('clock')}${pz.txt}</span>` : ''}
+      ${chk.length ? `<span class="kb-mini ${feitos === chk.length ? 'ok' : ''}">${ic('check')}${feitos}/${chk.length}</span>` : ''}
+      ${nc ? `<span class="kb-mini">${ic('msg')}${nc}</span>` : ''}
+      <span class="grow"></span><span class="kb-avs">${pessoas.slice(0, 3).map(kanAv).join('')}${pessoas.length > 3 ? `<span class="avatar kb-av mais">+${pessoas.length - 3}</span>` : ''}</span></div>
+  </div>`;
+}
+VIEWS.kanban = {
+  actions: () => can('kanban') && KANBAN_OK ? `<button class="btn primary" data-act="kan-novo">${ic('plus')}Card</button>` : '',
+  html() {
+    if (!KANBAN_OK) return `<div class="banner">${ic('info')}<span>O banco ainda não tem a estrutura do Kanban. Rode no Supabase (SQL Editor) o arquivo <b>supabase/migrations/20261120100000_kanban.sql</b>.</span></div>`;
+    const cfg = kanCfg(), f = state.kan, cards = kanFiltrados(), ids = new Set(cfg.colunas.map(c => c.id));
+    const us = corretores().filter(c => c.ativo !== false || kanVisiveis().some(k => k.responsavelId === c.id));
+    const filtros = `<div class="row kb-filtros">
+      <div class="field kb-busca"><label for="kb-busca">Buscar</label><input class="input" id="kb-busca" value="${esc(f.busca)}" placeholder="Título, descrição ou etiqueta"></div>
+      <div class="field"><label for="kb-pessoa">Pessoa</label><select class="input" id="kb-pessoa"><option value="all">${kanVeTodos() ? 'Todos os cards' : 'Todos os meus cards'}</option>
+        ${kanVeTodos() ? `<option value="meus" ${f.pessoa === 'meus' ? 'selected' : ''}>Só os que estou envolvido</option>${us.map(c => `<option value="${c.id}" ${f.pessoa === c.id ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}` : ''}</select></div>
+      <div class="field"><label for="kb-prio">Prioridade</label><select class="input" id="kb-prio"><option value="all">Todas</option>${Object.entries(KAN_PRIO).map(([k, [l]]) => `<option value="${k}" ${f.prio === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="field"><label for="kb-etq">Etiqueta</label><select class="input" id="kb-etq"><option value="all">Todas</option>${cfg.etiquetas.map(e => `<option ${f.etq === e.nome ? 'selected' : ''}>${esc(e.nome)}</option>`).join('')}</select></div>
+      <span class="grow"></span>
+      <div class="seg" role="group" aria-label="Cards"><button data-act="kan-arq" data-v="0" aria-pressed="${!f.arquivados}">No quadro</button><button data-act="kan-arq" data-v="1" aria-pressed="${!!f.arquivados}">${ic('archive')}Arquivados</button></div>
+    </div>`;
+    const colunas = cfg.colunas.map((c, i) => {
+      const cs = cards.filter(k => k.coluna === c.id || (i === 0 && !ids.has(k.coluna))).sort((a, b) => kanOrdem(a) - kanOrdem(b));
+      const ativos = list('kanban').filter(k => k.coluna === c.id && !k.arquivado).length, lim = +c.limite || 0;
+      const ex = Object.keys(KAN_EXIGE).filter(x => c.exige?.[x]);
+      return `<section class="kb-col" data-col="${esc(c.id)}" style="--c:${kanCor(c.cor)}" aria-label="Etapa ${esc(c.nome)}">
+        <header class="kb-col-h"><span class="kb-dot"></span><b>${esc(c.nome)}</b>${c.final ? `<span class="kb-fim" title="Etapa final: o card é dado como concluído">${ic('check')}</span>` : ''}
+          <span class="kb-n ${lim && ativos >= lim ? 'cheio' : ''}" title="${lim ? 'Limite de ' + lim + ' card(s) nesta etapa' : 'Cards nesta etapa'}">${f.arquivados ? cs.length : lim ? `${ativos}/${lim}` : ativos}</span>
+          <span class="grow"></span>${can('kanban') && !f.arquivados ? `<button class="btn icon sm ghost" data-act="kan-novo" data-col="${esc(c.id)}" aria-label="Novo card em ${esc(c.nome)}">${ic('plus')}</button>` : ''}</header>
+        ${ex.length ? `<div class="kb-exige" title="Para um card entrar nesta etapa">${ic('lock')}Exige: ${ex.map(x => KAN_EXIGE[x].toLowerCase()).join(', ')}</div>` : ''}
+        <div class="kb-lista">${cs.map(k => kanCardHTML(k, cfg)).join('') || `<div class="kb-vazio">${f.arquivados ? 'Nenhum card arquivado' : 'Arraste um card para cá'}</div>`}</div>
+      </section>`;
+    }).join('');
+    const total = kanVisiveis().length;
+    const fluxo = cfg.fluxo === 'livre' ? '' : `<div class="kb-fluxo">${ic('swap')}Passo a passo ativo: <b>${KAN_FLUXOS[cfg.fluxo]?.[0] || ''}</b>. ${cfg.fluxo === 'sequencial' ? 'Os cards avançam uma etapa por vez.' : 'Só aparecem como destino as etapas liberadas.'}${isMaster() ? ' <a href="#configuracoes">Configurar</a>' : ''}</div>`;
+    return filtros + fluxo + (total || f.arquivados ? `<div class="kb-board" id="kb-board">${colunas}</div>`
+      : `<div class="card"><div class="empty"><b>Nenhum card ainda</b>${can('kanban') ? 'Use “+ Card” para criar o primeiro. Quem for colocado como responsável ou participante recebe um aviso no sininho.' : 'Quando você for incluído num card, ele aparece aqui.'}</div></div>`);
+  },
+  mount() {
+    const b = $('#kb-busca'); if (b) b.oninput = () => { state.kan.busca = b.value; render(); };
+    [['kb-pessoa', 'pessoa'], ['kb-prio', 'prio'], ['kb-etq', 'etq']].forEach(([id, k]) => { const el = $('#' + id); if (el) el.onchange = () => { state.kan[k] = el.value; render(); }; });
+    $$('.kb-card').forEach(el => {
+      el.onclick = () => { const k = S.kanban.get(el.dataset.kid); if (k) kanForm(k); };
+      el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } };
+    });
+    kanArrastar();
+  }
+};
+// Arrastar e soltar entre etapas (no celular, a etapa muda dentro do card)
+function kanArrastar() {
+  let id = null, marca = null;
+  const limpa = () => { $$('.kb-col').forEach(c => c.classList.remove('alvo', 'bloq')); if (marca) { marca.remove(); marca = null; } };
+  const posicao = (col, y) => [...col.querySelectorAll('.kb-card:not(.arrastando)')].find(el => { const r = el.getBoundingClientRect(); return y < r.top + r.height / 2; }) || null;
+  $$('.kb-card[draggable="true"]').forEach(el => {
+    el.ondragstart = e => { id = el.dataset.kid; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); requestAnimationFrame(() => el.classList.add('arrastando')); state.dirty = true; };
+    el.ondragend = () => { el.classList.remove('arrastando'); limpa(); id = null; state.dirty = false; if (state.pending) scheduleRender(); };
+  });
+  $$('.kb-col').forEach(col => {
+    col.ondragover = e => {
+      if (!id) return; e.preventDefault();
+      const k = S.kanban.get(id), bloq = k && kanBloqueio(k, col.dataset.col);
+      $$('.kb-col').forEach(c => c !== col && c.classList.remove('alvo', 'bloq'));
+      col.classList.toggle('alvo', !bloq); col.classList.toggle('bloq', !!bloq);
+      e.dataTransfer.dropEffect = 'move'; // soltar numa etapa bloqueada mostra o motivo
+      if (bloq) { if (marca) { marca.remove(); marca = null; } return; }
+      if (!marca) { marca = document.createElement('div'); marca.className = 'kb-marca'; }
+      const lista = col.querySelector('.kb-lista'), antes = posicao(col, e.clientY);
+      if (antes) lista.insertBefore(marca, antes); else lista.appendChild(marca);
+    };
+    col.ondragleave = e => { if (!col.contains(e.relatedTarget)) { col.classList.remove('alvo', 'bloq'); } };
+    col.ondrop = e => {
+      e.preventDefault(); if (!id) return;
+      const k = S.kanban.get(id), para = col.dataset.col, antes = posicao(col, e.clientY);
+      limpa(); state.dirty = false;
+      if (!k) return;
+      const bloq = kanBloqueio(k, para); if (bloq) return toast(bloq, 'warn');
+      const irmaos = [...col.querySelectorAll('.kb-card:not(.arrastando)')].map(el => S.kanban.get(el.dataset.kid)).filter(Boolean);
+      const idx = antes ? irmaos.findIndex(x => x.id === antes.dataset.kid) : irmaos.length;
+      const prev = irmaos[idx - 1], next = irmaos[idx];
+      const ordem = prev && next ? (kanOrdem(prev) + kanOrdem(next)) / 2 : prev ? kanOrdem(prev) + 1000 : next ? kanOrdem(next) - 1000 : Date.now();
+      if (k.coluna === para && kanOrdem(k) === ordem) return;
+      kanMover(k.id, para, ordem);
+    };
+  });
+}
+async function kanMover(id, para, ordem) {
+  const k = S.kanban.get(id); if (!k) return false;
+  if (!kanPode(k)) { denied(); return false; }
+  const bloq = kanBloqueio(k, para); if (bloq) { toast(bloq, 'warn'); return false; }
+  S.kanban.set(id, {...k, coluna: para, ordem}); scheduleRender(true);
+  const {error} = await sb.rpc('kanban_mover', {p_id: id, p_coluna: para, p_ordem: ordem});
+  if (error) { S.kanban.set(id, k); scheduleRender(true); kanErro(error); return false; }
+  scheduleReload('kanban');
+  if (para !== k.coluna) toast(`Card movido para “${kanCol(kanCfg(), para)?.nome || para}”.`);
+  return true;
+}
+async function kanSalvar(id, rec, novo) {
+  const antes = S.kanban.get(id);
+  const dados = {...(antes || {}), ...rec}; delete dados.id;
+  S.kanban.set(id, {...dados, id, ...(novo ? {criadoPor: ME.id, criadoNome: ME.nome, criadoTs: Date.now(), comentarios: [], historico: []} : {})}); scheduleRender(true);
+  try {
+    const {error} = novo ? await sb.from('kanban_cards').insert({id, data: dados}) : await sb.from('kanban_cards').update({data: dados}).eq('id', id);
+    if (error) throw error;
+    scheduleReload('kanban'); return true;
+  } catch (e) {
+    if (antes) S.kanban.set(id, antes); else S.kanban.delete(id);
+    scheduleRender(true); kanErro(e); return false;
+  }
+}
+const kanDataHora = ts => ts ? new Date(ts).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'}) : '';
+function kanComentariosHTML(k) {
+  const cs = k.comentarios || [];
+  return cs.length ? cs.map(c => `<div class="kb-com">${kanAv(c.autorId) || `<span class="avatar kb-av">${esc(initials(c.autorNome))}</span>`}<div class="grow">
+      <div class="kb-com-h"><b>${esc(corretor(c.autorId)?.nome || c.autorNome)}</b><span class="muted small">${kanDataHora(c.ts)}</span>
+        ${c.autorId === ME?.id || can('kanbanTodos') ? `<button class="btn sm ghost kb-com-x" data-act="kan-com-del" data-id="${k.id}" data-c="${esc(c.id)}" aria-label="Excluir comentário">${ic('trash')}</button>` : ''}</div>
+      <div class="kb-com-t">${esc(c.texto)}</div></div></div>`).join('') : '<div class="small muted">Nenhum comentário ainda.</div>';
+}
+function kanHistoricoHTML(k) {
+  const h = [...(k.historico || [])].reverse();
+  const t = x => x.acao === 'criou' ? `criou o card em “${esc(x.paraNome || '')}”` : x.acao === 'moveu' ? `moveu de “${esc(x.deNome || '')}” para “${esc(x.paraNome || '')}”`
+    : x.acao === 'responsavel' ? (x.paraNome ? `definiu ${esc(x.paraNome)} como responsável` : 'tirou o responsável') : x.acao === 'arquivou' ? 'arquivou o card' : x.acao === 'desarquivou' ? 'tirou o card do arquivo' : esc(x.acao);
+  return h.length ? `<ul class="kb-hist">${h.map(x => `<li><span class="muted small">${kanDataHora(x.ts)}</span> <b>${esc(x.autorNome || 'Alguém')}</b> ${t(x)}</li>`).join('')}</ul>` : '<div class="small muted">Sem histórico.</div>';
+}
+const kanChkRow = (i, n) => `<div class="kb-chk-row" data-chk="${esc(i.id || uid())}"><label class="check"><input type="checkbox" ${i.feito ? 'checked' : ''} aria-label="Item ${n + 1} concluído"></label>
+  <input class="input sm" value="${esc(i.texto)}" maxlength="300" aria-label="Item ${n + 1}"><button type="button" class="btn sm icon ghost" data-act="kan-chk-del" aria-label="Remover item">${ic('x')}</button></div>`;
+function kanForm(k = {}, colunaInicial) {
+  if (!KANBAN_OK) return toast('O banco ainda não tem a estrutura do Kanban. Veja o aviso na tela do Kanban.', 'warn');
+  if (k.id ? !kanPode(k) : !can('kanban')) return denied();
+  const cfg = kanCfg(), novo = !k.id, us = corretores(true);
+  const atual = novo ? (colunaInicial && kanCol(cfg, colunaInicial) ? colunaInicial : cfg.colunas[0].id) : kanColDe(cfg, k).id;
+  const etapas = cfg.colunas.map(c => ({c, ok: novo || c.id === atual || kanTransicaoOk(cfg, k.coluna, c.id)}));
+  const comInativo = id => id && !us.some(c => c.id === id) && corretor(id) ? [corretor(id)] : [];
+  const pessoasResp = [...us, ...comInativo(k.responsavelId)];
+  const parts = new Set(k.participantes || []), pessoasPart = [...us, ...(k.participantes || []).flatMap(comInativo)];
+  const etqs = new Set(k.etiquetas || []);
+  const pz = kanPrazoInfo(k, cfg);
+  KAN_ABERTO = k.id || null;
+  openModal({title: novo ? 'Novo card' : 'Card', wide: true,
+    body: `<form class="kb-form" id="kb-form" onsubmit="return false" autocomplete="off">
+      <div class="stack">
+        <div class="field"><label for="kb-tit">Título *</label><input class="input" id="kb-tit" maxlength="200" value="${esc(k.titulo)}" placeholder="Ex.: Retornar proposta do cliente"></div>
+        <div class="field"><label for="kb-desc">Descrição</label><textarea class="input" id="kb-desc" maxlength="10000" placeholder="Detalhes, contexto, links…">${esc(k.descricao)}</textarea></div>
+        <div class="field"><label>Checklist</label><div id="kb-chk" class="stack" style="gap:6px">${(k.checklist || []).map(kanChkRow).join('')}</div>
+          <div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input sm" id="kb-chk-novo" maxlength="300" placeholder="Novo item do checklist"><button type="button" class="btn sm" data-act="kan-chk-add">${ic('plus')}Item</button></div></div>
+        ${novo ? '' : `<div class="field"><label for="kb-com-txt">Comentários</label><div id="kb-coms" class="stack" style="gap:10px">${kanComentariosHTML(k)}</div>
+          <textarea class="input" id="kb-com-txt" maxlength="4000" style="min-height:64px" placeholder="Escreva um comentário (os envolvidos são avisados)"></textarea>
+          <div class="row" style="justify-content:flex-end"><button type="button" class="btn sm" data-act="kan-comentar" data-id="${k.id}">${ic('msg')}Comentar</button></div></div>
+          <details class="kb-det"><summary>Histórico</summary><div id="kb-hist">${kanHistoricoHTML(k)}</div></details>`}
+      </div>
+      <div class="stack kb-lado">
+        <div class="field"><label for="kb-col">Etapa</label><select class="input" id="kb-col">${etapas.map(({c, ok}) => `<option value="${esc(c.id)}" ${c.id === atual ? 'selected' : ''} ${ok ? '' : 'disabled'}>${esc(c.nome)}${ok ? '' : ' (bloqueada pelo passo a passo)'}</option>`).join('')}</select></div>
+        <div class="field"><label for="kb-prio-f">Prioridade</label><select class="input" id="kb-prio-f">${Object.entries(KAN_PRIO).map(([v, [l]]) => `<option value="${v}" ${(k.prioridade || 'media') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label for="kb-prazo">Prazo</label><input class="input" type="date" id="kb-prazo" value="${esc(k.prazo || '')}">${pz && pz.cls ? `<div class="help kb-pz ${pz.cls}">${pz.txt}</div>` : ''}</div>
+        <div class="field"><label for="kb-resp">Responsável</label><select class="input" id="kb-resp"><option value="">Sem responsável</option>${pessoasResp.map(c => `<option value="${c.id}" ${k.responsavelId === c.id ? 'selected' : ''}>${esc(c.nome)}${c.ativo === false ? ' (inativo)' : ''}</option>`).join('')}</select></div>
+        <div class="field"><label>Participantes</label><div class="kb-pessoas" id="kb-part">${pessoasPart.map(c => `<label class="check"><input type="checkbox" value="${c.id}" ${parts.has(c.id) ? 'checked' : ''}>${esc(c.nome)}${c.ativo === false ? ' (inativo)' : ''}</label>`).join('')}</div><div class="help">Responsável e participantes recebem os avisos do card.</div></div>
+        ${cfg.etiquetas.length ? `<div class="field"><label>Etiquetas</label><div class="kb-etq-esc" id="kb-etqs">${cfg.etiquetas.map(e => `<label class="kb-etq-op" style="--c:${kanCor(e.cor)}"><input type="checkbox" value="${esc(e.nome)}" ${etqs.has(e.nome) ? 'checked' : ''}><span>${esc(e.nome)}</span></label>`).join('')}</div></div>` : ''}
+        ${novo ? '' : `<div class="help">Criado por <b>${esc(corretor(k.criadoPor)?.nome || k.criadoNome || '—')}</b> em ${kanDataHora(k.criadoTs)}${k.concluidoTs ? `<br>Concluído em ${kanDataHora(k.concluidoTs)}` : ''}.</div>`}
+      </div>
+    </form>`,
+    foot: `${!novo && kanPodeExcluir(k) ? `<button class="btn danger left" data-act="kan-del" data-id="${k.id}">${ic('trash')}Excluir</button>` : ''}
+      ${novo ? '' : `<button class="btn ${kanPodeExcluir(k) ? '' : 'left'}" data-act="kan-arquivar" data-id="${k.id}">${ic('archive')}${k.arquivado ? 'Tirar do arquivo' : 'Arquivar'}</button>`}
+      <button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="kb-salvar">${novo ? 'Criar card' : 'Salvar'}</button>`,
+    onMount: m => {
+      modalCleanup = () => { KAN_ABERTO = null; };
+      const novoItem = $('#kb-chk-novo', m);
+      novoItem.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); ACTIONS['kan-chk-add'](); } };
+      // responsável escolhido sai da lista de participantes
+      const sincroniza = () => { const r = val('kb-resp'); $$('#kb-part input', m).forEach(i => { const eh = i.value === r; i.disabled = eh; if (eh) i.checked = false; i.closest('label').classList.toggle('desab', eh); }); };
+      $('#kb-resp', m).onchange = sincroniza; sincroniza();
+      $('#kb-salvar', m).onclick = async () => {
+        if (!requireFields(['kb-tit'])) return;
+        const rec = {titulo: val('kb-tit'), descricao: $('#kb-desc', m).value.trim(), coluna: val('kb-col'), prioridade: val('kb-prio-f'), prazo: val('kb-prazo'),
+          responsavelId: val('kb-resp'), participantes: $$('#kb-part input:checked', m).map(i => i.value), etiquetas: $$('#kb-etqs input:checked', m).map(i => i.value),
+          checklist: kanChkLer(m), arquivado: !!k.arquivado, ordem: novo ? Date.now() : (k.coluna === val('kb-col') ? kanOrdem(k) : Date.now())};
+        if (!rec.prazo) delete rec.prazo;
+        if (!rec.responsavelId) delete rec.responsavelId;
+        const bloq = (novo || rec.coluna !== k.coluna) ? kanBloqueio({...k, ...rec}, rec.coluna, cfg, novo) : '';
+        if (bloq) return toast(bloq, 'warn');
+        const btn = $('#kb-salvar', m); btn.disabled = true;
+        const ok = await kanSalvar(k.id || uid(), rec, novo);
+        btn.disabled = false;
+        if (ok) { closeModal(); toast(novo ? 'Card criado.' : 'Card salvo.'); }
+      };
+    }});
+}
+const kanChkLer = m => $$('#kb-chk [data-chk]', m).map(r => ({id: r.dataset.chk, texto: r.querySelector('input.input').value.trim(), feito: r.querySelector('input[type=checkbox]').checked})).filter(i => i.texto);
+// Comentários e histórico do card aberto acompanham as mudanças que chegam em tempo real
+function kanAtualizaAberto() {
+  if (!KAN_ABERTO) return;
+  const k = S.kanban.get(KAN_ABERTO), coms = $('#kb-coms'), hist = $('#kb-hist');
+  if (!k) return;
+  if (coms) coms.innerHTML = kanComentariosHTML(k);
+  if (hist) hist.innerHTML = kanHistoricoHTML(k);
+}
+async function kanComentar(btn) {
+  const id = btn.dataset.id, txt = $('#kb-com-txt'), texto = txt.value.trim();
+  if (!texto) { txt.classList.add('err'); txt.focus(); return toast('Escreva o comentário.', 'warn'); }
+  btn.disabled = true;
+  const {data, error} = await sb.rpc('kanban_comentar', {p_id: id, p_texto: texto});
+  btn.disabled = false;
+  if (error) return kanErro(error);
+  const k = S.kanban.get(id);
+  if (k && data) S.kanban.set(id, {...k, comentarios: [...(k.comentarios || []), data]});
+  txt.value = ''; txt.classList.remove('err'); kanAtualizaAberto(); scheduleRender(true); scheduleReload('kanban');
+  toast('Comentário enviado. Os envolvidos foram avisados.');
+}
+async function kanExcluir(k) {
+  S.kanban.delete(k.id); scheduleRender(true);
+  const {error} = await sb.from('kanban_cards').delete().eq('id', k.id);
+  if (error) { S.kanban.set(k.id, k); scheduleRender(true); kanErro(error); return false; }
+  return true;
+}
+
+/* =========================================================
+   Notificações (sininho no alto da tela)
+   ========================================================= */
+let NOTIF_INICIO = true;
+// (o servidor já entrega só as da pessoa; o filtro abaixo é só uma garantia a mais)
+const ntMinhas = () => list('notificacoes').filter(n => !!ME && (!n.usuario || n.usuario === ME.id));
+const ntLista = () => ntMinhas().sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em)));
+const ntNaoLidas = () => ntMinhas().filter(n => !n.lida);
+const NT_VISTOS = 'imob20-prazos-vistos';
+const ntVistos = () => { try { const v = JSON.parse(localStorage.getItem(NT_VISTOS) || '{}'); return v.dia === today() ? new Set(v.ids || []) : new Set(); } catch (e) { return new Set(); } };
+const ntMarcaVistos = ids => { try { localStorage.setItem(NT_VISTOS, JSON.stringify({dia: today(), ids})); } catch (e) {} };
+// Prazos dos cards em que a pessoa está (atrasados, de hoje e próximos)
+function ntPrazos() {
+  if (!ME || !KANBAN_OK || !can('kanban')) return [];
+  const cfg = kanCfg();
+  return kanVisiveis().filter(k => kanEnvolvido(k) && k.prazo && !k.arquivado && !kanFinal(k, cfg) && diasAte(k.prazo) <= Math.max(0, cfg.prazoDias))
+    .sort((a, b) => a.prazo.localeCompare(b.prazo));
+}
+const ntChave = k => k.id + ':' + k.prazo;
+function ntTempo(iso) {
+  const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+  if (s < 60) return 'agora'; if (s < 3600) return `há ${Math.floor(s / 60)} min`; if (s < 86400) return `há ${Math.floor(s / 3600)} h`;
+  const d = Math.floor(s / 86400); return d === 1 ? 'ontem' : d < 7 ? `há ${d} dias` : new Date(iso).toLocaleDateString('pt-BR');
+}
+const NT_ICONE = {atribuicao: 'user', movimento: 'swap', comentario: 'msg', prazo: 'clock', exclusao: 'trash'};
+function ntPainelHTML() {
+  const ns = ntLista(), nl = ns.filter(n => !n.lida).length, pz = ntPrazos();
+  const pedir = 'Notification' in window && Notification.permission === 'default';
+  return `<div class="nt-h"><b>Notificações</b><span class="grow"></span>${nl ? `<button class="btn sm ghost" data-act="nt-todas">${ic('check')}Marcar todas como lidas</button>` : ''}</div>
+    <div class="nt-corpo">
+    ${pz.length ? `<div class="nt-sec">Prazos</div>${pz.map(k => { const p = kanPrazoInfo(k); return `<div class="nt-item"><button class="nt-main" data-act="nt-card" data-card="${k.id}">
+        <span class="nt-ic ${p.cls || 'info'}">${ic('clock')}</span><span class="nt-txt"><b>${esc(k.titulo)}</b><span>${p.d < 0 ? `Prazo vencido em ${brD(k.prazo)}` : p.d === 0 ? 'O prazo vence hoje' : p.d === 1 ? 'O prazo vence amanhã' : `O prazo vence em ${brD(k.prazo)}`}</span></span></button></div>`; }).join('')}` : ''}
+    ${pz.length ? '<div class="nt-sec">Atividade</div>' : ''}
+    ${ns.length ? ns.map(n => `<div class="nt-item ${n.lida ? '' : 'nova'}"><button class="nt-main" data-act="nt-abrir" data-id="${n.id}">
+        <span class="nt-ic">${ic(NT_ICONE[n.tipo] || 'info')}</span><span class="nt-txt"><b>${esc(n.titulo)}</b>${n.texto ? `<span>${esc(n.texto)}</span>` : ''}<small>${esc(n.ator_nome || '')}${n.ator_nome ? ' · ' : ''}${ntTempo(n.criado_em)}</small></span>${n.lida ? '' : '<span class="nt-ponto" aria-label="Não lida"></span>'}</button>
+        <button class="btn icon sm ghost nt-x" data-act="nt-del" data-id="${n.id}" aria-label="Apagar notificação">${ic('x')}</button></div>`).join('')
+      : `<div class="nt-vazio">${ic('bell')}<b>Tudo em dia</b>Avisos dos cards em que você está aparecem aqui.</div>`}
+    </div>
+    ${pedir || ns.some(n => n.lida) ? `<div class="nt-f">${pedir ? `<button class="btn sm" data-act="nt-navegador">${ic('bell')}Avisar também pelo navegador</button>` : ''}<span class="grow"></span>${ns.some(n => n.lida) ? `<button class="btn sm ghost" data-act="nt-limpar">Apagar as lidas</button>` : ''}</div>` : ''}`;
+}
+function renderBell() {
+  const w = $('#bell-wrap'); if (!w) return;
+  const mostra = !!ME && !ME.virtual && (NOTIF_OK || KANBAN_OK);
+  w.hidden = !mostra; if (!mostra) { ntFechar(); return; }
+  const vistos = ntVistos(), pzNovos = ntPrazos().filter(k => !vistos.has(ntChave(k))).length, n = ntNaoLidas().length + pzNovos;
+  const b = $('#bell-n'); b.hidden = !n; b.textContent = n > 99 ? '99+' : n;
+  $('#bell').setAttribute('aria-label', n ? `Notificações: ${n} nova(s)` : 'Notificações');
+  const p = $('#nt-panel'); if (!p.hidden) { const sc = p.querySelector('.nt-corpo')?.scrollTop || 0; p.innerHTML = ntPainelHTML(); const c = p.querySelector('.nt-corpo'); if (c) c.scrollTop = sc; }
+}
+function ntAbrir() {
+  const p = $('#nt-panel'); p.innerHTML = ntPainelHTML(); p.hidden = false; $('#bell').setAttribute('aria-expanded', 'true');
+  ntMarcaVistos(ntPrazos().map(ntChave)); renderBell();
+}
+function ntFechar() { const p = $('#nt-panel'); if (p && !p.hidden) { p.hidden = true; $('#bell').setAttribute('aria-expanded', 'false'); } }
+document.addEventListener('click', e => { const w = $('#bell-wrap'); if (w && !w.contains(e.target) && !$('#nt-panel').hidden) ntFechar(); }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#nt-panel') && !$('#nt-panel').hidden) { ntFechar(); $('#bell').focus(); } });
+async function ntMarcar(ids) {
+  ids = ids.filter(id => S.notificacoes.get(id) && !S.notificacoes.get(id).lida); if (!ids.length) return;
+  ids.forEach(id => S.notificacoes.set(id, {...S.notificacoes.get(id), lida: true})); renderBell();
+  const {error} = await sb.from('notificacoes').update({lida: true}).in('id', ids);
+  if (error) scheduleReload('notificacoes');
+}
+function ntIrParaCard(cardId) {
+  ntFechar();
+  const k = cardId && S.kanban.get(cardId);
+  if (!k) return toast('Este card foi excluído ou você não participa mais dele.', 'warn');
+  if (state.view !== 'kanban') { if (location.hash !== '#kanban') location.hash = 'kanban'; else go('kanban'); }
+  state.kan.arquivados = !!k.arquivado; render();
+  kanForm(k);
+}
+// Chegou notificação nova em tempo real: avisa na tela e, se a aba estiver em segundo plano, pelo navegador
+function ntChegou(novas) {
+  const b = $('#bell'); if (b) { b.classList.remove('tocou'); void b.offsetWidth; b.classList.add('tocou'); }
+  const n = novas[0];
+  toast(novas.length > 1 ? `${novas.length} novas notificações.` : n.titulo);
+  if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+    try { const x = new Notification(novas.length > 1 ? `${novas.length} novas notificações` : n.titulo, {body: novas.length > 1 ? n.titulo : n.texto || '', tag: 'imob20-' + n.id});
+      x.onclick = () => { window.focus(); ntMarcar([n.id]); ntIrParaCard(n.card_id); x.close(); }; } catch (e) {}
+  }
+}
+
+/* =========================================================
+   VIEW: Configurações (Master) — Kanban
+   ========================================================= */
+const kanRascunho = () => { if (!state.kanCfg) state.kanCfg = JSON.parse(JSON.stringify(kanCfg())); return state.kanCfg; };
+VIEWS.configuracoes = {
+  html() {
+    const d = kanRascunho(), contagem = id => list('kanban').filter(k => k.coluna === id).length;
+    const corSel = (v, attrs) => `<select class="input sm kc-cor" ${attrs} style="--c:${kanCor(v)}">${Object.entries(KAN_CORES).map(([k, [l]]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+    const etapas = d.colunas.map((c, i) => `<div class="kc-col" style="--c:${kanCor(c.cor)}">
+      <div class="kc-ord"><button class="btn icon sm ghost" data-act="kc-mover" data-i="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="Subir etapa">${ic('up')}</button><span class="num">${i + 1}</span><button class="btn icon sm ghost" data-act="kc-mover" data-i="${i}" data-d="1" ${i < d.colunas.length - 1 ? '' : 'disabled'} aria-label="Descer etapa">${ic('down')}</button></div>
+      <div class="kc-campos">
+        <div class="kc-l1">
+          <div class="field"><label for="kc-nome-${i}">Nome da etapa</label><input class="input sm" id="kc-nome-${i}" data-kc="nome" data-i="${i}" maxlength="40" value="${esc(c.nome)}"></div>
+          <div class="field"><label for="kc-cor-${i}">Cor</label>${corSel(c.cor || 'cinza', `id="kc-cor-${i}" data-kc="cor" data-i="${i}"`)}</div>
+          <div class="field"><label for="kc-lim-${i}">Limite de cards</label><input class="input sm num" id="kc-lim-${i}" data-kc="limite" data-i="${i}" type="number" min="0" max="999" value="${+c.limite || 0}"><div class="help">0 = sem limite</div></div>
+        </div>
+        <div class="kc-l2"><label class="check"><input type="checkbox" data-kc="final" data-i="${i}" ${c.final ? 'checked' : ''}>Etapa final (o card é dado como concluído)</label></div>
+        <div class="kc-l2"><span class="small muted">Para entrar nesta etapa, o card precisa ter:</span>${Object.entries(KAN_EXIGE).map(([x, l]) => `<label class="check"><input type="checkbox" data-kc="exige" data-x="${x}" data-i="${i}" ${c.exige?.[x] ? 'checked' : ''}>${l}</label>`).join('')}</div>
+      </div>
+      <div class="kc-acoes"><span class="small muted">${contagem(c.id)} card(s)</span><button class="btn icon sm danger" data-act="kc-del-col" data-i="${i}" aria-label="Remover etapa ${esc(c.nome)}">${ic('trash')}</button></div>
+    </div>`).join('');
+    const nomes = d.colunas.map(c => esc(c.nome || '(sem nome)'));
+    const destinos = (c, i) => d.colunas.filter((x, j) => j !== i && (d.fluxo === 'livre' || (d.fluxo === 'sequencial' ? j === i + 1 || (j < i && d.voltar !== false) : (d.transicoes[c.id] || []).includes(x.id))));
+    const matriz = d.fluxo !== 'personalizado' ? '' : `<div class="tbl-wrap"><table class="t kc-matriz"><thead><tr><th>De ↓ / Para →</th>${nomes.map(n => `<th class="c">${n}</th>`).join('')}</tr></thead><tbody>
+      ${d.colunas.map((c, i) => `<tr><th>${nomes[i]}</th>${d.colunas.map((x, j) => `<td class="c">${i === j ? '—' : `<input type="checkbox" data-kc="trans" data-de="${esc(c.id)}" data-para="${esc(x.id)}" ${(d.transicoes[c.id] || []).includes(x.id) ? 'checked' : ''} aria-label="De ${nomes[i]} para ${nomes[j]}">`}</td>`).join('')}</tr>`).join('')}
+      </tbody></table></div><div class="row" style="gap:8px"><button class="btn sm" data-act="kc-trans" data-v="seq">Só a próxima etapa</button><button class="btn sm" data-act="kc-trans" data-v="todas">Liberar todas</button><button class="btn sm" data-act="kc-trans" data-v="nenhuma">Limpar</button></div>`;
+    return `<div class="tabs-top"><div class="seg" role="group" aria-label="Configurações"><button class="kc-tab" aria-pressed="true">${ic('kanban')}Kanban</button></div><span class="grow"></span>
+        <span class="pill warn" id="kc-sujo" ${state.kanCfgSujo ? '' : 'hidden'}>Alterações não salvas</span>
+        <button class="btn" data-act="kc-padrao">Restaurar padrão</button><button class="btn" data-act="kc-descartar" ${state.kanCfgSujo ? '' : 'disabled'}>Descartar</button><button class="btn primary" data-act="kc-salvar">Salvar configurações</button></div>
+      <div id="kc-root" class="stack" style="gap:20px">
+      <div class="card"><div class="card-h"><h2>Etapas do quadro</h2><span class="hint">As colunas do Kanban, da esquerda para a direita.</span></div>
+        <div class="card-b stack">${etapas}<div><button class="btn" data-act="kc-add-col">${ic('plus')}Adicionar etapa</button></div></div></div>
+      <div class="card"><div class="card-h"><h2>Passo a passo dos cards</h2><span class="hint">Por quais etapas o card pode passar.</span></div>
+        <div class="card-b stack">
+          <div class="kc-fluxos" role="radiogroup" aria-label="Passo a passo">${Object.entries(KAN_FLUXOS).map(([v, [l, ds]]) => `<label class="kc-fluxo ${d.fluxo === v ? 'on' : ''}"><input type="radio" name="kc-fluxo" data-kc="fluxo" value="${v}" ${d.fluxo === v ? 'checked' : ''}><b>${l}</b><span>${ds}</span></label>`).join('')}</div>
+          ${d.fluxo === 'sequencial' ? `<label class="check"><input type="checkbox" data-kc="voltar" ${d.voltar !== false ? 'checked' : ''}>Pode voltar para etapas anteriores</label>` : ''}
+          ${matriz}
+          <label class="check"><input type="checkbox" data-kc="gestorLivre" ${d.gestorLivre ? 'checked' : ''}>Master e Coordenador podem pular o passo a passo</label>
+          <div class="kc-previa"><span class="small muted">Como fica:</span>${d.colunas.map((c, i) => `<div><b style="--c:${kanCor(c.cor)}" class="kc-chip">${nomes[i]}</b> → ${destinos(c, i).map(x => esc(x.nome)).join(', ') || '<span class="muted">nenhuma etapa</span>'}</div>`).join('')}</div>
+          <div class="small muted">O passo a passo, os limites e as exigências também são conferidos no servidor.</div>
+        </div></div>
+      <div class="grid-2" style="align-items:start">
+        <div class="card"><div class="card-h"><h2>Etiquetas</h2><span class="hint">Para classificar os cards.</span></div>
+          <div class="card-b stack" style="gap:8px">${d.etiquetas.map((e, i) => `<div class="kc-etq"><input class="input sm" id="kc-etq-${i}" data-kc="etqNome" data-i="${i}" maxlength="40" value="${esc(e.nome)}" aria-label="Nome da etiqueta ${i + 1}">${corSel(e.cor || 'cinza', `id="kc-etqc-${i}" data-kc="etqCor" data-i="${i}" aria-label="Cor da etiqueta ${i + 1}"`)}<button class="btn icon sm ghost" data-act="kc-del-etq" data-i="${i}" aria-label="Remover etiqueta">${ic('x')}</button></div>`).join('') || '<div class="small muted">Nenhuma etiqueta.</div>'}
+            <div><button class="btn sm" data-act="kc-add-etq">${ic('plus')}Etiqueta</button></div></div></div>
+        <div class="card"><div class="card-h"><h2>Notificações</h2><span class="hint">Quem está no card (quem criou, responsável e participantes) é avisado no sininho.</span></div>
+          <div class="card-b stack" style="gap:10px">${Object.entries(KAN_NOTIF).map(([x, [l, ds]]) => `<label class="check kc-not"><input type="checkbox" data-kc="notif" data-x="${x}" ${d.notificar[x] !== false ? 'checked' : ''}><span><b>${l}</b><span class="small muted">${ds}</span></span></label>`).join('')}
+            <div class="field" style="max-width:320px"><label for="kc-pz">Avisar no sininho os prazos que vencem em até</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input sm num" id="kc-pz" data-kc="prazoDias" type="number" min="0" max="30" value="${d.prazoDias}" style="width:90px"><span class="small">dia(s)</span></div><div class="help">Prazos vencidos sempre aparecem.</div></div></div></div>
+      </div></div>`;
+  },
+  mount() {
+    const root = $('#kc-root'); if (!root) return;
+    const muda = e => {
+      const el = e.target, k = el.dataset.kc; if (!k) return;
+      const d = kanRascunho(), i = +el.dataset.i, c = d.colunas[i];
+      let refaz = false;
+      if (k === 'nome') { c.nome = el.value; } // sem redesenhar: um clique logo depois (ex.: Salvar) não pode se perder
+      else if (k === 'cor') { c.cor = el.value; refaz = true; }
+      else if (k === 'limite') c.limite = Math.max(0, Math.min(999, parseInt(el.value, 10) || 0));
+      else if (k === 'final') c.final = el.checked;
+      else if (k === 'exige') { c.exige = {...(c.exige || {}), [el.dataset.x]: el.checked}; }
+      else if (k === 'fluxo') { d.fluxo = el.value; refaz = true; }
+      else if (k === 'voltar') { d.voltar = el.checked; refaz = true; }
+      else if (k === 'gestorLivre') d.gestorLivre = el.checked;
+      else if (k === 'trans') { const s = new Set(d.transicoes[el.dataset.de] || []); el.checked ? s.add(el.dataset.para) : s.delete(el.dataset.para); d.transicoes[el.dataset.de] = [...s]; refaz = true; }
+      else if (k === 'etqNome') d.etiquetas[i].nome = el.value;
+      else if (k === 'etqCor') { d.etiquetas[i].cor = el.value; refaz = true; }
+      else if (k === 'notif') d.notificar = {...d.notificar, [el.dataset.x]: el.checked};
+      else if (k === 'prazoDias') d.prazoDias = Math.max(0, Math.min(30, parseInt(el.value, 10) || 0));
+      state.kanCfgSujo = true; const p = $('#kc-sujo'); if (p) p.hidden = false; const ds = $('[data-act="kc-descartar"]'); if (ds) ds.disabled = false;
+      if (refaz && e.type === 'change') render();
+    };
+    root.addEventListener('input', muda); root.addEventListener('change', muda);
+  }
+};
+async function kanCfgSalvar() {
+  if (!isMaster()) return denied();
+  const d = JSON.parse(JSON.stringify(kanRascunho()));
+  d.colunas.forEach(c => { c.nome = String(c.nome || '').trim(); c.limite = +c.limite || 0; if (!c.limite) delete c.limite; if (!c.final) delete c.final;
+    if (c.exige) { Object.keys(c.exige).forEach(x => { if (!c.exige[x]) delete c.exige[x]; }); if (!Object.keys(c.exige).length) delete c.exige; } });
+  const vazia = d.colunas.findIndex(c => !c.nome);
+  if (!d.colunas.length) return toast('O quadro precisa ter pelo menos uma etapa.', 'warn');
+  if (vazia >= 0) { const el = $('#kc-nome-' + vazia); if (el) { el.classList.add('err'); el.focus(); } return toast('Dê um nome para cada etapa.', 'warn'); }
+  const rep = d.colunas.map(c => c.nome.toLowerCase()).find((n, i, a) => a.indexOf(n) !== i);
+  if (rep) return toast(`Há duas etapas com o nome “${rep}”.`, 'warn');
+  const ids = new Set(d.colunas.map(c => c.id));
+  d.transicoes = Object.fromEntries(Object.entries(d.transicoes || {}).filter(([de]) => ids.has(de)).map(([de, ps]) => [de, ps.filter(p => ids.has(p) && p !== de)]));
+  d.etiquetas = d.etiquetas.map(e => ({nome: String(e.nome || '').trim(), cor: e.cor || 'cinza'})).filter(e => e.nome);
+  const er = d.etiquetas.map(e => e.nome.toLowerCase()).find((n, i, a) => a.indexOf(n) !== i);
+  if (er) return toast(`Há duas etiquetas com o nome “${er}”.`, 'warn');
+  if (d.fluxo === 'personalizado' && d.colunas.length > 1 && !Object.values(d.transicoes).some(ps => ps.length)) return toast('No passo a passo personalizado, libere pelo menos um caminho entre as etapas.', 'warn');
+  delete d.id;
+  if (await save('config', 'kanban', d)) { state.kanCfg = null; state.kanCfgSujo = false; render(); toast('Configurações do Kanban salvas.'); }
+}
+
+/* =========================================================
    VIEW: Angariações
    ========================================================= */
 let ANGARIACOES_OK = true;
@@ -2396,7 +3017,7 @@ async function analisarDia(btn) {
   delete rec.analiseErro;
   await save('diario', id, rec);
   restaura(); state.dirty = false; render();
-  const tempo = ` (${seg()} s)`;
+  const tempo = ` (${seg()} s${out.meta?.reserva ? ', pela OpenAI: o Gemini não respondeu' : ''})`;
   toast(jaLancou ? 'Relatório atualizado' + tempo + '. Os lançamentos da primeira análise foram mantidos.' : acoes.length ? `Relatório pronto${tempo} e ${acoes.filter(a => a.ok).length} registro(s) lançado(s).` : 'Relatório pronto' + tempo + '.');
 }
 async function criarRegistros(regs, did, dataDia) {
@@ -2487,7 +3108,7 @@ function diarioConfigHTML() {
     <div class="row" style="justify-content:flex-end"><button class="btn" data-act="dc-padrao">Restaurar sugestões</button><button class="btn primary" id="dc-save">Salvar configurações</button></div>`;
 }
 // Teste da inteligência: mostra o que a função publicada no Supabase está usando e o resultado de uma chamada curta
-const IA_VERSAO_ESPERADA = '2026-11-19.3';
+const IA_VERSAO_ESPERADA = '2026-11-19.5';
 async function testarIA(btn) {
   const box = $('#dc-ia-res'); if (!box) return;
   btn.disabled = true; box.innerHTML = '<div class="small muted">Testando…</div>';
@@ -2497,14 +3118,18 @@ async function testarIA(btn) {
     const r = await fnCall('diario-ia', {diagnostico: true});
     const nomes = {openai: 'OpenAI', gemini: 'Google Gemini', claude: 'Claude (Anthropic)'};
     const velha = r.versao !== IA_VERSAO_ESPERADA;
+    // função nova: um teste por inteligência, na ordem em que são usadas (principal e reservas)
+    const testes = Array.isArray(r.testes) && r.testes.length ? r.testes : [{provedor: r.provedor, modelo: r.modelo, ...(r.teste || {})}];
+    const papel = i => i === 0 ? 'Principal' : testes.length > 2 ? `Reserva ${i}` : 'Reserva';
+    const resultado = t => t.ok ? `<span class="pill ok">OK</span> em ${(t.ms / 1000).toFixed(1)} s` : `<span class="pill bad">Falhou</span> <span class="small">${esc(t.msg || '')}</span>`;
     box.innerHTML = `${velha ? `<div class="ang-dup" role="alert" style="margin-bottom:12px">${ic('info')}<div><b>A função publicada não é a mais recente</b><div>Versão no Supabase: ${esc(r.versao || '—')}; esperada: ${IA_VERSAO_ESPERADA}. Atualize a função <b>diario-ia</b> (Edge Functions → diario-ia → Code → colar o arquivo novo → Deploy).</div></div></div>` : ''}
       <table class="t"><tbody>
-        ${linha('Resultado do teste', r.teste?.ok ? `<span class="pill ok">OK</span> em ${(r.teste.ms / 1000).toFixed(1)} s` : `<span class="pill bad">Falhou</span> ${esc(r.teste?.msg || '')}`)}
-        ${linha('Inteligência em uso', esc(nomes[r.provedor] || r.provedor))}
-        ${linha('Modelo', esc(r.modelo || '—'))}${r.esforco ? linha('Raciocínio', esc(r.esforco)) : ''}
+        ${testes.map((t, i) => linha(`${papel(i)}: ${esc(nomes[t.provedor] || t.provedor)} <span class="small">(${esc(t.modelo || '—')})</span>`, resultado(t))).join('')}
+        ${testes.length < 2 ? linha('Reserva', '<span class="pill neutral">nenhuma</span> <span class="small muted">cadastre a chave de outra IA para a análise seguir nela quando a principal não responder</span>') : ''}
+        ${r.esforco ? linha('Raciocínio da OpenAI', esc(r.esforco)) : ''}
         ${linha('Chave OpenAI (OPENAI_API_KEY)', sim(r.chaves?.openai))}${linha('Chave Gemini (GEMINI_API_KEY)', sim(r.chaves?.gemini))}${linha('Chave Claude (ANTHROPIC_API_KEY)', sim(r.chaves?.claude))}
         ${linha('Versão da função', esc(r.versao || '—'))}
-      </tbody></table>${r.teste?.ok ? '' : `<div class="small muted" style="margin-top:8px">${esc(r.teste?.msg || '')}</div>`}`;
+      </tbody></table>`;
   } catch (e) {
     const msg = String(e.message || e);
     // a função antiga não conhece o teste e responde pedindo o relato
@@ -4341,6 +4966,51 @@ const ACTIONS = {
     if (error || !data) { if (w) w.close(); return toast('Não foi possível abrir o arquivo.', 'bad'); }
     if (w) w.location.href = data.signedUrl; else location.href = data.signedUrl;
   },
+  // kanban
+  'kan-novo': el => kanForm({}, el.dataset.col),
+  'kan-arq': el => { state.kan.arquivados = el.dataset.v === '1'; render(); },
+  'kan-chk-add': () => { const inp = $('#kb-chk-novo'), t = inp.value.trim(); if (!t) return inp.focus(); const box = $('#kb-chk'); box.insertAdjacentHTML('beforeend', kanChkRow({texto: t}, box.children.length)); inp.value = ''; inp.focus(); },
+  'kan-chk-del': el => el.closest('[data-chk]').remove(),
+  'kan-comentar': el => kanComentar(el),
+  'kan-com-del': el => { const id = el.dataset.id, c = el.dataset.c;
+    if (!confirm('Excluir este comentário?')) return;
+    sb.rpc('kanban_comentario_excluir', {p_id: id, p_comentario: c}).then(({error}) => { if (error) return kanErro(error);
+      const k = S.kanban.get(id); if (k) S.kanban.set(id, {...k, comentarios: (k.comentarios || []).filter(x => x.id !== c)}); kanAtualizaAberto(); scheduleRender(true); scheduleReload('kanban'); toast('Comentário excluído.'); }); },
+  'kan-arquivar': async el => { const k = S.kanban.get(el.dataset.id); if (!k) return; if (!kanPode(k)) return denied();
+    if (k.arquivado) { const b = kanBloqueio(k, k.coluna); if (b) return toast(b, 'warn'); }
+    if (await kanSalvar(k.id, {arquivado: !k.arquivado}, false)) { closeModal(); toast(k.arquivado ? 'Card de volta ao quadro.' : 'Card arquivado. Veja em “Arquivados”.'); } },
+  'kan-del': el => { const k = S.kanban.get(el.dataset.id); if (!k) return; if (!kanPodeExcluir(k)) return denied();
+    confirmBox(`Excluir o card <b>${esc(k.titulo)}</b>? Os comentários e o histórico também são apagados. Para guardar, use “Arquivar”.`, 'Excluir', async () => { if (await kanExcluir(k)) toast('Card excluído.'); }); },
+  // notificações
+  'nt-toggle': () => { if ($('#nt-panel').hidden) ntAbrir(); else ntFechar(); },
+  'nt-abrir': el => { const n = S.notificacoes.get(el.dataset.id); if (!n) return; ntMarcar([n.id]); if (n.card_id) ntIrParaCard(n.card_id); else { ntFechar(); toast(n.titulo); } },
+  'nt-card': el => ntIrParaCard(el.dataset.card),
+  'nt-todas': () => ntMarcar(ntNaoLidas().map(n => n.id)),
+  'nt-del': async el => { const id = el.dataset.id; S.notificacoes.delete(id); renderBell(); const {error} = await sb.from('notificacoes').delete().eq('id', id); if (error) scheduleReload('notificacoes'); },
+  'nt-limpar': async () => { const ids = ntLista().filter(n => n.lida).map(n => n.id); ids.forEach(id => S.notificacoes.delete(id)); renderBell();
+    const {error} = await sb.from('notificacoes').delete().in('id', ids); if (error) scheduleReload('notificacoes'); },
+  'nt-navegador': async () => { try { const r = await Notification.requestPermission(); toast(r === 'granted' ? 'Pronto: com a aba em segundo plano, os avisos também aparecem pelo navegador.' : 'O navegador não liberou os avisos. Você pode liberar nas configurações do site.', r === 'granted' ? 'ok' : 'warn'); } catch (e) {} renderBell(); },
+  // configurações do kanban
+  'kc-add-col': () => { const d = kanRascunho(); d.colunas.push({id: 'c' + uid(), nome: 'Nova etapa', cor: 'cinza'}); state.kanCfgSujo = true; render(); const el = $('#kc-nome-' + (d.colunas.length - 1)); if (el) { el.focus(); el.select(); } },
+  'kc-del-col': el => { const d = kanRascunho(), i = +el.dataset.i, c = d.colunas[i]; if (!c) return;
+    if (d.colunas.length === 1) return toast('O quadro precisa ter pelo menos uma etapa.', 'warn');
+    const n = list('kanban').filter(k => k.coluna === c.id).length;
+    if (n) return toast(`A etapa “${c.nome}” tem ${n} card(s), contando os arquivados. Mova ou exclua esses cards antes de remover a etapa.`, 'warn');
+    d.colunas.splice(i, 1); delete d.transicoes[c.id]; Object.values(d.transicoes).forEach(ps => { const j = ps.indexOf(c.id); if (j >= 0) ps.splice(j, 1); });
+    state.kanCfgSujo = true; render(); },
+  'kc-mover': el => { const d = kanRascunho(), i = +el.dataset.i, j = i + +el.dataset.d; if (j < 0 || j >= d.colunas.length) return; [d.colunas[i], d.colunas[j]] = [d.colunas[j], d.colunas[i]]; state.kanCfgSujo = true; render(); },
+  'kc-add-etq': () => { const d = kanRascunho(); d.etiquetas.push({nome: '', cor: 'azul'}); state.kanCfgSujo = true; render(); const el = $('#kc-etq-' + (d.etiquetas.length - 1)); if (el) el.focus(); },
+  'kc-del-etq': el => { kanRascunho().etiquetas.splice(+el.dataset.i, 1); state.kanCfgSujo = true; render(); },
+  'kc-trans': el => { const d = kanRascunho(), v = el.dataset.v; d.transicoes = {};
+    d.colunas.forEach((c, i) => { d.transicoes[c.id] = v === 'todas' ? d.colunas.filter(x => x.id !== c.id).map(x => x.id) : v === 'seq' ? (d.colunas[i + 1] ? [d.colunas[i + 1].id] : []) : []; });
+    state.kanCfgSujo = true; render(); },
+  'kc-salvar': () => kanCfgSalvar(),
+  'kc-descartar': () => { state.kanCfg = null; state.kanCfgSujo = false; render(); toast('Alterações descartadas.'); },
+  'kc-padrao': () => confirmBox('Voltar as etapas, o passo a passo, as etiquetas e as notificações do Kanban para o padrão? Nada é salvo até você clicar em <b>Salvar configurações</b>.', 'Restaurar', async () => {
+    const usadas = new Set(list('kanban').map(k => k.coluna)), padrao = JSON.parse(JSON.stringify(KAN_PADRAO)), ids = new Set(padrao.colunas.map(c => c.id));
+    const faltam = kanRascunho().colunas.filter(c => usadas.has(c.id) && !ids.has(c.id));
+    if (faltam.length) return toast(`As etapas ${faltam.map(c => '“' + c.nome + '”').join(', ')} têm cards. Mova os cards antes de restaurar o padrão.`, 'warn');
+    state.kanCfg = padrao; state.kanCfgSujo = true; render(); }),
   'vd-new': () => vendaForm(),
   'ang-new': () => angForm(),
   'ang-edit': el => { const a = S.angariacoes.get(el.dataset.id); if (a) angForm(a); },
