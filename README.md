@@ -139,3 +139,15 @@ Menu **Kanban** (grupo Gestão): quadro de cards em etapas (colunas). Cada card 
 - O passo a passo, os limites e as exigências são conferidos também no banco; as notificações são criadas pelo próprio banco (ninguém consegue forjar).
 
 **Banco:** rode no Supabase (SQL Editor) `supabase/migrations/20261120100000_kanban.sql`.
+
+## Aparência: Tema CRM e layout clássico
+
+O sistema abre no **Tema CRM**:
+- menu no alto, com ícones que crescem e mostram o nome ao passar o mouse;
+- fundo off-white no tema claro e tons de cinza no escuro;
+- botões vermelhos;
+- à direita: sininho, tela cheia, atualizar, lua/sol (claro/escuro, vale só no aparelho de cada pessoa) e o menu ☰ (Meus dados, Minha senha, Sair; no celular também lista todas as telas).
+
+**Voltar ao layout anterior (ponto de backup `TEMA_CRM`):**
+- **Na hora, sem publicar nada:** o Master entra em **Configurações → Aparência → Clássico (versão anterior)**. Vale para todos.
+- **No código:** o branch `TEMA_CRM` no GitHub guarda a versão anterior ao tema (não apague). No Claude Code, o comando `/TEMA_CRM` (arquivo `.claude/commands/TEMA_CRM.md`) faz a volta passo a passo.
