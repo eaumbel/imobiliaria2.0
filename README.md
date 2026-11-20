@@ -21,6 +21,9 @@ Sistema de gestão da equipe de corretores: painel de BI e metas, vendas e comis
 | `supabase/migrations/20261115100000_contratos_identidade.sql` | Contratos: IP pelo servidor, dossiê de comprovação e impressões digitais (SHA-256) |
 | `gestao/modelos/proposta-compra.pdf` | Modelo da Proposta de Compra (PDF com campos preenchíveis) |
 | `supabase/migrations/20261115140000_propostas.sql` | Propostas de compra: tabela, status, link público (5 dias úteis) e funções de assinatura |
+| `supabase/migrations/20261121100000_comunicacao_push.sql` | Comunicados, aparelhos inscritos para push e disparo automático das notificações |
+| `supabase/functions/enviar-push/index.ts` | Função que envia as notificações push (Web Push) |
+| `gestao/sw.js`, `gestao/manifest.webmanifest`, ícones | Recebe o push no aparelho e permite instalar o sistema na tela de início |
 
 ## Configuração (uma vez)
 
@@ -139,6 +142,24 @@ Menu **Kanban** (grupo Gestão): quadro de cards em etapas (colunas). Cada card 
 - O passo a passo, os limites e as exigências são conferidos também no banco; as notificações são criadas pelo próprio banco (ninguém consegue forjar).
 
 **Banco:** rode no Supabase (SQL Editor) `supabase/migrations/20261120100000_kanban.sql`.
+
+## Comunicação e notificações push
+
+- **Aba "Comunicação"** (vertical, na lateral direita): quem tem a permissão **"Enviar comunicados para a equipe"** (Master e Coordenador por padrão; ajustável em **Usuários → Permissões**) escreve um aviso de até **75 caracteres** e envia para **todos os usuários ativos**. O aviso chega como **notificação push** e aparece no **sininho**. A aba mostra os últimos comunicados enviados.
+- **Push do Kanban:** todo aviso de card que já ia para o sininho (mudança de etapa, responsável, participante, comentário, prazo, arquivamento, exclusão) também vai por push para quem está vinculado ao card.
+- **Clicar na notificação** (no sininho ou no push do celular/computador) abre o sistema direto no card. Comunicados abrem o sininho.
+- **Ativar em cada aparelho:** sininho → **Ativar notificações neste aparelho** → permitir. Depois disso aparece **Testar**.
+  - **iPhone/iPad (iOS 16.4 ou mais novo):** no Safari, abra o sistema → **Compartilhar → Adicionar à Tela de Início** → abra pelo ícone **Gestão 2.0** e ative pelo sininho. No Safari comum (fora do ícone), a Apple não permite push.
+  - **Android, Windows e Mac:** funciona direto no Chrome, Edge, Firefox ou Safari.
+- Cada aparelho fica ligado a quem entrou por último nele; ao **Sair**, o aparelho para de receber os avisos dessa pessoa.
+
+**Configuração (uma vez):**
+1. **Banco:** rode no SQL Editor `supabase/migrations/20261121100000_comunicacao_push.sql` (precisa do `20261120100000_kanban.sql` antes). Ele liga a extensão **pg_net**, que o banco usa para chamar a função de envio.
+2. **Função:** Edge Functions → Deploy a new function → Via Editor → nome **`enviar-push`** → cole `supabase/functions/enviar-push/index.ts` → Deploy. Em **Settings**, **desligue "Verify JWT"**.
+   Linha de comando: `supabase functions deploy enviar-push --no-verify-jwt`
+3. Nada mais: as chaves do push (VAPID) são geradas e guardadas no banco sozinhas, na primeira vez que alguém ativa as notificações. Opcional: o segredo `PUSH_CONTATO` (ex.: `mailto:voce@eaumbel.com.br`) troca o contato informado aos serviços de push.
+
+Se a função ficar com outro endereço, ajuste a coluna `funcao_url` da tabela `push_config`.
 
 ## Aparência: Tema CRM e layout clássico
 
