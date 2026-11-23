@@ -1267,14 +1267,15 @@ const corretor = id => S.corretores.get(id);
 /* =========================================================
    Controle de acesso — perfis e permissões
    ========================================================= */
-const PERFIS = {master: 'Master · Gestor de Vendas', coordenador: 'Coordenador', corretor: 'Corretor'};
-const PERFIL_CURTO = {master: 'Master', coordenador: 'Coordenador', corretor: 'Corretor'};
+const PERFIS = {master: 'Master · Gestor de Vendas', diretor: 'Diretor', coordenador: 'Coordenador', corretor: 'Corretor'};
+const PERFIL_CURTO = {master: 'Master', diretor: 'Diretor', coordenador: 'Coordenador', corretor: 'Corretor'};
 const MENUS_ON = {diario: 1, relatorios: 1, agenda: 1, kanban: 1, conhecimento: 1, treinamentos: 1, ponto: 1, vendas: 1, angariacoes: 1, contratos: 1};
 const PERMS = {
   master:      {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 1, usuarios: 1, conteudo: 1, operacaoTodos: 1, kanbanTodos: 1, comunicacao: 1},
   coordenador: {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 0, usuarios: 0, conteudo: 1, operacaoTodos: 1, kanbanTodos: 1, comunicacao: 1},
   corretor:    {...MENUS_ON, equipe: 0, metas: 0, metasEdit: 0, usuarios: 0, conteudo: 0, operacaoTodos: 0, kanbanTodos: 0, comunicacao: 0}
 };
+PERMS.diretor = {...PERMS.coordenador}; // Diretor: mesmos acessos do Coordenador
 const PERM_DEFS = [
   {k: 'diario', g: 'Menus que aparecem', l: 'Diário de bordo', d: 'Cada um escreve e vê o próprio diário. Ver o da equipe depende de "Ver números de toda a equipe".'},
   {k: 'relatorios', g: 'Menus que aparecem', l: 'Relatórios'},
@@ -1301,7 +1302,8 @@ const OWNER = {id: '__owner', nome: 'Dono da página', perfil: 'master', virtual
 const perfilOf = u => PERFIS[u?.perfil] ? u.perfil : 'corretor';
 const isMaster = () => !!ME && perfilOf(ME) === 'master';
 const cfgPerm = () => S.config.get('permissoes') || {};
-const perfilPode = (pf, k) => { if (pf === 'master') return true; const v = cfgPerm()[pf]?.[k]; return v === true || v === false ? v : !!PERMS[pf][k]; };
+// O Diretor tem os mesmos acessos do Coordenador: segue a coluna dele enquanto a do Diretor não for alterada
+const perfilPode = (pf, k) => { if (pf === 'master') return true; const v = cfgPerm()[pf]?.[k]; if (v === true || v === false) return v; if (pf === 'diretor') return perfilPode('coordenador', k); return !!PERMS[pf][k]; };
 const can = p => { if (!ME) return false; const pf = perfilOf(ME); if (pf === 'master') return true;
   const ov = ME.permissoes?.[p]; if (ov === true || ov === false) return ov; return perfilPode(pf, p); };
 const participa = c => c.participa != null ? c.participa !== false : perfilOf(c) !== 'master';
@@ -4156,11 +4158,11 @@ function permHTML() {
   const outros = corretores().filter(c => perfilOf(c) !== 'master');
   const alvo = sel ? corretor(sel) : null;
   const row = d => `<td><b style="font-size:14px">${esc(d.l)}</b>${d.d ? `<div class="small muted">${esc(d.d)}</div>` : ''}</td>`;
-  const tabelaPerfis = `<table class="t"><thead><tr><th>Permissão</th><th style="text-align:center">Master</th><th style="text-align:center">Coordenador</th><th style="text-align:center">Corretor</th></tr></thead><tbody>
-    ${grupos.map(g => `<tr><td colspan="4" style="background:var(--surface-2);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">${g}</td></tr>` +
+  const tabelaPerfis = `<table class="t"><thead><tr><th>Permissão</th><th style="text-align:center">Master</th><th style="text-align:center">Diretor</th><th style="text-align:center">Coordenador</th><th style="text-align:center">Corretor</th></tr></thead><tbody>
+    ${grupos.map(g => `<tr><td colspan="5" style="background:var(--surface-2);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">${g}</td></tr>` +
       PERM_DEFS.filter(d => d.g === g).map(d => `<tr>${row(d)}
         <td style="text-align:center"><span class="lock-note" style="justify-content:center">${ic('lock')}Sempre</span></td>
-        ${['coordenador', 'corretor'].map(pf => `<td style="text-align:center"><label class="switch" style="justify-content:center"><input type="checkbox" data-pp="${pf}" data-k="${d.k}" ${perfilPode(pf, d.k) ? 'checked' : ''} aria-label="${esc(d.l)} para ${PERFIS[pf]}"><i></i></label></td>`).join('')}</tr>`).join('')).join('')}
+        ${['diretor', 'coordenador', 'corretor'].map(pf => `<td style="text-align:center"><label class="switch" style="justify-content:center"><input type="checkbox" data-pp="${pf}" data-k="${d.k}" ${perfilPode(pf, d.k) ? 'checked' : ''} aria-label="${esc(d.l)} para ${PERFIS[pf]}"><i></i></label></td>`).join('')}</tr>`).join('')).join('')}
   </tbody></table>`;
   const ov = alvo?.permissoes || {};
   const tabelaUser = alvo ? `<table class="t"><thead><tr><th>Permissão</th><th>Padrão do perfil (${PERFIL_CURTO[perfilOf(alvo)]})</th><th>Acesso deste usuário</th></tr></thead><tbody>
@@ -4229,7 +4231,7 @@ async function saveUser() {
   const perfil = val('us-perfil');
   if (!isMaster() && (perfil === 'master' || perfilOf(old) === 'master' && old.id)) return denied();
   if (old.id && perfilOf(old) === 'master' && perfil !== 'master' && !mastersAtivos(id).length) { toast('É preciso manter pelo menos um usuário Master ativo.', 'warn'); return; }
-  if (perfil !== 'master' && !val('us-creci')) { $('#us-creci').classList.add('err'); $('#us-creci').focus(); toast('Informe o CRECI do corretor ou coordenador.', 'warn'); return; }
+  if (perfil !== 'master' && !val('us-creci')) { $('#us-creci').classList.add('err'); $('#us-creci').focus(); toast('Informe o CRECI (obrigatório para Diretor, Coordenador e Corretor).', 'warn'); return; }
   const rec = {nome: val('us-nome'), telefone: val('us-tel'), email, creci: val('us-creci'), especialidade: val('us-esp'), login, perfil, participa: $('#us-part').checked, ativo: old.ativo !== false,
     _senha: senha || '', ...(old.permissoes ? {permissoes: old.permissoes} : {}), criadoEm: old.criadoEm || Date.now(), ...(old.exemplo ? {exemplo: true} : {})};
   if (await save('corretores', id, rec)) { toast(old.id ? 'Cadastro atualizado.' : `${firstName(rec.nome)} cadastrado(a).`); state.users.tab = 'lista'; state.users.editId = null; render(); }
@@ -6109,7 +6111,7 @@ const ACTIONS = {
   'us-perm': () => { if (!isMaster()) return denied(); state.users.tab = 'perm'; state.users.editId = null; render(); },
   'perm-ov': el => setOverride(el.dataset.k, el.dataset.v),
   'perm-ov-clear': () => setOverride(null),
-  'perm-reset': () => { if (!isMaster()) return denied(); confirmBox('Voltar as permissões de Coordenador e Corretor para o padrão do sistema? As exceções por usuário continuam.', 'Restaurar', async () => { if (await save('config', 'permissoes', {})) toast('Permissões padrão restauradas.'); }); },
+  'perm-reset': () => { if (!isMaster()) return denied(); confirmBox('Voltar as permissões de Diretor, Coordenador e Corretor para o padrão do sistema? As exceções por usuário continuam.', 'Restaurar', async () => { if (await save('config', 'permissoes', {})) toast('Permissões padrão restauradas.'); }); },
   'us-edit': el => { const c = corretor(el.dataset.id); if (c && !isMaster() && perfilOf(c) === 'master') return denied(); state.users.tab = 'form'; state.users.editId = el.dataset.id; render(); window.scrollTo(0, 0); },
   'us-filtro': el => { state.users.filtro = el.dataset.v; render(); },
   'us-limpar': () => confirmBox('Remover todos os registros de exemplo (corretores, metas, visitas, agenda, cards, treinamentos e assiduidade de exemplo)? Os dados que você cadastrou ficam.', 'Remover exemplos', async () => {

@@ -226,6 +226,13 @@ Os números do Brasil podem ser digitados como `(43) 99999-0000`; o sistema conv
 
 **Rotinas automáticas:** chamam `POST /functions/v1/enviar-sms` com `Authorization: Bearer <service_role>` e o corpo `{"acao": "enviar", "para": "(43) 99999-0000", "template": "chave", "dados": {...}}`.
 
+## Tipo de usuário Diretor
+
+O tipo **Diretor** tem os **mesmos acessos do Coordenador**. Em Usuários → Permissões ele ganha uma coluna própria: enquanto o Master não mexer nela, o Diretor segue exatamente o que estiver marcado para o Coordenador.
+
+**Publicar:**
+1. Supabase → SQL Editor: rodar `supabase/migrations/20261123100000_diretor.sql`.
+2. Atualizar a função `admin-usuarios`: Edge Functions → admin-usuarios → Code → colar `supabase/functions/admin-usuarios/index.ts` → Deploy. Sem isso, salvar um usuário como Diretor vira Corretor.
 ## Kanban: anexos nos cards
 
 No card do Kanban (novo ou existente) há a seção **Anexos**:
