@@ -11,7 +11,7 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const EMAIL_DOM = Deno.env.get("EMAIL_DOMINIO") ?? "acesso.eaumbel.com.br";
-const PERFIS = ["master", "coordenador", "corretor"];
+const PERFIS = ["master", "diretor", "coordenador", "corretor"];
 
 const resp = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
@@ -73,7 +73,9 @@ Deno.serve(async (req) => {
     if (typeof ov === "boolean") podeUsuarios = ov;
     else {
       const { data: cfg } = await admin.from("config").select("data").eq("id", "permissoes").maybeSingle();
-      const v = cfg?.data?.[me.perfil]?.usuarios;
+      // o Diretor segue a configuração do Coordenador enquanto não tiver uma própria
+      let v = cfg?.data?.[me.perfil]?.usuarios;
+      if (typeof v !== "boolean" && me.perfil === "diretor") v = cfg?.data?.coordenador?.usuarios;
       podeUsuarios = typeof v === "boolean" ? v : false;
     }
   }

@@ -642,6 +642,20 @@ select.input.rel-per{width:170px;flex:none}
 .kb-com-t{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:2px}
 .kb-det summary{cursor:pointer;font-weight:700;font-size:13.5px}
 .kb-hist{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.anx-lista{display:flex;flex-direction:column;gap:6px}
+.anx-it{display:flex;align-items:center;gap:8px;padding:7px 8px 7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.anx-it > svg{width:18px;height:18px;flex:none;color:var(--muted)}
+.anx-tx{display:flex;flex-direction:column;min-width:0;flex:1}.anx-tx b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.anx-tx span{font-size:12px;color:var(--muted)}
+.anx-it .btn svg{width:15px;height:15px}
+.anx-ver{position:fixed;inset:0;z-index:200;background:rgba(10,10,10,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+.anx-box{background:var(--surface);border-radius:16px;box-shadow:var(--shadow-lg);width:min(1000px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden}
+.anx-h{display:flex;align-items:center;gap:10px;padding:12px 14px 12px 18px;border-bottom:1px solid var(--line)}.anx-h > svg{width:18px;height:18px;flex:none;color:var(--muted)}
+.anx-h b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.anx-corpo{overflow:auto;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;align-items:center;gap:12px;min-height:200px}
+.anx-img{max-width:100%;max-height:calc(100vh - 140px);object-fit:contain;border-radius:8px;background:#fff}
+.anx-pg{width:100%;max-width:850px;border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,.15);background:#fff}
+.anx-txt{width:100%;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;margin:0}
+@media (max-width: 620px){.anx-ver{padding:0}.anx-box{border-radius:0;height:100%}.anx-it{flex-wrap:wrap}.anx-tx{flex-basis:calc(100% - 30px)}.anx-it .btn{margin-left:auto}.anx-it .btn ~ .btn{margin-left:0}}
 .kb-pz.bad{color:var(--bad);font-weight:700}.kb-pz.warn{color:var(--warn);font-weight:700}
 /* ---------- Sininho ---------- */
 .bell-wrap{position:relative;flex:none}
@@ -747,7 +761,7 @@ select.input.rel-per{width:170px;flex:none}
 .kc-etq{display:grid;grid-template-columns:minmax(0,1fr) 140px 32px;gap:8px;align-items:center}
 .kc-not{align-items:flex-start}.kc-not > span{display:flex;flex-direction:column;gap:1px}.kc-not input{margin-top:3px}
 @media (max-width: 900px){
-  .kb-form{grid-template-columns:1fr}
+  .kb-form{grid-template-columns:minmax(0,1fr)}
   .kb-board{min-height:0}
   .kc-fluxos{grid-template-columns:1fr}
 }
@@ -1055,6 +1069,7 @@ const ICON = {
   mega: '<path d="M3 10v4h3l6 4V6L6 10z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M19 6.5a8 8 0 0 1 0 11"/>',
   archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10h14V9M10 13h4"/>',
   up: '<path d="m6 15 6-6 6 6"/>',
+  clip: '<path d="M20.5 11.5 12 20a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.7a1.7 1.7 0 0 1-2.4-2.4L15 7.6"/>',
   sol: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   lua: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   tela: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
@@ -1252,14 +1267,15 @@ const corretor = id => S.corretores.get(id);
 /* =========================================================
    Controle de acesso — perfis e permissões
    ========================================================= */
-const PERFIS = {master: 'Master · Gestor de Vendas', coordenador: 'Coordenador', corretor: 'Corretor'};
-const PERFIL_CURTO = {master: 'Master', coordenador: 'Coordenador', corretor: 'Corretor'};
+const PERFIS = {master: 'Master · Gestor de Vendas', diretor: 'Diretor', coordenador: 'Coordenador', corretor: 'Corretor'};
+const PERFIL_CURTO = {master: 'Master', diretor: 'Diretor', coordenador: 'Coordenador', corretor: 'Corretor'};
 const MENUS_ON = {diario: 1, relatorios: 1, agenda: 1, kanban: 1, conhecimento: 1, treinamentos: 1, ponto: 1, vendas: 1, angariacoes: 1, contratos: 1};
 const PERMS = {
   master:      {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 1, usuarios: 1, conteudo: 1, operacaoTodos: 1, kanbanTodos: 1, comunicacao: 1},
   coordenador: {...MENUS_ON, equipe: 1, metas: 1, metasEdit: 0, usuarios: 0, conteudo: 1, operacaoTodos: 1, kanbanTodos: 1, comunicacao: 1},
   corretor:    {...MENUS_ON, equipe: 0, metas: 0, metasEdit: 0, usuarios: 0, conteudo: 0, operacaoTodos: 0, kanbanTodos: 0, comunicacao: 0}
 };
+PERMS.diretor = {...PERMS.coordenador}; // Diretor: mesmos acessos do Coordenador
 const PERM_DEFS = [
   {k: 'diario', g: 'Menus que aparecem', l: 'Diário de bordo', d: 'Cada um escreve e vê o próprio diário. Ver o da equipe depende de "Ver números de toda a equipe".'},
   {k: 'relatorios', g: 'Menus que aparecem', l: 'Relatórios'},
@@ -1286,7 +1302,8 @@ const OWNER = {id: '__owner', nome: 'Dono da página', perfil: 'master', virtual
 const perfilOf = u => PERFIS[u?.perfil] ? u.perfil : 'corretor';
 const isMaster = () => !!ME && perfilOf(ME) === 'master';
 const cfgPerm = () => S.config.get('permissoes') || {};
-const perfilPode = (pf, k) => { if (pf === 'master') return true; const v = cfgPerm()[pf]?.[k]; return v === true || v === false ? v : !!PERMS[pf][k]; };
+// O Diretor tem os mesmos acessos do Coordenador: segue a coluna dele enquanto a do Diretor não for alterada
+const perfilPode = (pf, k) => { if (pf === 'master') return true; const v = cfgPerm()[pf]?.[k]; if (v === true || v === false) return v; if (pf === 'diretor') return perfilPode('coordenador', k); return !!PERMS[pf][k]; };
 const can = p => { if (!ME) return false; const pf = perfilOf(ME); if (pf === 'master') return true;
   const ov = ME.permissoes?.[p]; if (ov === true || ov === false) return ov; return perfilPode(pf, p); };
 const participa = c => c.participa != null ? c.participa !== false : perfilOf(c) !== 'master';
@@ -2301,6 +2318,7 @@ const KAN_NOTIF = {
   movimento: ['Mudança de etapa', 'Quando o card muda de coluna, é arquivado ou volta ao quadro.'],
   comentario: ['Comentários', 'Quando alguém comenta num card.'],
   prazo: ['Prazo alterado', 'Quando o prazo do card muda.'],
+  anexo: ['Anexos', 'Quando alguém anexa um arquivo num card.'],
   exclusao: ['Card excluído', 'Quando um card em que a pessoa está é excluído.']
 };
 const KAN_PADRAO = {
@@ -2382,6 +2400,7 @@ function kanCardHTML(k, cfg) {
     <div class="kb-meta"><span class="pill ${p[1]}">${p[0]}</span>
       ${pz ? `<span class="kb-mini ${pz.cls}">${ic('clock')}${pz.txt}</span>` : ''}
       ${chk.length ? `<span class="kb-mini ${feitos === chk.length ? 'ok' : ''}">${ic('check')}${feitos}/${chk.length}</span>` : ''}
+      ${(k.anexos || []).length ? `<span class="kb-mini" title="Anexos">${ic('clip')}${k.anexos.length}</span>` : ''}
       ${nc ? `<span class="kb-mini">${ic('msg')}${nc}</span>` : ''}
       <span class="grow"></span><span class="kb-avs">${pessoas.slice(0, 3).map(kanAv).join('')}${pessoas.length > 3 ? `<span class="avatar kb-av mais">+${pessoas.length - 3}</span>` : ''}</span></div>
   </div>`;
@@ -2524,6 +2543,9 @@ function kanForm(k = {}, colunaInicial) {
         <div class="field"><label for="kb-desc">Descrição</label><textarea class="input" id="kb-desc" maxlength="10000" placeholder="Detalhes, contexto, links…">${esc(k.descricao)}</textarea></div>
         <div class="field"><label>Checklist</label><div id="kb-chk" class="stack" style="gap:6px">${(k.checklist || []).map(kanChkRow).join('')}</div>
           <div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input sm" id="kb-chk-novo" maxlength="300" placeholder="Novo item do checklist"><button type="button" class="btn sm" data-act="kan-chk-add">${ic('plus')}Item</button></div></div>
+        <div class="field"><label>Anexos</label><div id="kb-anx" class="anx-lista">${kanAnexosHTML(k)}</div>
+          <div class="row" style="gap:8px"><button type="button" class="btn sm" data-act="kan-anx-add">${ic('clip')}Anexar arquivo</button><span class="small muted">Imagem, PDF, Word, Excel, PowerPoint, texto ou CSV · até 20 MB</span>
+          <input type="file" id="kb-anx-in" multiple accept="${ANX_ACCEPT}" hidden></div></div>
         ${novo ? '' : `<div class="field"><label for="kb-com-txt">Comentários</label><div id="kb-coms" class="stack" style="gap:10px">${kanComentariosHTML(k)}</div>
           <textarea class="input" id="kb-com-txt" maxlength="4000" style="min-height:64px" placeholder="Escreva um comentário (os envolvidos são avisados)"></textarea>
           <div class="row" style="justify-content:flex-end"><button type="button" class="btn sm" data-act="kan-comentar" data-id="${k.id}">${ic('msg')}Comentar</button></div></div>
@@ -2543,7 +2565,16 @@ function kanForm(k = {}, colunaInicial) {
       ${novo ? '' : `<button class="btn ${kanPodeExcluir(k) ? '' : 'left'}" data-act="kan-arquivar" data-id="${k.id}">${ic('archive')}${k.arquivado ? 'Tirar do arquivo' : 'Arquivar'}</button>`}
       <button class="btn" data-act="modal-close">Cancelar</button><button class="btn primary" id="kb-salvar">${novo ? 'Criar card' : 'Salvar'}</button>`,
     onMount: m => {
-      modalCleanup = () => { KAN_ABERTO = null; };
+      modalCleanup = () => { KAN_ABERTO = null; anxFechar(); };
+      // Anexos: no card novo ficam na fila e são enviados depois de salvar; no card existente, vão na hora
+      m._fila = []; m._pintaFila = () => { $('#kb-anx', m).innerHTML = kanAnexosHTML(novo ? {} : (S.kanban.get(k.id) || k), m._fila); };
+      $('#kb-anx-in', m).onchange = async e => {
+        const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
+        const bons = fs.filter(f => { const er = anxValida(f); if (er) toast(er, 'warn'); return !er; }); if (!bons.length) return;
+        if (novo) { m._fila.push(...bons); m._pintaFila(); return; }
+        if (!kanPode(S.kanban.get(k.id) || k)) return denied();
+        await kanAnexarVarios(k.id, bons);
+      };
       const novoItem = $('#kb-chk-novo', m);
       novoItem.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); ACTIONS['kan-chk-add'](); } };
       // responsável escolhido sai da lista de participantes
@@ -2559,7 +2590,9 @@ function kanForm(k = {}, colunaInicial) {
         const bloq = (novo || rec.coluna !== k.coluna) ? kanBloqueio({...k, ...rec}, rec.coluna, cfg, novo) : '';
         if (bloq) return toast(bloq, 'warn');
         const btn = $('#kb-salvar', m); btn.disabled = true;
-        const ok = await kanSalvar(k.id || uid(), rec, novo);
+        const idCard = k.id || uid(), fila = [...(m._fila || [])];
+        const ok = await kanSalvar(idCard, rec, novo);
+        if (ok && novo && fila.length) { closeModal(); toast('Card criado. Enviando os anexos…'); await kanAnexarVarios(idCard, fila); return; }
         btn.disabled = false;
         if (ok) { closeModal(); toast(novo ? 'Card criado.' : 'Card salvo.'); }
       };
@@ -2586,7 +2619,106 @@ async function kanComentar(btn) {
   txt.value = ''; txt.classList.remove('err'); kanAtualizaAberto(); scheduleRender(true); scheduleReload('kanban');
   toast('Comentário enviado. Os envolvidos foram avisados.');
 }
+/* ---------- Anexos dos cards (armazenamento privado "kanban") ---------- */
+const ANX_MAX = 20 * 1024 * 1024;
+const ANX_TIPOS = {pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
+  txt: 'text/plain', csv: 'text/csv', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'};
+const ANX_ACCEPT = Object.keys(ANX_TIPOS).map(e => '.' + e).join(',') + ',image/*,application/pdf';
+const anxExt = n => (String(n).match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+const anxTipo = f => { const t = ANX_TIPOS[anxExt(f.name)]; return Object.values(ANX_TIPOS).includes(f.type) ? f.type : t || ''; };
+const anxTam = b => b >= 1048576 ? (b / 1048576).toLocaleString('pt-BR', {maximumFractionDigits: 1}) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+const anxIcone = t => /^image\//.test(t) ? 'img' : t === 'application/pdf' ? 'file' : 'clip';
+const anxPreviaOk = t => /^image\/(jpeg|png|gif|webp)$/.test(t) || t === 'application/pdf' || /^text\//.test(t);
+function anxValida(f) {
+  if (!anxTipo(f)) return `“${f.name}”: tipo de arquivo não aceito. Use imagem, PDF, Word, Excel, PowerPoint, texto ou CSV.`;
+  if (f.size > ANX_MAX) return `“${f.name}” tem ${anxTam(f.size)}; o limite é 20 MB por arquivo.`;
+  return '';
+}
+function kanAnexosHTML(k, fila = []) {
+  const lista = k.anexos || [];
+  const linha = (a, fila) => `<div class="anx-it">${ic(anxIcone(a.tipo))}<div class="anx-tx"><b title="${esc(a.nome)}">${esc(a.nome)}</b>
+      <span>${anxTam(a.tamanho || 0)}${fila ? ' · será enviado ao salvar' : ` · ${esc(corretor(a.porId)?.nome || a.porNome || '')}${a.ts ? ' · ' + kanDataHora(a.ts) : ''}`}</span></div>
+      ${fila ? `<button type="button" class="btn sm icon ghost" data-act="kan-anx-tirar" data-i="${fila.i}" aria-label="Tirar ${esc(a.nome)}">${ic('x')}</button>`
+        : `<button type="button" class="btn sm" data-act="kan-anx-ver" data-id="${k.id}" data-a="${esc(a.id)}">${ic('eye')}Visualizar</button>
+           <button type="button" class="btn sm icon ghost" data-act="kan-anx-baixar" data-id="${k.id}" data-a="${esc(a.id)}" aria-label="Baixar ${esc(a.nome)}">${ic('download')}</button>
+           ${a.porId === ME?.id || k.criadoPor === ME?.id || can('kanbanTodos') ? `<button type="button" class="btn sm icon ghost" data-act="kan-anx-del" data-id="${k.id}" data-a="${esc(a.id)}" aria-label="Remover ${esc(a.nome)}">${ic('trash')}</button>` : ''}`}</div>`;
+  const itens = lista.map(a => linha(a)).concat(fila.map((f, i) => linha({nome: f.name, tamanho: f.size, tipo: anxTipo(f)}, {i})));
+  return itens.length ? itens.join('') : '<div class="small muted">Nenhum arquivo anexado.</div>';
+}
+const anxCaminho = (cardId, f) => { const ext = anxExt(f.name), base = slug(f.name.replace(/\.[^.]+$/, '')) || 'arquivo'; return `${cardId}/${uid()}-${base}${ext ? '.' + ext : ''}`; };
+// Envia um arquivo e registra no card; devolve o anexo registrado
+async function kanAnexar(cardId, f) {
+  const path = anxCaminho(cardId, f), tipo = anxTipo(f);
+  const up = await sb.storage.from('kanban').upload(path, f, {contentType: tipo, upsert: false});
+  if (up.error) throw new Error(/row-level|policy|403/i.test(up.error.message || '') ? 'Seu acesso não permite anexar neste card.' : /bucket|not found/i.test(up.error.message || '') ? 'O armazenamento de anexos ainda não existe: rode a migração 20261124100000_kanban_anexos.sql no Supabase.' : 'Não foi possível enviar o arquivo. Verifique a internet.');
+  const {data, error} = await sb.rpc('kanban_anexo_registrar', {p_id: cardId, p_anexo: {path, nome: f.name, tipo, tamanho: f.size}});
+  if (error) { sb.storage.from('kanban').remove([path]).catch(() => {}); throw error; }
+  const k = S.kanban.get(cardId); if (k && data) S.kanban.set(cardId, {...k, anexos: [...(k.anexos || []), data]});
+  return data;
+}
+async function kanAnexarVarios(cardId, files) {
+  let ok = 0;
+  for (const f of files) {
+    try { await comCarregando(() => kanAnexar(cardId, f)); ok++; }
+    catch (e) { e?.code ? kanErro(e) : toast(String(e.message || e), 'bad'); }
+  }
+  kanAtualizaAnexos(); scheduleRender(true); scheduleReload('kanban');
+  if (ok) toast(ok === 1 ? 'Arquivo anexado. Os envolvidos foram avisados.' : `${ok} arquivos anexados. Os envolvidos foram avisados.`);
+  return ok;
+}
+function kanAtualizaAnexos() {
+  const box = $('#kb-anx'); if (!box || !KAN_ABERTO) return;
+  const k = S.kanban.get(KAN_ABERTO); if (k) box.innerHTML = kanAnexosHTML(k);
+}
+const anxDe = (cardId, aid) => (S.kanban.get(cardId)?.anexos || []).find(a => a.id === aid);
+async function anxBaixarBlob(a) {
+  const {data, error} = await sb.storage.from('kanban').download(a.path);
+  if (error || !data) throw new Error('Não foi possível abrir o arquivo. Verifique a internet ou se ele ainda existe.');
+  return data;
+}
+// Visualizador: abre por cima do card (o card continua aberto embaixo)
+function anxVer(a) {
+  anxFechar();
+  const el = document.createElement('div'); el.id = 'anx-ver'; el.className = 'anx-ver'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', a.nome);
+  el.innerHTML = `<div class="anx-box"><div class="anx-h">${ic(anxIcone(a.tipo))}<b title="${esc(a.nome)}">${esc(a.nome)}</b><span class="small muted">${anxTam(a.tamanho || 0)}</span><span class="grow"></span>
+      <button type="button" class="btn sm" data-anx="baixar">${ic('download')}Baixar</button><button type="button" class="btn icon ghost" data-anx="fechar" aria-label="Fechar">${ic('x')}</button></div>
+    <div class="anx-corpo"><div class="empty">Carregando…</div></div></div>`;
+  document.body.appendChild(el);
+  const corpo = el.querySelector('.anx-corpo');
+  let urlObj = null;
+  el._fechar = () => { if (urlObj) URL.revokeObjectURL(urlObj); };
+  el.addEventListener('click', e => {
+    if (e.target === el || e.target.closest('[data-anx="fechar"]')) return anxFechar();
+    if (e.target.closest('[data-anx="baixar"]')) anxBaixar(a);
+  });
+  el.querySelector('[data-anx="fechar"]').focus();
+  (async () => {
+    try {
+      if (!anxPreviaOk(a.tipo)) {
+        corpo.innerHTML = `<div class="empty"><b>Pré-visualização indisponível para este tipo de arquivo</b>Arquivos do Word, Excel e PowerPoint abrem depois de baixados.<div style="margin-top:12px"><button type="button" class="btn primary" data-anx="baixar">${ic('download')}Baixar arquivo</button></div></div>`;
+        return;
+      }
+      const blob = await anxBaixarBlob(a);
+      if (!el.isConnected) return;
+      if (/^image\//.test(a.tipo)) { urlObj = URL.createObjectURL(blob); corpo.innerHTML = `<img class="anx-img" src="${urlObj}" alt="${esc(a.nome)}">`; }
+      else if (a.tipo === 'application/pdf') { const pgs = await paginasPdf(blob, 1.6); if (el.isConnected) corpo.innerHTML = pgs.map((s, i) => `<img class="anx-pg" src="${s}" alt="Página ${i + 1}">`).join(''); }
+      else { const t = await blob.text(); corpo.innerHTML = `<pre class="anx-txt">${esc(t.slice(0, 200000))}${t.length > 200000 ? '\n…' : ''}</pre>`; }
+    } catch (e) { if (el.isConnected) corpo.innerHTML = `<div class="empty"><b>Não foi possível abrir o arquivo</b>${esc(e.message || '')}</div>`; }
+  })();
+}
+function anxFechar() { const el = $('#anx-ver'); if (el) { el._fechar && el._fechar(); el.remove(); } }
+async function anxBaixar(a) {
+  try { const blob = await comCarregando(() => anxBaixarBlob(a)); baixarBlob(blob, a.nome); }
+  catch (e) { toast(String(e.message || e), 'bad'); }
+}
+// Esc fecha o visualizador antes do card
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#anx-ver')) { e.stopImmediatePropagation(); anxFechar(); } }, true);
+
 async function kanExcluir(k) {
+  const arqs = (k.anexos || []).map(a => a.path).filter(Boolean);
+  if (arqs.length) await sb.storage.from('kanban').remove(arqs).catch(() => {});
   S.kanban.delete(k.id); scheduleRender(true);
   const {error} = await sb.from('kanban_cards').delete().eq('id', k.id);
   if (error) { S.kanban.set(k.id, k); scheduleRender(true); kanErro(error); return false; }
@@ -2617,7 +2749,7 @@ function ntTempo(iso) {
   if (s < 60) return 'agora'; if (s < 3600) return `há ${Math.floor(s / 60)} min`; if (s < 86400) return `há ${Math.floor(s / 3600)} h`;
   const d = Math.floor(s / 86400); return d === 1 ? 'ontem' : d < 7 ? `há ${d} dias` : new Date(iso).toLocaleDateString('pt-BR');
 }
-const NT_ICONE = {atribuicao: 'user', movimento: 'swap', comentario: 'msg', prazo: 'clock', exclusao: 'trash', comunicado: 'mega'};
+const NT_ICONE = {anexo: 'clip', atribuicao: 'user', movimento: 'swap', comentario: 'msg', prazo: 'clock', exclusao: 'trash', comunicado: 'mega'};
 function ntPainelHTML() {
   const ns = ntLista(), nl = ns.filter(n => !n.lida).length, pz = ntPrazos();
   const pf = pushRodape();
@@ -4026,11 +4158,11 @@ function permHTML() {
   const outros = corretores().filter(c => perfilOf(c) !== 'master');
   const alvo = sel ? corretor(sel) : null;
   const row = d => `<td><b style="font-size:14px">${esc(d.l)}</b>${d.d ? `<div class="small muted">${esc(d.d)}</div>` : ''}</td>`;
-  const tabelaPerfis = `<table class="t"><thead><tr><th>Permissão</th><th style="text-align:center">Master</th><th style="text-align:center">Coordenador</th><th style="text-align:center">Corretor</th></tr></thead><tbody>
-    ${grupos.map(g => `<tr><td colspan="4" style="background:var(--surface-2);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">${g}</td></tr>` +
+  const tabelaPerfis = `<table class="t"><thead><tr><th>Permissão</th><th style="text-align:center">Master</th><th style="text-align:center">Diretor</th><th style="text-align:center">Coordenador</th><th style="text-align:center">Corretor</th></tr></thead><tbody>
+    ${grupos.map(g => `<tr><td colspan="5" style="background:var(--surface-2);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">${g}</td></tr>` +
       PERM_DEFS.filter(d => d.g === g).map(d => `<tr>${row(d)}
         <td style="text-align:center"><span class="lock-note" style="justify-content:center">${ic('lock')}Sempre</span></td>
-        ${['coordenador', 'corretor'].map(pf => `<td style="text-align:center"><label class="switch" style="justify-content:center"><input type="checkbox" data-pp="${pf}" data-k="${d.k}" ${perfilPode(pf, d.k) ? 'checked' : ''} aria-label="${esc(d.l)} para ${PERFIS[pf]}"><i></i></label></td>`).join('')}</tr>`).join('')).join('')}
+        ${['diretor', 'coordenador', 'corretor'].map(pf => `<td style="text-align:center"><label class="switch" style="justify-content:center"><input type="checkbox" data-pp="${pf}" data-k="${d.k}" ${perfilPode(pf, d.k) ? 'checked' : ''} aria-label="${esc(d.l)} para ${PERFIS[pf]}"><i></i></label></td>`).join('')}</tr>`).join('')).join('')}
   </tbody></table>`;
   const ov = alvo?.permissoes || {};
   const tabelaUser = alvo ? `<table class="t"><thead><tr><th>Permissão</th><th>Padrão do perfil (${PERFIL_CURTO[perfilOf(alvo)]})</th><th>Acesso deste usuário</th></tr></thead><tbody>
@@ -4099,7 +4231,7 @@ async function saveUser() {
   const perfil = val('us-perfil');
   if (!isMaster() && (perfil === 'master' || perfilOf(old) === 'master' && old.id)) return denied();
   if (old.id && perfilOf(old) === 'master' && perfil !== 'master' && !mastersAtivos(id).length) { toast('É preciso manter pelo menos um usuário Master ativo.', 'warn'); return; }
-  if (perfil !== 'master' && !val('us-creci')) { $('#us-creci').classList.add('err'); $('#us-creci').focus(); toast('Informe o CRECI do corretor ou coordenador.', 'warn'); return; }
+  if (perfil !== 'master' && !val('us-creci')) { $('#us-creci').classList.add('err'); $('#us-creci').focus(); toast('Informe o CRECI (obrigatório para Diretor, Coordenador e Corretor).', 'warn'); return; }
   const rec = {nome: val('us-nome'), telefone: val('us-tel'), email, creci: val('us-creci'), especialidade: val('us-esp'), login, perfil, participa: $('#us-part').checked, ativo: old.ativo !== false,
     _senha: senha || '', ...(old.permissoes ? {permissoes: old.permissoes} : {}), criadoEm: old.criadoEm || Date.now(), ...(old.exemplo ? {exemplo: true} : {})};
   if (await save('corretores', id, rec)) { toast(old.id ? 'Cadastro atualizado.' : `${firstName(rec.nome)} cadastrado(a).`); state.users.tab = 'lista'; state.users.editId = null; render(); }
@@ -5781,6 +5913,17 @@ const ACTIONS = {
     emailEnviarTeste(el, {t: x, para: val('et-teste-para')}); },
   // kanban
   'kan-novo': el => kanForm({}, el.dataset.col),
+  'kan-anx-add': () => $('#kb-anx-in')?.click(),
+  'kan-anx-tirar': el => { const m = $('#modal-root .modal'); if (!m?._fila) return; m._fila.splice(+el.dataset.i, 1); m._pintaFila(); },
+  'kan-anx-ver': el => { const a = anxDe(el.dataset.id, el.dataset.a); if (a) anxVer(a); },
+  'kan-anx-baixar': el => { const a = anxDe(el.dataset.id, el.dataset.a); if (a) anxBaixar(a); },
+  'kan-anx-del': el => { const id = el.dataset.id, a = anxDe(id, el.dataset.a); if (!a) return;
+    if (!confirm(`Remover o anexo “${a.nome}”?`)) return;
+    sb.rpc('kanban_anexo_remover', {p_id: id, p_anexo: a.id}).then(async ({data, error}) => {
+      if (error) return kanErro(error);
+      if (data?.path) await sb.storage.from('kanban').remove([data.path]).catch(() => {});
+      const k = S.kanban.get(id); if (k) S.kanban.set(id, {...k, anexos: (k.anexos || []).filter(x => x.id !== a.id)});
+      kanAtualizaAnexos(); scheduleRender(true); scheduleReload('kanban'); toast('Anexo removido.'); }); },
   'kan-arq': el => { state.kan.arquivados = el.dataset.v === '1'; render(); },
   'kan-chk-add': () => { const inp = $('#kb-chk-novo'), t = inp.value.trim(); if (!t) return inp.focus(); const box = $('#kb-chk'); box.insertAdjacentHTML('beforeend', kanChkRow({texto: t}, box.children.length)); inp.value = ''; inp.focus(); },
   'kan-chk-del': el => el.closest('[data-chk]').remove(),
@@ -5968,7 +6111,7 @@ const ACTIONS = {
   'us-perm': () => { if (!isMaster()) return denied(); state.users.tab = 'perm'; state.users.editId = null; render(); },
   'perm-ov': el => setOverride(el.dataset.k, el.dataset.v),
   'perm-ov-clear': () => setOverride(null),
-  'perm-reset': () => { if (!isMaster()) return denied(); confirmBox('Voltar as permissões de Coordenador e Corretor para o padrão do sistema? As exceções por usuário continuam.', 'Restaurar', async () => { if (await save('config', 'permissoes', {})) toast('Permissões padrão restauradas.'); }); },
+  'perm-reset': () => { if (!isMaster()) return denied(); confirmBox('Voltar as permissões de Diretor, Coordenador e Corretor para o padrão do sistema? As exceções por usuário continuam.', 'Restaurar', async () => { if (await save('config', 'permissoes', {})) toast('Permissões padrão restauradas.'); }); },
   'us-edit': el => { const c = corretor(el.dataset.id); if (c && !isMaster() && perfilOf(c) === 'master') return denied(); state.users.tab = 'form'; state.users.editId = el.dataset.id; render(); window.scrollTo(0, 0); },
   'us-filtro': el => { state.users.filtro = el.dataset.v; render(); },
   'us-limpar': () => confirmBox('Remover todos os registros de exemplo (corretores, metas, visitas, agenda, cards, treinamentos e assiduidade de exemplo)? Os dados que você cadastrou ficam.', 'Remover exemplos', async () => {

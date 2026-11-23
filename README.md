@@ -225,3 +225,23 @@ Os números do Brasil podem ser digitados como `(43) 99999-0000`; o sistema conv
 2. Supabase → Edge Functions → **Deploy a new function** → nome `enviar-sms` → colar `supabase/functions/enviar-sms/index.ts` → Deploy, com **Verify JWT desligado**.
 
 **Rotinas automáticas:** chamam `POST /functions/v1/enviar-sms` com `Authorization: Bearer <service_role>` e o corpo `{"acao": "enviar", "para": "(43) 99999-0000", "template": "chave", "dados": {...}}`.
+
+## Tipo de usuário Diretor
+
+O tipo **Diretor** tem os **mesmos acessos do Coordenador**. Em Usuários → Permissões ele ganha uma coluna própria: enquanto o Master não mexer nela, o Diretor segue exatamente o que estiver marcado para o Coordenador.
+
+**Publicar:**
+1. Supabase → SQL Editor: rodar `supabase/migrations/20261123100000_diretor.sql`.
+2. Atualizar a função `admin-usuarios`: Edge Functions → admin-usuarios → Code → colar `supabase/functions/admin-usuarios/index.ts` → Deploy. Sem isso, salvar um usuário como Diretor vira Corretor.
+## Kanban: anexos nos cards
+
+No card do Kanban (novo ou existente) há a seção **Anexos**:
+- **Anexar arquivo:**
+  - aceita imagem, PDF, Word, Excel, PowerPoint, texto ou CSV, até 20 MB cada e até 30 por card;
+  - num card novo, os arquivos ficam na fila e são enviados assim que o card é salvo.
+- **Visualizar:** abre por cima do card. Imagens, PDF (todas as páginas) e texto aparecem na tela; Word, Excel e PowerPoint são baixados.
+- **Baixar** com o nome original. **Remover:** quem anexou, quem criou o card ou quem vê todos os cards.
+- Os envolvidos recebem um aviso no sininho ("anexou um arquivo"); dá para desligar em Configurações → Kanban → Notificações.
+- Os arquivos ficam no armazenamento privado `kanban` do Supabase; só quem pode ver o card consegue abri-los. Excluir o card apaga os arquivos.
+
+**Publicar:** Supabase → SQL Editor: rodar `supabase/migrations/20261124100000_kanban_anexos.sql`.
