@@ -2221,8 +2221,12 @@ VIEWS.vendas = {
 };
 function vendaForm(v = {}) {
   if (v.id && !canOp(v.vendedorId)) return denied();
-  const vendCs = can('operacaoTodos') ? vendedores() : [ME];
-  const angCs = corretores(true);
+  // Vendedor e angariador: qualquer usuário ativo (Corretor, Coordenador, Diretor e Master/Gestor);
+  // ao editar, quem já está na venda continua na lista mesmo se estiver inativo
+  const comAtual = (cs, id) => id && !cs.some(c => c.id === id) && corretor(id) ? [...cs, corretor(id)] : cs;
+  const vendCs = can('operacaoTodos') ? comAtual(corretores(true), v.vendedorId) : [ME];
+  const angCs = comAtual(corretores(true), v.angariadorId);
+  const rotulo = c => esc(c.nome) + (perfilOf(c) !== 'corretor' ? ` · ${PERFIL_CURTO[perfilOf(c)] === 'Master' ? 'Gestor' : PERFIL_CURTO[perfilOf(c)]}` : '') + (c.ativo === false ? ' (inativo)' : '');
   const money = (id, label, val, req) => `<div class="field"><label for="${id}">${label}${req ? ' *' : ''}</label><input class="input num" id="${id}" data-money inputmode="numeric" value="${moneyCents(val)}" placeholder="R$ 0,00"></div>`;
   const pctF = (id, label, val, help) => `<div class="field"><label for="${id}">${label}</label><div class="suffix"><input class="input num" id="${id}" data-pct inputmode="decimal" value="${pctIn(val)}" placeholder="0"><span>%</span></div>${help ? `<div class="help">${help}</div>` : ''}</div>`;
   const tipo = v.tipoVenda || 'Financiamento';
@@ -2250,8 +2254,8 @@ function vendaForm(v = {}) {
       <div class="grid-2">${money('vd-entrada', 'Valor de entrada', v.entrada)}${money('vd-sinal', 'Valor de sinal', v.sinal)}</div>
       <div class="sec-title">Comissões</div>
       <div class="grid-2">
-        <div class="field"><label for="vd-vend">Corretor vendedor *</label><select class="input" id="vd-vend">${can('operacaoTodos') ? '<option value="">Selecione</option>' : ''}${vendCs.map(c => `<option value="${c.id}" ${(v.vendedorId || (can('operacaoTodos') ? '' : ME.id)) === c.id ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</select></div>
-        <div class="field"><label for="vd-ang">Angariador</label><select class="input" id="vd-ang"><option value="">— Sem angariador —</option>${angCs.map(c => `<option value="${c.id}" ${v.angariadorId === c.id ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</select></div>
+        <div class="field"><label for="vd-vend">Corretor vendedor *</label><select class="input" id="vd-vend">${can('operacaoTodos') ? '<option value="">Selecione</option>' : ''}${vendCs.map(c => `<option value="${c.id}" ${(v.vendedorId || (can('operacaoTodos') ? '' : ME.id)) === c.id ? 'selected' : ''}>${rotulo(c)}</option>`).join('')}</select></div>
+        <div class="field"><label for="vd-ang">Angariador</label><select class="input" id="vd-ang"><option value="">— Sem angariador —</option>${angCs.map(c => `<option value="${c.id}" ${v.angariadorId === c.id ? 'selected' : ''}>${rotulo(c)}</option>`).join('')}</select></div>
         <div>${pctF('vd-cvp', 'Comissão de venda', v.comVendaPct, '')}<div class="com-calc" id="vd-cv"></div></div>
         <div>${pctF('vd-cap', 'Comissão de angariador', v.comAngPct, '')}<div class="com-calc" id="vd-ca"></div></div>
       </div>
