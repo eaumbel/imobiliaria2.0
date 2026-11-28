@@ -1236,6 +1236,12 @@ async function save(col, id, data) {
     delete rec._senha; delete rec.senhaHash; delete rec.atualizadoEm;
     try {
       const out = await api('salvar', {id: prev ? id : null, dados: rec, senha});
+      // Confere se o servidor gravou o tipo de acesso pedido (a função antiga trocava "diretor" por "corretor" sem avisar)
+      if (rec.perfil && (out.perfil ? out.perfil !== rec.perfil : rec.perfil === 'diretor')) {
+        toast(out.perfil ? `O servidor gravou o tipo ${PERFIL_CURTO[out.perfil] || out.perfil} no lugar de ${PERFIL_CURTO[rec.perfil]}.`
+          : 'O tipo de acesso não foi aplicado: a função admin-usuarios publicada no Supabase está desatualizada. Atualize em Edge Functions → admin-usuarios → Code (cole o arquivo novo) → Deploy.', 'bad');
+        scheduleReload('corretores'); return false;
+      }
       const nid = out.id || id; S.corretores.set(nid, {...prev, ...rec, id: nid, senhaHash: '1'}); scheduleRender(true); scheduleReload('corretores'); return nid;
     } catch (e) { toast(e.message, 'bad'); scheduleReload('corretores'); return false; }
   }

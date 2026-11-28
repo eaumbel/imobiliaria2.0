@@ -11,6 +11,7 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const EMAIL_DOM = Deno.env.get("EMAIL_DOMINIO") ?? "acesso.eaumbel.com.br";
+const VERSAO = "2026-11-28.1";
 const PERFIS = ["master", "diretor", "coordenador", "corretor"];
 
 const resp = (status: number, body: unknown) =>
@@ -19,6 +20,10 @@ const erro = (status: number, msg: string) => resp(status, { erro: msg });
 const limpa = (s: unknown, max = 200) => String(s ?? "").trim().slice(0, max);
 const loginOk = (l: string) => /^[a-z0-9._-]{3,40}$/.test(l);
 const emailDe = (login: string) => `${login}@${EMAIL_DOM}`;
+// O banco recusou: explica quando é o tipo Diretor ainda não liberado
+const erroBanco = (e: { message?: string }) => /perfil_check|check constraint/i.test(e?.message ?? "")
+  ? "O banco ainda não aceita este tipo de acesso. Rode no Supabase (SQL Editor) a migração 20261123100000_diretor.sql."
+  : "Não foi possível salvar o usuário.";
 function traduz(m: string) {
   if (/already|registered|exists/i.test(m)) return "Este login já está em uso.";
   if (/password/i.test(m)) return "Senha não aceita pelo servidor. Use pelo menos 6 caracteres.";
@@ -85,7 +90,9 @@ Deno.serve(async (req) => {
 
   const d = body.dados ?? {};
   const senha = body.senha ? String(body.senha) : "";
-  const perfil = PERFIS.includes(d.perfil) ? d.perfil : "corretor";
+  // tipo de acesso desconhecido é recusado (antes virava "corretor" sem avisar)
+  if (d.perfil != null && !PERFIS.includes(d.perfil)) return erro(400, `Tipo de acesso inválido: ${limpa(d.perfil, 30)}.`);
+  const perfil = d.perfil ?? "corretor";
   const login = limpa(d.login, 40).toLowerCase();
   if (!limpa(d.nome) || !loginOk(login)) return erro(400, "Informe o nome e um login de 3 a 40 caracteres (letras, números, ponto ou hífen).");
   if (senha && senha.length < 6) return erro(400, "A senha precisa ter pelo menos 6 caracteres.");
@@ -121,8 +128,8 @@ Deno.serve(async (req) => {
     const { data: cu, error } = await admin.auth.admin.createUser({ email: emailDe(login), password: senha, email_confirm: true });
     if (error || !cu?.user) return erro(400, traduz(error?.message ?? ""));
     const { error: e2 } = await admin.from("perfis").insert({ id: cu.user.id, ...linha });
-    if (e2) { await admin.auth.admin.deleteUser(cu.user.id); return erro(500, "Não foi possível salvar o usuário."); }
-    return resp(200, { id: cu.user.id });
+    if (e2) { await admin.auth.admin.deleteUser(cu.user.id); return erro(500, erroBanco(e2)); }
+    return resp(200, { id: cu.user.id, perfil, versao: VERSAO });
   }
 
   const upd: Record<string, unknown> = {};
@@ -134,6 +141,6 @@ Deno.serve(async (req) => {
     if (error) return erro(400, traduz(error.message));
   }
   const { error: e3 } = await admin.from("perfis").update(linha).eq("id", alvo.id);
-  if (e3) return erro(500, "Não foi possível salvar o usuário.");
-  return resp(200, { id: alvo.id });
+  if (e3) return erro(500, erroBanco(e3));
+  return resp(200, { id: alvo.id, perfil, versao: VERSAO });
 });
