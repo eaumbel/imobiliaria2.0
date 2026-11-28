@@ -353,6 +353,7 @@ table.t.vis td{white-space:nowrap}
 .login-foot{text-align:center;color:var(--side-muted);font-size:12.5px}
 .pw{position:relative}
 .pw .input{padding-right:78px}
+.us-senha-acoes{gap:8px;margin-top:2px}.us-senha-acoes .btn svg{width:15px;height:15px}
 .pw button{position:absolute;right:6px;top:5px;height:32px;border:0;background:transparent;font-weight:700;font-size:12.5px;color:var(--accent);cursor:pointer;padding:0 10px;border-radius:8px}
 .check{display:flex;gap:9px;align-items:center;font-size:13.5px;font-weight:600;cursor:pointer}
 .check input{width:17px;height:17px;accent-color:var(--accent)}
@@ -4143,6 +4144,17 @@ VIEWS.usuarios = {
     if (state.users.tab === 'form') {
       const tel = $('#us-tel'); tel.oninput = () => tel.value = maskTel(tel.value);
       $('#us-save').onclick = saveUser;
+      // Senha: mostrar o que foi digitado, gerar uma nova e copiar (a senha atual nunca é exibida: só existe criptografada)
+      const sen = $('#us-senha'), ver = $('#us-ver-senha'), cop = $('#us-copiar');
+      const mostrar = v => { sen.type = v ? 'text' : 'password'; ver.textContent = v ? 'Ocultar' : 'Ver senha'; };
+      ver.onclick = () => mostrar(sen.type === 'password');
+      sen.oninput = () => { cop.hidden = !sen.value; state.dirty = true; };
+      $('#us-gerar').onclick = () => {
+        const A = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789', r = crypto.getRandomValues(new Uint32Array(10));
+        sen.value = [...r].map(n => A[n % A.length]).join(''); sen.classList.remove('err'); mostrar(true); cop.hidden = false; state.dirty = true;
+        toast('Senha gerada. Copie e passe ao usuário; ela só vale depois de salvar.');
+      };
+      cop.onclick = () => copyText(sen.value, 'Senha copiada.');
       $('#us-login').oninput = e => e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, '');
       $('#us-perfil').onchange = e => { const pc = $('#us-part'); if (!pc.dataset.touched) pc.checked = e.target.value !== 'master'; };
       $('#us-part').onchange = e => e.target.dataset.touched = '1';
@@ -4218,14 +4230,16 @@ function userForm() {
         <div class="field"><label for="us-email">E-mail *</label><input class="input" id="us-email" type="email" value="${esc(c.email)}" placeholder="nome@patrimonio.com.br"></div>
         <div class="field"><label for="us-creci">CRECI</label><input class="input" id="us-creci" value="${esc(c.creci)}" placeholder="Ex.: F-41233"></div>
         <div class="field"><label for="us-perfil">Tipo de acesso *</label><select class="input" id="us-perfil">${Object.entries(PERFIS).filter(([k]) => isMaster() || k !== 'master').map(([k, l]) => `<option value="${k}" ${perfilOf(c.id ? c : {perfil: 'corretor'}) === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
-          <div class="help">Master: acesso total. Coordenador: toda a operação, sem usuários e sem alterar metas. Corretor: só os próprios dados.</div></div>
+          <div class="help">Master: acesso total. Diretor e Coordenador: toda a operação, sem usuários e sem alterar metas. Corretor: só os próprios dados.</div></div>
         <div class="field" style="justify-content:center"><label class="check" style="margin-top:22px"><input type="checkbox" id="us-part" ${(c.id ? participa(c) : true) ? 'checked' : ''}>Participa das metas, da roleta e do ranking</label></div>
         <div class="field"><label for="us-esp">Especialidade</label><input class="input" id="us-esp" value="${esc(c.especialidade)}" list="esp-list" placeholder="Escolha ou digite"><datalist id="esp-list">${ESPEC.map(e => `<option>${e}</option>`).join('')}</datalist></div>
       </div>
       <div style="border-top:1px solid var(--line);padding-top:16px;margin-top:4px"><div style="font-weight:800;margin-bottom:10px">Acesso</div>
       <div class="grid-2">
         <div class="field"><label for="us-login">Login *</label><input class="input" id="us-login" value="${esc(c.login)}" autocomplete="off" placeholder="ex.: ana.ferreira"></div>
-        <div class="field"><label for="us-senha">Senha ${c.id ? '' : '*'}</label><input class="input" id="us-senha" type="password" autocomplete="new-password" placeholder="${c.id ? 'Deixe em branco para manter a atual' : 'Mínimo de 6 caracteres'}"><div class="help">Guardada de forma criptografada no servidor.</div></div>
+        <div class="field"><label for="us-senha">${c.id ? 'Nova senha' : 'Senha *'}</label><div class="pw"><input class="input" id="us-senha" type="password" autocomplete="new-password" placeholder="${c.id ? 'Deixe em branco para manter a atual' : 'Mínimo de 6 caracteres'}"><button type="button" id="us-ver-senha">Ver senha</button></div>
+          <div class="row us-senha-acoes"><button type="button" class="btn sm" id="us-gerar">${ic('key')}Gerar senha</button><button type="button" class="btn sm" id="us-copiar" hidden>${ic('copy')}Copiar</button></div>
+          <div class="help">${c.id ? 'A senha atual não pode ser exibida: ela fica guardada de forma criptografada e ninguém consegue lê-la, nem o Master. Para trocar, digite ou gere uma nova e salve.' : 'Guardada de forma criptografada no servidor; depois de salva, não pode mais ser exibida. Anote ou copie antes de salvar.'}</div></div>
       </div></div>
       <div class="row" style="justify-content:flex-end"><button class="btn" data-act="us-lista">Cancelar</button><button class="btn primary" id="us-save">${c.id ? 'Salvar alterações' : 'Cadastrar corretor'}</button></div>
     </div></form>`;
